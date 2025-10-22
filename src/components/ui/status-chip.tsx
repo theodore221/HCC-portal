@@ -1,7 +1,22 @@
-import { BookingStatus } from "@/lib/mock-data";
+import type { ComponentProps } from "react";
 import { Badge } from "./badge";
+import { BookingStatus } from "@/lib/mock-data";
 
-const statusCopy: Record<BookingStatus, string> = {
+const variantForStatus: Record<
+  BookingStatus,
+  ComponentProps<typeof Badge>["variant"]
+> = {
+  Pending: "warning",
+  InTriage: "outline",
+  Approved: "success",
+  DepositPending: "warning",
+  DepositReceived: "success",
+  InProgress: "default",
+  Completed: "neutral",
+  Cancelled: "danger",
+};
+
+const labelForStatus: Record<BookingStatus, string> = {
   Pending: "Pending",
   InTriage: "In Triage",
   Approved: "Approved",
@@ -13,5 +28,5 @@ const statusCopy: Record<BookingStatus, string> = {
 };
 
 export function StatusChip({ status }: { status: BookingStatus }) {
-  return <Badge label={statusCopy[status]} />;
+  return <Badge variant={variantForStatus[status]}>{labelForStatus[status]}</Badge>;
 }

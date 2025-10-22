@@ -1,11 +1,25 @@
 import { notFound } from "next/navigation";
 import { Stepper } from "@/components/ui/stepper";
-import { Card, CardHeader, CardSection } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { RoomCard } from "@/components/ui/room-card";
-import { MOCK_BOOKINGS, MOCK_MEAL_JOBS, MOCK_ROOMS, MOCK_DIETARIES } from "@/lib/mock-data";
 import { StatusChip } from "@/components/ui/status-chip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { MOCK_BOOKINGS, MOCK_MEAL_JOBS, MOCK_ROOMS, MOCK_DIETARIES } from "@/lib/mock-data";
 
 const steps = ["Deposit", "Catering", "Rooming", "Summary"];
 
@@ -24,105 +38,120 @@ export default function CustomerPortal({
     <div className="space-y-8">
       <Stepper steps={steps} currentStep={currentStep} />
       <Card>
-        <CardHeader
-          title={`Booking reference ${booking.reference}`}
-          subtitle={`${booking.groupName} · ${booking.headcount} guests`}
-          action={<StatusChip status={booking.status} />}
-        />
-        <CardSection title="1 · Deposit instructions">
-          <p className="text-sm leading-relaxed text-olive-800">
-            A $1,500 deposit is required to secure your dates. Transfer to the Holy
-            Cross Centre account and include your booking reference. Once finance
-            confirms payment your catering and rooming steps unlock automatically.
-          </p>
-          <div className="mt-4 grid gap-3 rounded-xl border border-olive-100 bg-white p-4 sm:grid-cols-2">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-olive-600">Bank</p>
-              <p className="text-sm font-medium text-olive-900">Holy Cross Centre</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-olive-600">BSB</p>
-              <p className="text-sm font-medium text-olive-900">033-123</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-olive-600">Account</p>
-              <p className="text-sm font-medium text-olive-900">124 567 890</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-olive-600">Reference</p>
-              <p className="text-sm font-medium text-olive-900">{booking.reference}</p>
-            </div>
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle>{`Booking reference ${booking.reference}`}</CardTitle>
+            <CardDescription>{`${booking.groupName} · ${booking.headcount} guests`}</CardDescription>
           </div>
-        </CardSection>
-        <CardSection title="2 · Catering planner">
-          <p className="text-sm text-olive-800">
-            Select meals for each day. Totals automatically validate against your
-            headcount. Morning and Afternoon Tea include a percolated coffee option.
-          </p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {cateringJobs.map((job) => (
-              <MealSlotCard key={job.id} job={job} />
-            ))}
-          </div>
-          <Button className="mt-4 w-full md:w-auto" variant="outline">
-            Add dietary note
-          </Button>
-        </CardSection>
-        <CardSection title="Dietary register">
-          <table className="w-full text-sm text-olive-800">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-olive-600">
-                <th className="pb-2">Guest</th>
-                <th className="pb-2">Diet type</th>
-                <th className="pb-2">Allergy</th>
-                <th className="pb-2">Severity</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-olive-100">
-              {MOCK_DIETARIES.map((item) => (
-                <tr key={item.name}>
-                  <td className="py-2 font-medium">{item.name}</td>
-                  <td className="py-2">{item.dietType}</td>
-                  <td className="py-2">{item.allergy || "—"}</td>
-                  <td className="py-2">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        item.severity === "Fatal"
-                          ? "bg-red-100 text-red-700"
-                          : item.severity === "High"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-olive-100 text-olive-800"
-                      }`}
-                    >
-                      {item.severity}
-                    </span>
-                  </td>
-                </tr>
+          <StatusChip status={booking.status} />
+        </CardHeader>
+        <CardContent className="space-y-8">
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-olive-600">
+              1 · Deposit instructions
+            </h3>
+            <p className="text-sm leading-relaxed text-olive-800">
+              A $1,500 deposit is required to secure your dates. Transfer to the Holy Cross Centre account and include your booking
+              reference. Once finance confirms payment your catering and rooming steps unlock automatically.
+            </p>
+            <div className="grid gap-3 rounded-xl border border-olive-100 bg-white p-4 sm:grid-cols-2">
+              <InfoBlock label="Bank" value="Holy Cross Centre" />
+              <InfoBlock label="BSB" value="033-123" />
+              <InfoBlock label="Account" value="124 567 890" />
+              <InfoBlock label="Reference" value={booking.reference} />
+            </div>
+          </section>
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-olive-600">
+              2 · Catering planner
+            </h3>
+            <p className="text-sm text-olive-800">
+              Select meals for each day. Totals automatically validate against your headcount. Morning and Afternoon Tea include a
+              percolated coffee option.
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              {cateringJobs.map((job) => (
+                <MealSlotCard key={job.id} job={job} />
               ))}
-            </tbody>
-          </table>
-        </CardSection>
-        <CardSection title="3 · Rooming planner">
-          <div className="grid gap-4 md:grid-cols-3">
-            {rooms.map((room) => (
-              <RoomCard key={room.id} room={room} />
-            ))}
-          </div>
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-dashed border-olive-200 bg-white/60 p-4 text-sm text-olive-700 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              Upload a CSV or XLSX template to import your guest list in bulk.
             </div>
-            <Button variant="ghost">Download template</Button>
-          </div>
-        </CardSection>
-        <CardSection title="4 · Summary & submit">
-          <p className="text-sm text-olive-800">
-            Review your selections. Changes remain available until 7 days prior to
-            arrival. After that window contact the HCC team for adjustments.
-          </p>
-          <Button className="mt-4 w-full md:w-auto">Submit updates</Button>
-        </CardSection>
+            <Button className="w-full md:w-auto" variant="outline">
+              Add dietary note
+            </Button>
+          </section>
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-olive-600">
+              Dietary register
+            </h3>
+            <div className="overflow-hidden rounded-2xl border border-olive-100 bg-white">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Guest</TableHead>
+                    <TableHead>Diet type</TableHead>
+                    <TableHead>Allergy</TableHead>
+                    <TableHead>Severity</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {MOCK_DIETARIES.map((item) => (
+                    <TableRow key={item.name}>
+                      <TableCell className="font-medium text-olive-900">{item.name}</TableCell>
+                      <TableCell>{item.dietType}</TableCell>
+                      <TableCell>{item.allergy || "—"}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            item.severity === "Fatal"
+                              ? "bg-red-100 text-red-700"
+                              : item.severity === "High"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-olive-100 text-olive-800"
+                          }`}
+                        >
+                          {item.severity}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </section>
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-olive-600">
+              3 · Rooming planner
+            </h3>
+            <div className="grid gap-4 md:grid-cols-3">
+              {rooms.map((room) => (
+                <RoomCard key={room.id} room={room} />
+              ))}
+            </div>
+            <div className="flex flex-col gap-3 rounded-xl border border-dashed border-olive-200 bg-white/60 p-4 text-sm text-olive-700 sm:flex-row sm:items-center sm:justify-between">
+              <div>Upload a CSV or XLSX template to import your guest list in bulk.</div>
+              <Button variant="ghost">Download template</Button>
+            </div>
+          </section>
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-olive-600">
+              4 · Summary & submit
+            </h3>
+            <p className="text-sm text-olive-800">
+              Review your selections. Changes remain available until 7 days prior to arrival. After that window contact the HCC team
+              for adjustments.
+            </p>
+            <Button className="w-full md:w-auto">Submit updates</Button>
+          </section>
+        </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function InfoBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-olive-600">{label}</p>
+      <p className="text-sm font-medium text-olive-900">{value}</p>
     </div>
   );
 }

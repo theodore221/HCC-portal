@@ -1,4 +1,10 @@
-import { Card, CardHeader, CardSection } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { MOCK_BOOKINGS, MOCK_MEAL_JOBS } from "@/lib/mock-data";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatDateRange } from "@/lib/utils";
@@ -11,50 +17,65 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader title="Operational snapshot" subtitle="Today&apos;s status" />
-        <div className="mt-6 grid gap-4 sm:grid-cols-3">
-          <StatCard label="Pending" value={pending.length} helper="Awaiting triage" />
-          <StatCard
-            label="Deposit pending"
-            value={depositPending.length}
-            helper="Approved but unpaid"
-          />
-          <StatCard
-            label="Deposit received"
-            value={depositReceived.length}
-            helper="Customer portal unlocked"
-          />
-        </div>
+        <CardHeader>
+          <CardTitle>Operational snapshot</CardTitle>
+          <CardDescription>Today&apos;s status</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <StatCard label="Pending" value={pending.length} helper="Awaiting triage" />
+            <StatCard
+              label="Deposit pending"
+              value={depositPending.length}
+              helper="Approved but unpaid"
+            />
+            <StatCard
+              label="Deposit received"
+              value={depositReceived.length}
+              helper="Customer portal unlocked"
+            />
+          </div>
+        </CardContent>
       </Card>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Bookings awaiting action" />
-          <ul className="mt-6 space-y-4">
-            {pending.map((booking) => (
-              <li key={booking.id} className="rounded-xl border border-olive-100 bg-olive-50/70 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-olive-900">{booking.groupName}</p>
-                    <p className="text-xs text-olive-700">
-                      {formatDateRange(booking.arrival, booking.departure)}
-                    </p>
-                    <p className="mt-2 text-xs text-olive-700">
-                      Spaces requested: {booking.spaces.join(", ")}
-                    </p>
+          <CardHeader>
+            <CardTitle>Bookings awaiting action</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {pending.map((booking) => (
+                <li key={booking.id} className="rounded-xl border border-olive-100 bg-olive-50/70 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-olive-900">{booking.groupName}</p>
+                      <p className="text-xs text-olive-700">
+                        {formatDateRange(booking.arrival, booking.departure)}
+                      </p>
+                      <p className="mt-2 text-xs text-olive-700">
+                        Spaces requested: {booking.spaces.join(", ")}
+                      </p>
+                    </div>
+                    <StatusChip status={booking.status} />
                   </div>
-                  <StatusChip status={booking.status} />
-                </div>
-              </li>
-            ))}
-            {!pending.length && (
-              <p className="text-sm text-olive-700">No bookings waiting for triage.</p>
-            )}
-          </ul>
+                </li>
+              ))}
+              {!pending.length && (
+                <p className="text-sm text-olive-700">No bookings waiting for triage.</p>
+              )}
+            </ul>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader title="Catering alerts" subtitle="Recent updates to meal jobs" />
-          <CardSection title="Updated jobs">
-            <ul className="space-y-3 text-sm text-olive-800">
+          <CardHeader>
+            <CardTitle>Catering alerts</CardTitle>
+            <CardDescription>Recent updates to meal jobs</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm font-semibold uppercase tracking-wide text-olive-600">
+              Updated jobs
+            </p>
+            <ul className="mt-3 space-y-3 text-sm text-olive-800">
               {MOCK_MEAL_JOBS.slice(0, 4).map((job) => (
                 <li
                   key={job.id}
@@ -72,7 +93,7 @@ export default function AdminDashboard() {
                 </li>
               ))}
             </ul>
-          </CardSection>
+          </CardContent>
         </Card>
       </div>
     </div>

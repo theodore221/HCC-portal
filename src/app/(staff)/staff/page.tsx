@@ -1,4 +1,10 @@
-import { Card, CardHeader, CardSection } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { MOCK_MEAL_JOBS } from "@/lib/mock-data";
 
@@ -8,22 +14,33 @@ export default function StaffDashboard() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader title="Staff dashboard" subtitle="Today&apos;s arrivals and departures" />
-        <div className="mt-6 grid gap-4 sm:grid-cols-3 text-sm text-olive-800">
-          <InfoCard label="Arrivals" value="2 groups" helper="Alpha Youth · Beta School" />
-          <InfoCard label="Departures" value="1 group" helper="Guest Conference" />
-          <InfoCard label="Tasks" value="3 open" helper="Coffee urn prep · AV setup" />
-        </div>
+        <CardHeader>
+          <CardTitle>Staff dashboard</CardTitle>
+          <CardDescription>Today&apos;s arrivals and departures</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 text-sm text-olive-800 sm:grid-cols-3">
+            <InfoCard label="Arrivals" value="2 groups" helper="Alpha Youth · Beta School" />
+            <InfoCard label="Departures" value="1 group" helper="Guest Conference" />
+            <InfoCard label="Tasks" value="3 open" helper="Coffee urn prep · AV setup" />
+          </div>
+        </CardContent>
       </Card>
       <Card>
-        <CardHeader title="Catering run sheet preview" subtitle="Upcoming services" />
-        <CardSection title="Today">
-          <div className="grid gap-4 md:grid-cols-2">
+        <CardHeader>
+          <CardTitle>Catering run sheet preview</CardTitle>
+          <CardDescription>Upcoming services</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm font-semibold uppercase tracking-wide text-olive-600">
+            Today
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             {todaysJobs.map((job) => (
               <MealSlotCard key={job.id} job={job} />
             ))}
           </div>
-        </CardSection>
+        </CardContent>
       </Card>
     </div>
   );

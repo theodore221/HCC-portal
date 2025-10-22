@@ -29,6 +29,17 @@ To lint the project:
 npm run lint
 ```
 
+## Shadcn UI setup
+
+To regenerate or extend the component library with the official Shadcn CLI, run the following commands from the project root:
+
+```bash
+npx shadcn-ui@latest init
+npx shadcn-ui@latest add button card badge table tabs combobox
+```
+
+You can append other components (e.g. `dialog`, `popover`, `dropdown-menu`) using the same `add` command as you expand the UI surface area.
+
 ## Supabase schema blueprint
 
 Set up the following tables to power the workflows described in the UX blueprint. Each table should have Row Level Security enabled, with policies scoped to the roles below.

@@ -1,4 +1,10 @@
-import { Card, CardHeader, CardSection } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { Button } from "@/components/ui/button";
 import { MOCK_MEAL_JOBS } from "@/lib/mock-data";
@@ -10,15 +16,24 @@ export default function AdminCateringJobs() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader title="Catering jobs" subtitle="Assign caterers and export run sheets" />
-        <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-olive-700">
-          <Button>Assign caterer</Button>
-          <Button variant="outline">Export run sheets</Button>
-        </div>
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle>Catering jobs</CardTitle>
+            <CardDescription>Assign caterers and export run sheets</CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button>Assign caterer</Button>
+            <Button variant="outline">Export run sheets</Button>
+          </div>
+        </CardHeader>
       </Card>
       <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
         <Card>
-          <CardSection title="Week view">
+          <CardHeader>
+            <CardTitle>Week view</CardTitle>
+            <CardDescription>All meal jobs this week</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3 text-sm text-olive-800">
               {MOCK_MEAL_JOBS.map((job) => (
                 <div
@@ -30,17 +45,20 @@ export default function AdminCateringJobs() {
                     <p className="text-xs text-olive-700">{job.timeSlot}</p>
                   </div>
                   <div className="text-right text-xs">
-                    <p className="font-medium text-olive-700">{job.assignedCaterer}</p>
+                    <p className="font-medium text-olive-700">{job.assignedCaterer ?? "Unassigned"}</p>
                     <p>{Object.values(job.dietaryCounts).reduce((acc, val) => acc + val, 0)} meals</p>
                   </div>
                 </div>
               ))}
             </div>
-          </CardSection>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader title="Today" subtitle="{todaysJobs.length} services" />
-          <CardSection title="Jobs">
+          <CardHeader>
+            <CardTitle>Today</CardTitle>
+            <CardDescription>{todaysJobs.length} services</CardDescription>
+          </CardHeader>
+          <CardContent>
             {todaysJobs.length ? (
               <div className="space-y-3">
                 {todaysJobs.map((job) => (
@@ -50,7 +68,7 @@ export default function AdminCateringJobs() {
             ) : (
               <p className="text-sm text-olive-700">No catering services scheduled today.</p>
             )}
-          </CardSection>
+          </CardContent>
         </Card>
       </div>
     </div>

@@ -1,5 +1,24 @@
-import { Card, CardHeader, CardSection } from "@/components/ui/card";
+"use client";
+
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 
 const spaces = [
   { name: "Corbett Room", capacity: 80, features: "AV, breakout" },
@@ -22,61 +41,138 @@ const caterers = [
 ];
 
 export default function AdminResources() {
+  const [defaultCaterers, setDefaultCaterers] = useState<Record<string, string>>(() =>
+    Object.fromEntries(menuItems.map((item) => [item.label, item.caterer]))
+  );
+
+  const catererOptions: ComboboxOption[] = caterers.map((caterer) => ({
+    value: caterer.name,
+    label: caterer.name,
+    description: caterer.contact,
+  }));
+
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader title="Resource registry" subtitle="Maintain spaces, rooms, menu items and caterers" />
-        <div className="mt-6 flex flex-wrap gap-3 text-sm text-olive-700">
-          <Button>Add resource</Button>
-          <Button variant="outline">Import from CSV</Button>
-        </div>
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle>Resource registry</CardTitle>
+            <CardDescription>Maintain spaces, rooms, menu items and caterers</CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button>Add resource</Button>
+            <Button variant="outline">Import from CSV</Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="spaces" className="space-y-4">
+            <TabsList className="flex flex-wrap gap-2 bg-transparent p-0">
+              <TabsTrigger value="spaces" className="rounded-full border border-transparent">
+                Spaces
+              </TabsTrigger>
+              <TabsTrigger value="rooms" className="rounded-full border border-transparent">
+                Rooms
+              </TabsTrigger>
+              <TabsTrigger value="menu" className="rounded-full border border-transparent">
+                Menu items
+              </TabsTrigger>
+              <TabsTrigger value="caterers" className="rounded-full border border-transparent">
+                Caterers
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="spaces" className="space-y-4 p-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Features</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {spaces.map((space) => (
+                    <TableRow key={space.name}>
+                      <TableCell className="font-medium text-olive-900">{space.name}</TableCell>
+                      <TableCell>{space.capacity}</TableCell>
+                      <TableCell>{space.features}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+            <TabsContent value="rooms" className="space-y-4 p-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Building</TableHead>
+                    <TableHead>Beds</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rooms.map((room) => (
+                    <TableRow key={room.name}>
+                      <TableCell className="font-medium text-olive-900">{room.name}</TableCell>
+                      <TableCell>{room.building}</TableCell>
+                      <TableCell>{room.beds}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+            <TabsContent value="menu" className="space-y-4 p-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Menu item</TableHead>
+                    <TableHead>Allergens</TableHead>
+                    <TableHead className="w-60">Default caterer</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {menuItems.map((item) => (
+                    <TableRow key={item.label}>
+                      <TableCell className="font-medium text-olive-900">{item.label}</TableCell>
+                      <TableCell>{item.allergens}</TableCell>
+                      <TableCell>
+                        <Combobox
+                          value={defaultCaterers[item.label] ?? null}
+                          onChange={(next) =>
+                            setDefaultCaterers((prev) => ({
+                              ...prev,
+                              [item.label]: next ?? "",
+                            }))
+                          }
+                          options={catererOptions}
+                          placeholder="Assign caterer"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+            <TabsContent value="caterers" className="space-y-4 p-6">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Contact</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {caterers.map((caterer) => (
+                    <TableRow key={caterer.name}>
+                      <TableCell className="font-medium text-olive-900">{caterer.name}</TableCell>
+                      <TableCell>{caterer.contact}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
       </Card>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardSection title="Spaces">
-            <ul className="space-y-3 text-sm text-olive-800">
-              {spaces.map((space) => (
-                <li key={space.name} className="rounded-xl border border-olive-100 bg-white px-4 py-3">
-                  <p className="font-semibold text-olive-900">{space.name}</p>
-                  <p className="text-xs text-olive-700">Capacity {space.capacity} · {space.features}</p>
-                </li>
-              ))}
-            </ul>
-          </CardSection>
-          <CardSection title="Rooms">
-            <ul className="space-y-3 text-sm text-olive-800">
-              {rooms.map((room) => (
-                <li key={room.name} className="rounded-xl border border-olive-100 bg-white px-4 py-3">
-                  <p className="font-semibold text-olive-900">{room.name}</p>
-                  <p className="text-xs text-olive-700">{room.building} · {room.beds} beds</p>
-                </li>
-              ))}
-            </ul>
-          </CardSection>
-        </Card>
-        <Card>
-          <CardSection title="Menu items">
-            <ul className="space-y-3 text-sm text-olive-800">
-              {menuItems.map((item) => (
-                <li key={item.label} className="rounded-xl border border-olive-100 bg-white px-4 py-3">
-                  <p className="font-semibold text-olive-900">{item.label}</p>
-                  <p className="text-xs text-olive-700">Allergens: {item.allergens} · Default caterer {item.caterer}</p>
-                </li>
-              ))}
-            </ul>
-          </CardSection>
-          <CardSection title="Caterers">
-            <ul className="space-y-3 text-sm text-olive-800">
-              {caterers.map((caterer) => (
-                <li key={caterer.name} className="rounded-xl border border-olive-100 bg-white px-4 py-3">
-                  <p className="font-semibold text-olive-900">{caterer.name}</p>
-                  <p className="text-xs text-olive-700">{caterer.contact}</p>
-                </li>
-              ))}
-            </ul>
-          </CardSection>
-        </Card>
-      </div>
     </div>
   );
 }
