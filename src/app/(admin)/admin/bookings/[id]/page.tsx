@@ -1,3 +1,5 @@
+"use client";
+
 import { notFound } from "next/navigation";
 import {
   Card,
@@ -38,7 +40,8 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
           <div>
             <CardTitle>{booking.groupName}</CardTitle>
             <CardDescription>
-              {formatDateRange(booking.arrival, booking.departure)} · {booking.headcount} guests
+              {formatDateRange(booking.arrival, booking.departure)} ·{" "}
+              {booking.headcount} guests
             </CardDescription>
           </div>
           <StatusChip status={booking.status} />
@@ -46,7 +49,11 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
         <CardContent>
           <TabsList className="flex flex-wrap gap-2 bg-transparent p-0">
             {tabConfig.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="rounded-full border border-transparent">
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="rounded-full border border-transparent"
+              >
                 {tab.label}
               </TabsTrigger>
             ))}
@@ -61,7 +68,10 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
           </h3>
           <div className="grid gap-4 sm:grid-cols-3">
             {["Pending", "Approved", "Deposit Received"].map((stage) => (
-              <div key={stage} className="rounded-xl border border-olive-100 bg-white/80 p-4 text-sm">
+              <div
+                key={stage}
+                className="rounded-xl border border-olive-100 bg-white/80 p-4 text-sm"
+              >
                 <p className="font-semibold text-olive-900">{stage}</p>
                 <p className="text-xs text-olive-700">Date placeholder</p>
               </div>
@@ -74,10 +84,19 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
           </h3>
           <div className="grid gap-4 md:grid-cols-3">
             <InfoBlock label="Reference" value={booking.reference} />
-            <InfoBlock label="Overnight" value={booking.overnight ? "Yes" : "No"} />
-            <InfoBlock label="Catering" value={booking.cateringRequired ? "Required" : "Not required"} />
+            <InfoBlock
+              label="Overnight"
+              value={booking.overnight ? "Yes" : "No"}
+            />
+            <InfoBlock
+              label="Catering"
+              value={booking.cateringRequired ? "Required" : "Not required"}
+            />
             <InfoBlock label="Spaces" value={booking.spaces.join(", ")} />
-            <InfoBlock label="Conflicts" value={booking.conflicts?.join(", ") ?? "None"} />
+            <InfoBlock
+              label="Conflicts"
+              value={booking.conflicts?.join(", ") ?? "None"}
+            />
           </div>
         </section>
       </TabsContent>
@@ -91,7 +110,9 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
         </section>
         <section className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-olive-100 bg-white p-4">
-            <p className="text-sm font-semibold text-olive-900">Requested spaces</p>
+            <p className="text-sm font-semibold text-olive-900">
+              Requested spaces
+            </p>
             <ul className="mt-3 space-y-2 text-sm text-olive-800">
               {booking.spaces.map((space) => (
                 <li key={space} className="flex items-center justify-between">
@@ -102,10 +123,13 @@ export default function BookingDetail({ params }: { params: { id: string } }) {
             </ul>
           </div>
           <div className="rounded-xl border border-olive-100 bg-white p-4">
-            <p className="text-sm font-semibold text-olive-900">Capacity & warnings</p>
+            <p className="text-sm font-semibold text-olive-900">
+              Capacity & warnings
+            </p>
             <ul className="mt-3 space-y-2 text-sm text-olive-800">
               <li>
-                Headcount {booking.headcount} vs beds 80 · <span className="font-semibold text-emerald-700">OK</span>
+                Headcount {booking.headcount} vs beds 80 ·{" "}
+                <span className="font-semibold text-emerald-700">OK</span>
               </li>
               <li>Conflict detected on Dining Hall 13 Nov 12:00</li>
             </ul>

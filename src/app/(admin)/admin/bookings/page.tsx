@@ -40,9 +40,9 @@ export default function AdminBookings() {
           <Button>New booking</Button>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3 text-sm text-olive-700">
-          <Badge variant="warning">Pending {counts.Pending}</Badge>
+          {/* <Badge variant="warning">Pending {counts.Pending}</Badge>
           <Badge variant="outline">In triage {counts.InTriage}</Badge>
-          <Badge variant="success">Approved {counts.Approved}</Badge>
+          <Badge variant="success">Approved {counts.Approved}</Badge> */}
         </CardContent>
       </Card>
       <Card>
@@ -86,7 +86,9 @@ export default function AdminBookings() {
                       ))}
                     </div>
                   </TableCell>
-                  <TableCell>{booking.cateringRequired ? "Yes" : "No"}</TableCell>
+                  <TableCell>
+                    {booking.cateringRequired ? "Yes" : "No"}
+                  </TableCell>
                   <TableCell>
                     <StatusChip status={booking.status} />
                   </TableCell>
@@ -100,7 +102,10 @@ export default function AdminBookings() {
                       </Button>
                       <Link
                         href={`/admin/bookings/${booking.id}`}
-                        className={buttonVariants({ variant: "ghost", size: "sm" })}
+                        className={buttonVariants({
+                          variant: "ghost",
+                          size: "sm",
+                        })}
                       >
                         Open
                       </Link>
@@ -112,7 +117,12 @@ export default function AdminBookings() {
           </Table>
         </CardContent>
       </Card>
-      <ConflictBanner issues={["Corbett Room clash with Retreat 12 Nov", "Dining Hall capacity exceeded on 13 Nov"]} />
+      <ConflictBanner
+        issues={[
+          "Corbett Room clash with Retreat 12 Nov",
+          "Dining Hall capacity exceeded on 13 Nov",
+        ]}
+      />
     </div>
   );
 }
