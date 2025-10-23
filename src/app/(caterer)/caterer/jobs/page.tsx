@@ -1,33 +1,101 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+import { CateringJobsCalendar } from "@/components/catering-jobs-calendar";
+import { MealJobsGridCard } from "@/components/meal-jobs-grid-card";
+import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MealJobsGridCard } from "@/components/meal-jobs-grid-card";
-import { Button } from "@/components/ui/button";
-import { MOCK_MEAL_JOBS } from "@/lib/mock-data";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { enrichMealJobs, type EnrichedMealJob } from "@/lib/catering";
+import { MOCK_BOOKINGS, MOCK_MEAL_JOBS } from "@/lib/mock-data";
+
+const CURRENT_CATERER = "HCC Kitchen";
 
 export default function CatererJobs() {
+  const [view, setView] = useState("calendar");
+
+  const enrichedJobs = useMemo<EnrichedMealJob[]>(
+    () => enrichMealJobs(MOCK_MEAL_JOBS, MOCK_BOOKINGS),
+    []
+  );
+
+  const assignedJobs = useMemo(
+    () =>
+      enrichedJobs.filter((job) => job.assignedCaterer === CURRENT_CATERER),
+    [enrichedJobs]
+  );
+
+  const handleViewDetails = (job: EnrichedMealJob) => {
+    console.info("View details for", job.id);
+  };
+
+  const handleMarkServed = (job: EnrichedMealJob) => {
+    console.info("Mark served", job.id);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle>My jobs</CardTitle>
-            <CardDescription>Confirm service readiness</CardDescription>
+            <CardDescription>
+              Stay across your assigned catering services and daily priorities.
+            </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline">Export run sheet</Button>
-            <Button variant="ghost">Mark as served</Button>
+            <Button variant="ghost">Bulk mark served</Button>
           </div>
         </CardHeader>
       </Card>
-      <MealJobsGridCard
-        title="Upcoming week"
-        description="Meals assigned to you"
-        jobs={MOCK_MEAL_JOBS}
-      />
+      <Card>
+        <CardHeader className="space-y-2">
+          <CardTitle>Upcoming services</CardTitle>
+          <CardDescription>
+            Switch between calendar and list views to prep for the week ahead.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={view} onValueChange={setView} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+              <TabsTrigger value="list">Grouped list</TabsTrigger>
+            </TabsList>
+            <TabsContent value="calendar" className="space-y-4">
+              {assignedJobs.length ? (
+                <CateringJobsCalendar jobs={assignedJobs} />
+              ) : (
+                <div className="rounded-xl border border-dashed border-olive-200 bg-olive-50/60 p-6 text-center text-sm text-olive-700">
+                  You don&apos;t have any catering services assigned yet.
+                </div>
+              )}
+            </TabsContent>
+            <TabsContent value="list">
+              <MealJobsGridCard
+                title="Assigned services"
+                description={`All meals assigned to ${CURRENT_CATERER}`}
+                jobs={assignedJobs}
+                emptyMessage="You don&apos;t have any catering services assigned yet."
+                onViewDetails={handleViewDetails}
+                onMarkServed={handleMarkServed}
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
