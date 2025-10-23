@@ -349,46 +349,68 @@ declare
   bid uuid;
   start_d date := (snap->'range'->>'start')::date;
   end_d   date := (snap->'range'->>'end')::date;
+  ext_id text := nullif(snap->>'bookingId','');
+  form_id text := nullif(snap->>'formResponseId','');
 begin
-  insert into public.bookings as b (
-    external_id,
-    form_response_id,
-    customer_email,
-    customer_name,
-    booking_type,
-    is_overnight,
-    headcount,
-    arrival_date,
-    departure_date,
-    catering_required,
-    status,
-    notes
-  ) values (
-    nullif(snap->>'bookingId',''),
-    nullif(snap->>'formResponseId',''),
-    snap->>'email',
-    snap->>'org',
-    case when coalesce(snap->>'org','') <> '' then 'Group' else 'Individual' end,
-    coalesce((snap->>'overnight')::boolean, true),
-    coalesce((snap->>'headcount')::int, 0),
-    start_d,
-    end_d,
-    coalesce((snap->'catering'->>'required')::boolean, false),
-    'Pending',
-    snap->>'notes'
-  )
-  on conflict (external_id) do update set
-    customer_email     = excluded.customer_email,
-    customer_name      = excluded.customer_name,
-    headcount          = excluded.headcount,
-    arrival_date       = excluded.arrival_date,
-    departure_date     = excluded.departure_date,
-    catering_required  = excluded.catering_required,
-    notes              = excluded.notes
-  returning id into bid;
+    update public.bookings as b set
+      customer_email     = snap->>'email',
+      customer_name      = snap->>'org',
+      booking_type       = case when coalesce(snap->>'org','') <> '' then 'Group' else 'Individual' end,
+      is_overnight       = coalesce((snap->>'overnight')::boolean, true),
+      headcount          = coalesce((snap->>'headcount')::int, 0),
+      arrival_date       = start_d,
+      departure_date     = end_d,
+      catering_required  = coalesce((snap->'catering'->>'required')::boolean, false),
+      notes              = snap->>'notes',
+      form_response_id   = coalesce(form_id, b.form_response_id),
+      external_id        = coalesce(ext_id, b.external_id),
+      updated_at         = now()
+    where
+      (ext_id is not null and b.external_id = ext_id)
+      or (form_id is not null and b.form_response_id = form_id)
+    returning id into bid;
 
   if bid is null then
-    select id into bid from public.bookings where external_id = snap->>'bookingId';
+    insert into public.bookings as b (
+      external_id,
+      form_response_id,
+      customer_email,
+      customer_name,
+      booking_type,
+      is_overnight,
+      headcount,
+      arrival_date,
+      departure_date,
+      catering_required,
+      status,
+      notes
+    ) values (
+      ext_id,
+      form_id,
+      snap->>'email',
+      snap->>'org',
+      case when coalesce(snap->>'org','') <> '' then 'Group' else 'Individual' end,
+      coalesce((snap->>'overnight')::boolean, true),
+      coalesce((snap->>'headcount')::int, 0),
+      start_d,
+      end_d,
+      coalesce((snap->'catering'->>'required')::boolean, false),
+      'Pending',
+      snap->>'notes'
+    )
+    on conflict (external_id) do update set
+      customer_email     = excluded.customer_email,
+      customer_name      = excluded.customer_name,
+      booking_type       = excluded.booking_type,
+      is_overnight       = excluded.is_overnight,
+      headcount          = excluded.headcount,
+      arrival_date       = excluded.arrival_date,
+      departure_date     = excluded.departure_date,
+      catering_required  = excluded.catering_required,
+      notes              = excluded.notes,
+      form_response_id   = coalesce(excluded.form_response_id, public.bookings.form_response_id),
+      updated_at         = now()
+    returning id into bid;
   end if;
 
   delete from public.space_reservations where booking_id = bid and status = 'Held';
