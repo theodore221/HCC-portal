@@ -1,11 +1,10 @@
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MealSlotCard } from "@/components/ui/meal-slot-card";
+import { MealJobsGridCard } from "@/components/meal-jobs-grid-card";
 import { Button } from "@/components/ui/button";
 import { MOCK_MEAL_JOBS } from "@/lib/mock-data";
 
@@ -24,19 +23,11 @@ export default function CatererJobs() {
           </div>
         </CardHeader>
       </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming week</CardTitle>
-          <CardDescription>Meals assigned to you</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            {MOCK_MEAL_JOBS.map((job) => (
-              <MealSlotCard key={job.id} job={job} />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <MealJobsGridCard
+        title="Upcoming week"
+        description="Meals assigned to you"
+        jobs={MOCK_MEAL_JOBS}
+      />
     </div>
   );
 }

@@ -5,7 +5,9 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 const navItems = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/bookings", label: "Bookings" },
+  { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/catering/jobs", label: "Catering Jobs" },
+  { href: "/admin/catering/schedule", label: "Catering Schedule" },
   { href: "/admin/resources", label: "Resources" },
   { href: "/admin/audit", label: "Audit" },
 ];

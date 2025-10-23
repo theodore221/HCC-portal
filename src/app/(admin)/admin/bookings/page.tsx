@@ -21,12 +21,6 @@ import {
 import { MOCK_BOOKINGS } from "@/lib/mock-data";
 
 export default function AdminBookings() {
-  const counts = {
-    Pending: MOCK_BOOKINGS.filter((b) => b.status === "Pending").length,
-    InTriage: MOCK_BOOKINGS.filter((b) => b.status === "InTriage").length,
-    Approved: MOCK_BOOKINGS.filter((b) => b.status === "Approved").length,
-  };
-
   return (
     <div className="space-y-6">
       <Card>
