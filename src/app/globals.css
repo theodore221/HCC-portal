@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@fullcalendar/core/index.css";
+@import "@fullcalendar/daygrid/index.css";
 
 :root {
   --background: #f7f8f5;
