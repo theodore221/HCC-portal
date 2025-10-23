@@ -1,3 +1,8 @@
+"use client";
+
+import { useMemo, useState } from "react";
+
+import { CateringJobsCalendar } from "@/components/catering-jobs-calendar";
 import {
   Card,
   CardContent,
@@ -7,11 +12,43 @@ import {
 } from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { Button } from "@/components/ui/button";
-import { MOCK_MEAL_JOBS } from "@/lib/mock-data";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MOCK_MEAL_JOBS, MOCK_BOOKINGS } from "@/lib/mock-data";
+import {
+  enrichMealJobs,
+  formatDateLabel,
+  type EnrichedMealJob,
+} from "@/lib/catering";
 
 export default function AdminCateringJobs() {
-  const today = new Date().toISOString().slice(0, 10);
-  const todaysJobs = MOCK_MEAL_JOBS.filter((job) => job.date === today);
+  const [view, setView] = useState("calendar");
+
+  const enrichedJobs = useMemo<EnrichedMealJob[]>(
+    () => enrichMealJobs(MOCK_MEAL_JOBS, MOCK_BOOKINGS),
+    []
+  );
+
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todaysJobs = useMemo(
+    () => enrichedJobs.filter((job) => job.date === today),
+    [enrichedJobs, today]
+  );
+
+  const jobsByDate = useMemo(() => {
+    const grouped = enrichedJobs.reduce<Record<string, EnrichedMealJob[]>>(
+      (acc, job) => {
+        if (!acc[job.date]) {
+          acc[job.date] = [];
+        }
+        acc[job.date].push(job);
+        return acc;
+      },
+      {}
+    );
+
+    const sortedDates = Object.keys(grouped).sort();
+    return { grouped, sortedDates };
+  }, [enrichedJobs]);
 
   return (
     <div className="space-y-6">
@@ -29,28 +66,72 @@ export default function AdminCateringJobs() {
       </Card>
       <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
         <Card>
-          <CardHeader>
-            <CardTitle>Week view</CardTitle>
-            <CardDescription>All meal jobs this week</CardDescription>
+          <CardHeader className="space-y-2">
+            <CardTitle>Catering schedule</CardTitle>
+            <CardDescription>
+              Toggle between calendar and list views to manage upcoming services.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3 text-sm text-olive-800">
-              {MOCK_MEAL_JOBS.map((job) => (
-                <div
-                  key={job.id}
-                  className="flex items-center justify-between rounded-xl border border-olive-100 bg-white px-4 py-3"
-                >
-                  <div>
-                    <p className="font-semibold text-olive-900">{job.date}</p>
-                    <p className="text-xs text-olive-700">{job.timeSlot}</p>
-                  </div>
-                  <div className="text-right text-xs">
-                    <p className="font-medium text-olive-700">{job.assignedCaterer ?? "Unassigned"}</p>
-                    <p>{Object.values(job.dietaryCounts).reduce((acc, val) => acc + val, 0)} meals</p>
-                  </div>
+          <CardContent className="space-y-4">
+            <Tabs value={view} onValueChange={setView}>
+              <TabsList>
+                <TabsTrigger value="calendar">Calendar</TabsTrigger>
+                <TabsTrigger value="list">List</TabsTrigger>
+              </TabsList>
+              <TabsContent value="calendar" className="pt-4">
+                <CateringJobsCalendar jobs={enrichedJobs} />
+              </TabsContent>
+              <TabsContent value="list" className="pt-4">
+                <div className="space-y-6">
+                  {jobsByDate.sortedDates.length === 0 ? (
+                    <p className="text-sm text-olive-700">
+                      No catering services scheduled.
+                    </p>
+                  ) : null}
+                  {jobsByDate.sortedDates.map((dateKey) => {
+                    const jobsForDate = jobsByDate.grouped[dateKey];
+                    const groupNames = Array.from(
+                      new Set(jobsForDate.map((job) => job.groupName))
+                    ).join(", ");
+                    return (
+                      <div
+                        key={dateKey}
+                        className="space-y-3 rounded-xl border border-olive-100 bg-white/70 p-4"
+                      >
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <h3 className="text-sm font-semibold text-olive-900">
+                              {formatDateLabel(dateKey)}
+                            </h3>
+                            <p className="text-xs text-olive-700">
+                              {jobsForDate.length} {jobsForDate.length === 1 ? "service" : "services"}
+                            </p>
+                          </div>
+                          <span className="text-xs font-medium text-olive-700">
+                            {groupNames}
+                          </span>
+                        </div>
+                        <div className="space-y-4">
+                          {jobsForDate.map((job) => (
+                            <div key={job.id} className="space-y-2">
+                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm font-semibold text-olive-800">
+                                  {job.groupName}
+                                </p>
+                                <span className="text-xs text-olive-700">
+                                  {job.timeRangeLabel}
+                                </span>
+                              </div>
+                              <MealSlotCard job={job} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
         <Card>
