@@ -1,4 +1,7 @@
 import { notFound } from "next/navigation";
+import type { ColumnDef } from "@tanstack/react-table";
+
+import { DataTable } from "@/components/data-table";
 import { Stepper } from "@/components/ui/stepper";
 import {
   Card,
@@ -11,17 +14,53 @@ import { Button } from "@/components/ui/button";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { RoomCard } from "@/components/ui/room-card";
 import { StatusChip } from "@/components/ui/status-chip";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { MOCK_BOOKINGS, MOCK_MEAL_JOBS, MOCK_ROOMS, MOCK_DIETARIES } from "@/lib/mock-data";
 
 const steps = ["Deposit", "Catering", "Rooming", "Summary"];
+
+type DietaryRegisterItem = (typeof MOCK_DIETARIES)[number];
+
+const dietaryColumns: ColumnDef<DietaryRegisterItem>[] = [
+  {
+    accessorKey: "name",
+    header: "Guest",
+    cell: ({ row }) => (
+      <span className="font-medium text-olive-900">{row.original.name}</span>
+    ),
+  },
+  {
+    accessorKey: "dietType",
+    header: "Diet type",
+  },
+  {
+    accessorKey: "allergy",
+    header: "Allergy",
+    cell: ({ row }) => row.original.allergy || "—",
+  },
+  {
+    accessorKey: "severity",
+    header: "Severity",
+    cell: ({ row }) => {
+      const severity = row.original.severity;
+      const styles =
+        severity === "Fatal"
+          ? "bg-red-100 text-red-700"
+          : severity === "High"
+          ? "bg-amber-100 text-amber-700"
+          : "bg-olive-100 text-olive-800";
+
+      return (
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles}`}>
+          {severity}
+        </span>
+      );
+    },
+    enableSorting: false,
+    meta: {
+      cellClassName: "min-w-[120px]",
+    },
+  },
+];
 
 export default function CustomerPortal({
   params,
@@ -82,40 +121,12 @@ export default function CustomerPortal({
             <h3 className="text-sm font-semibold uppercase tracking-wide text-olive-600">
               Dietary register
             </h3>
-            <div className="overflow-hidden rounded-2xl border border-olive-100 bg-white">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Guest</TableHead>
-                    <TableHead>Diet type</TableHead>
-                    <TableHead>Allergy</TableHead>
-                    <TableHead>Severity</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {MOCK_DIETARIES.map((item) => (
-                    <TableRow key={item.name}>
-                      <TableCell className="font-medium text-olive-900">{item.name}</TableCell>
-                      <TableCell>{item.dietType}</TableCell>
-                      <TableCell>{item.allergy || "—"}</TableCell>
-                      <TableCell>
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            item.severity === "Fatal"
-                              ? "bg-red-100 text-red-700"
-                              : item.severity === "High"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-olive-100 text-olive-800"
-                          }`}
-                        >
-                          {item.severity}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable
+              columns={dietaryColumns}
+              data={MOCK_DIETARIES}
+              hidePagination
+              containerClassName="bg-white"
+            />
           </section>
           <section className="space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-olive-600">

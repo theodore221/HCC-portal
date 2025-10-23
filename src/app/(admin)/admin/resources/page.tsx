@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+
+import { DataTable } from "@/components/data-table";
 import {
   Card,
   CardContent,
@@ -10,14 +13,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 
 const spaces = [
@@ -40,6 +35,64 @@ const caterers = [
   { name: "Bella Catering", contact: "hello@bellacatering.com" },
 ];
 
+type Space = (typeof spaces)[number];
+type Room = (typeof rooms)[number];
+type MenuItem = (typeof menuItems)[number];
+type Caterer = (typeof caterers)[number];
+
+const spaceColumns: ColumnDef<Space>[] = [
+  {
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }) => (
+      <span className="font-medium text-olive-900">{row.original.name}</span>
+    ),
+  },
+  {
+    accessorKey: "capacity",
+    header: "Capacity",
+  },
+  {
+    accessorKey: "features",
+    header: "Features",
+    meta: {
+      cellClassName: "max-w-[220px]",
+    },
+  },
+];
+
+const roomColumns: ColumnDef<Room>[] = [
+  {
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }) => (
+      <span className="font-medium text-olive-900">{row.original.name}</span>
+    ),
+  },
+  {
+    accessorKey: "building",
+    header: "Building",
+  },
+  {
+    accessorKey: "beds",
+    header: "Beds",
+  },
+];
+
+const catererColumns: ColumnDef<Caterer>[] = [
+  {
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }) => (
+      <span className="font-medium text-olive-900">{row.original.name}</span>
+    ),
+  },
+  {
+    accessorKey: "contact",
+    header: "Contact",
+  },
+];
+
 export default function AdminResources() {
   const [defaultCaterers, setDefaultCaterers] = useState<Record<string, string>>(() =>
     Object.fromEntries(menuItems.map((item) => [item.label, item.caterer]))
@@ -50,6 +103,44 @@ export default function AdminResources() {
     label: caterer.name,
     description: caterer.contact,
   }));
+
+  const menuColumns: ColumnDef<MenuItem>[] = useMemo(
+    () => [
+      {
+        accessorKey: "label",
+        header: "Menu item",
+        cell: ({ row }) => (
+          <span className="font-medium text-olive-900">{row.original.label}</span>
+        ),
+      },
+      {
+        accessorKey: "allergens",
+        header: "Allergens",
+      },
+      {
+        id: "caterer",
+        header: "Default caterer",
+        cell: ({ row }) => (
+          <Combobox
+            value={defaultCaterers[row.original.label] ?? null}
+            onChange={(next) =>
+              setDefaultCaterers((prev) => ({
+                ...prev,
+                [row.original.label]: next ?? "",
+              }))
+            }
+            options={catererOptions}
+            placeholder="Assign caterer"
+          />
+        ),
+        enableSorting: false,
+        meta: {
+          cellClassName: "min-w-[240px]",
+        },
+      },
+    ],
+    [catererOptions, defaultCaterers, setDefaultCaterers]
+  );
 
   return (
     <div className="space-y-6">
@@ -81,94 +172,36 @@ export default function AdminResources() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="spaces" className="space-y-4 p-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Capacity</TableHead>
-                    <TableHead>Features</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {spaces.map((space) => (
-                    <TableRow key={space.name}>
-                      <TableCell className="font-medium text-olive-900">{space.name}</TableCell>
-                      <TableCell>{space.capacity}</TableCell>
-                      <TableCell>{space.features}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={spaceColumns}
+                data={spaces}
+                hidePagination
+                containerClassName="bg-white"
+              />
             </TabsContent>
             <TabsContent value="rooms" className="space-y-4 p-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Building</TableHead>
-                    <TableHead>Beds</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rooms.map((room) => (
-                    <TableRow key={room.name}>
-                      <TableCell className="font-medium text-olive-900">{room.name}</TableCell>
-                      <TableCell>{room.building}</TableCell>
-                      <TableCell>{room.beds}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={roomColumns}
+                data={rooms}
+                hidePagination
+                containerClassName="bg-white"
+              />
             </TabsContent>
             <TabsContent value="menu" className="space-y-4 p-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Menu item</TableHead>
-                    <TableHead>Allergens</TableHead>
-                    <TableHead className="w-60">Default caterer</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {menuItems.map((item) => (
-                    <TableRow key={item.label}>
-                      <TableCell className="font-medium text-olive-900">{item.label}</TableCell>
-                      <TableCell>{item.allergens}</TableCell>
-                      <TableCell>
-                        <Combobox
-                          value={defaultCaterers[item.label] ?? null}
-                          onChange={(next) =>
-                            setDefaultCaterers((prev) => ({
-                              ...prev,
-                              [item.label]: next ?? "",
-                            }))
-                          }
-                          options={catererOptions}
-                          placeholder="Assign caterer"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={menuColumns}
+                data={menuItems}
+                hidePagination
+                containerClassName="bg-white"
+              />
             </TabsContent>
             <TabsContent value="caterers" className="space-y-4 p-6">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {caterers.map((caterer) => (
-                    <TableRow key={caterer.name}>
-                      <TableCell className="font-medium text-olive-900">{caterer.name}</TableCell>
-                      <TableCell>{caterer.contact}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataTable
+                columns={catererColumns}
+                data={caterers}
+                hidePagination
+                containerClassName="bg-white"
+              />
             </TabsContent>
           </Tabs>
         </CardContent>
