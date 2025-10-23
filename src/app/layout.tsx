@@ -39,7 +39,7 @@ export default function RootLayout({
               </nav>
             </div>
           </header>
-          <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
+          <main className="px-6 py-10">{children}</main>
           <footer className="border-t border-olive-100 bg-white/90">
             <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-4 text-xs text-olive-700 sm:flex-row sm:items-center sm:justify-between">
               <span>© {new Date().getFullYear()} Holy Cross Centre</span>

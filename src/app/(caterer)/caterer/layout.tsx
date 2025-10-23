@@ -1,21 +1,32 @@
 import Link from "next/link";
 
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+
+const navItems = [
+  { href: "/caterer", label: "Dashboard" },
+  { href: "/caterer/jobs", label: "My jobs" },
+];
+
 export default function CatererLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-6">
-      <nav className="flex flex-wrap gap-3 text-sm font-medium text-olive-700">
-        <Link href="/caterer" className="rounded-full bg-olive-100 px-4 py-2">
-          Dashboard
+    <DashboardShell
+      title="Caterer workspace"
+      description="Manage menus, prep, and delivery timelines."
+      navItems={navItems}
+      actions={
+        <Link
+          href="/caterer/jobs"
+          className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-medium text-olive-800 shadow-soft transition-colors hover:bg-olive-50"
+        >
+          View job board
         </Link>
-        <Link href="/caterer/jobs" className="rounded-full bg-white px-4 py-2 shadow-soft">
-          My jobs
-        </Link>
-      </nav>
-      <div>{children}</div>
-    </div>
+      }
+    >
+      {children}
+    </DashboardShell>
   );
 }
