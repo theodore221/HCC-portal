@@ -32,6 +32,21 @@ create table if not exists public.spaces (
   active boolean not null default true
 );
 
+-- Seed the standard hireable spaces (id = display name for clarity).
+insert into public.spaces (id, name)
+values
+  ('Whole Centre Day Hire','Whole Centre Day Hire'),
+  ('Chapel','Chapel'),
+  ('Chapter','Chapter'),
+  ('Corbett','Corbett Room'),
+  ('La Velle','La Velle'),
+  ('Morris','Morris Room'),
+  ('Dining Hall','Dining Hall'),
+  ('Outdoor Picnic Space','Outdoor Picnic Space')
+on conflict (id) do update set
+  name = excluded.name,
+  active = true;
+
 create table if not exists public.rooms (
   id uuid primary key default gen_random_uuid(),
   building text,
@@ -377,9 +392,25 @@ begin
   end if;
 
   delete from public.space_reservations where booking_id = bid and status = 'Held';
+
+  with requested_spaces as (
+    select distinct trim(s)::text as space_id
+    from jsonb_array_elements_text(coalesce(snap->'spaces','[]'::jsonb)) as t(s)
+  ), whole_centre as (
+    select coalesce(bool_or(space_id = 'Whole Centre Day Hire'), false) as has_whole
+    from requested_spaces
+  ), spaces_for_booking as (
+    select s.id as space_id
+    from public.spaces s
+    where s.active
+      and (
+        s.id in (select space_id from requested_spaces)
+        or (select has_whole from whole_centre)
+      )
+  )
   insert into public.space_reservations (booking_id, space_id, service_date, status)
-  select bid, s::text, g::date, 'Held'
-  from jsonb_array_elements_text(coalesce(snap->'spaces','[]'::jsonb)) t(s)
+  select bid, sf.space_id, g::date, 'Held'
+  from spaces_for_booking sf
   cross join generate_series(start_d, end_d, interval '1 day') as g;
 
   delete from public.meal_jobs where booking_id = bid and status = 'Draft';

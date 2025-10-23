@@ -1,6 +1,6 @@
 # Supabase + Google Apps Script Integration
 
-These steps provision the Supabase schema that mirrors the data model exposed in the Next.js app and wire Google Apps Script (GAS) submissions into the `upsert_booking_snapshot` RPC. The schema aligns with the mock TypeScript models found in `src/lib/mock-data.ts`, so the UI will work once you replace the mock queries with Supabase calls.【F:src/lib/mock-data.ts†L1-L122】 All SQL is checked into version control under `infra/supabase/migration/001_booking_schema.sql` for reproducible environments; apply that file (or paste the blocks below) using the Supabase SQL editor.【F:infra/supabase/migration/001_booking_schema.sql†L1-L266】
+These steps provision the Supabase schema that mirrors the data model exposed in the Next.js app and wire Google Apps Script (GAS) submissions into the `upsert_booking_snapshot` RPC. The schema aligns with the mock TypeScript models found in `src/lib/mock-data.ts`, so the UI will work once you replace the mock queries with Supabase calls.【F:src/lib/mock-data.ts†L1-L122】 All SQL is checked into version control under `infra/supabase/migration/001_booking_schema.sql` and `infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql` for reproducible environments; apply those files (or paste the blocks below) using the Supabase SQL editor.【F:infra/supabase/migration/001_booking_schema.sql†L1-L266】【F:infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql†L1-L94】
 
 ## 1. Supabase schema & security
 
@@ -79,6 +79,26 @@ create table if not exists public.profiles (
 );
 create index if not exists idx_profiles_role on public.profiles(role);
 ```
+
+Seed the standard hireable spaces so bookings and Whole Centre hires have the correct inventory.
+
+```sql
+insert into public.spaces (id, name)
+values
+  ('Whole Centre Day Hire','Whole Centre Day Hire'),
+  ('Chapel','Chapel'),
+  ('Chapter','Chapter'),
+  ('Corbett','Corbett Room'),
+  ('La Velle','La Velle'),
+  ('Morris','Morris Room'),
+  ('Dining Hall','Dining Hall'),
+  ('Outdoor Picnic Space','Outdoor Picnic Space')
+on conflict (id) do update set
+  name = excluded.name,
+  active = true;
+```
+
+The `'Whole Centre Day Hire'` row is special: the ingest RPC expands it to hold every active space for the booking dates so no other hires can overlap.
 
 ### 1.3 Core bookings & operations tables
 
@@ -396,9 +416,25 @@ begin
   end if;
 
   delete from public.space_reservations where booking_id = bid and status = 'Held';
+
+  with requested_spaces as (
+    select distinct trim(s)::text as space_id
+    from jsonb_array_elements_text(coalesce(snap->'spaces','[]'::jsonb)) as t(s)
+  ), whole_centre as (
+    select coalesce(bool_or(space_id = 'Whole Centre Day Hire'), false) as has_whole
+    from requested_spaces
+  ), spaces_for_booking as (
+    select s.id as space_id
+    from public.spaces s
+    where s.active
+      and (
+        s.id in (select space_id from requested_spaces)
+        or (select has_whole from whole_centre)
+      )
+  )
   insert into public.space_reservations (booking_id, space_id, service_date, status)
-  select bid, s::text, g::date, 'Held'
-  from jsonb_array_elements_text(coalesce(snap->'spaces','[]'::jsonb)) t(s)
+  select bid, sf.space_id, g::date, 'Held'
+  from spaces_for_booking sf
   cross join generate_series(start_d, end_d, interval '1 day') as g;
 
   delete from public.meal_jobs where booking_id = bid and status = 'Draft';
@@ -420,6 +456,8 @@ begin
 end;
 $$;
 ```
+
+If you've already run the initial schema migration, apply `infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql` to seed the default spaces and enable the Whole Centre hire expansion logic without dropping any data.
 
 ## 2. Google Apps Script wiring
 
