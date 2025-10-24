@@ -61,8 +61,14 @@ function formatDateRange(arrival: string, departure: string) {
     month: "short",
     year: "numeric",
   })
-  const start = formatter.format(new Date(arrival))
-  const end = formatter.format(new Date(departure))
+
+  const parseLocalDate = (value: string) => {
+    const [year, month, day] = value.split("-").map(Number)
+    return new Date(year, month - 1, day)
+  }
+
+  const start = formatter.format(parseLocalDate(arrival))
+  const end = formatter.format(parseLocalDate(departure))
 
   return start === end ? start : `${start} → ${end}`
 }
