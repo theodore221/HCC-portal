@@ -22,6 +22,8 @@ import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/s
 
 import "./globals.css";
 
+const shellWidthClass = "mx-auto w-full max-w-[min(100vw-2rem,96rem)] px-4 sm:px-6 lg:px-8";
+
 const navItems = [
   { href: "/admin/bookings", label: "Admin" },
   { href: "/staff", label: "Staff" },
@@ -45,7 +47,7 @@ export default function RootLayout({
         <div className="flex min-h-screen flex-col">
           <AppHeader />
           <main className="flex-1">
-            <div className="mx-auto flex w-full max-w-6xl flex-1 px-4 pb-12 pt-8 sm:px-6 lg:px-8">
+            <div className={`${shellWidthClass} flex flex-1 pb-12 pt-8`}>
               <div className="flex w-full flex-col rounded-[2.5rem] border border-olive-100/80 bg-white/70 p-4 shadow-soft sm:p-6 lg:p-8">
                 {children}
               </div>
@@ -61,7 +63,7 @@ export default function RootLayout({
 function AppHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-olive-100 bg-white/85 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+      <div className={`${shellWidthClass} flex items-center gap-4 py-4`}>
         <div className="flex flex-1 items-center gap-3">
           <MobileNavigation />
           <BrandMark />
@@ -218,7 +220,9 @@ function UserMenu() {
 function SupportFooter() {
   return (
     <footer className="border-t border-olive-100 bg-white/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-4 text-xs text-olive-600 sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+      <div
+        className={`${shellWidthClass} flex flex-col gap-3 py-4 text-xs text-olive-600 sm:flex-row sm:items-center sm:justify-between sm:text-sm`}
+      >
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-2 rounded-full bg-olive-100 px-3 py-1 text-xs font-medium text-olive-700 shadow-soft">
             <span className="h-2 w-2 rounded-full bg-olive-500" aria-hidden />
