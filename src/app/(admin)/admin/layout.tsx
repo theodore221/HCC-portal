@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/admin", label: "Dashboard" },
@@ -22,13 +23,13 @@ export default function AdminLayout({
       title="Admin control panel"
       description="Oversee bookings, catering, and resources."
       navItems={navItems}
-      actions={
-        <Link
-          href="/admin/bookings"
-          className="inline-flex items-center justify-center rounded-full bg-olive-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-olive-700"
+      quickActions={
+        <Button
+          asChild
+          className="rounded-full bg-olive-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-olive-700"
         >
-          Quick create
-        </Link>
+          <Link href="/admin/bookings">Quick create</Link>
+        </Button>
       }
     >
       {children}

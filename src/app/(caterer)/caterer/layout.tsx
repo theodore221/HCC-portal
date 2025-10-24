@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/caterer", label: "Dashboard" },
@@ -17,13 +18,14 @@ export default function CatererLayout({
       title="Caterer workspace"
       description="Manage menus, prep, and delivery timelines."
       navItems={navItems}
-      actions={
-        <Link
-          href="/caterer/jobs"
-          className="inline-flex items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-medium text-olive-800 shadow-soft transition-colors hover:bg-olive-50"
+      quickActions={
+        <Button
+          asChild
+          variant="outline"
+          className="rounded-full border-olive-200 bg-white px-4 py-2 text-sm font-medium text-olive-800 shadow-soft transition-colors hover:bg-olive-50"
         >
-          View job board
-        </Link>
+          <Link href="/caterer/jobs">View job board</Link>
+        </Button>
       }
     >
       {children}

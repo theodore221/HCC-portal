@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/staff", label: "Dashboard" },
@@ -17,13 +18,14 @@ export default function StaffLayout({
       title="Staff workspace"
       description="Track daily tasks and schedules."
       navItems={navItems}
-      actions={
-        <Link
-          href="/staff/run-sheets/bkg_001/2025-11-13"
-          className="inline-flex items-center justify-center rounded-full border border-olive-200 px-4 py-2 text-sm font-medium text-olive-700 transition-colors hover:bg-olive-50"
+      quickActions={
+        <Button
+          asChild
+          variant="outline"
+          className="rounded-full border-olive-200 px-4 py-2 text-sm font-medium text-olive-700 transition-colors hover:bg-olive-50"
         >
-          Run sheets
-        </Link>
+          <Link href="/staff/run-sheets/bkg_001/2025-11-13">Run sheets</Link>
+        </Button>
       }
     >
       {children}
