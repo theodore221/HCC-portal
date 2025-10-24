@@ -46,6 +46,7 @@ interface WeekScheduleCardProps {
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   month: "short",
   day: "numeric",
+  timeZone: "UTC",
 });
 
 function getMealLabel(meal: MealJob) {
