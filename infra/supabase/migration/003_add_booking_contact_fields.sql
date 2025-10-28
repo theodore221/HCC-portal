@@ -79,7 +79,7 @@ begin
     departure_date     = excluded.departure_date,
     catering_required  = excluded.catering_required,
     chapel_required    = excluded.chapel_required,
-    status             = excluded.status,
+    status             = coalesce(nullif(snap->>'status','')::public.booking_status, public.bookings.status),
     notes              = excluded.notes
   returning id into bid;
 
