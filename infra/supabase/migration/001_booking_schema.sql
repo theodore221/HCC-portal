@@ -95,9 +95,12 @@ create table if not exists public.bookings (
   customer_user_id uuid references auth.users(id) on delete set null,
   customer_email text not null,
   customer_name text,
+  contact_name text,
+  contact_phone text,
 
   reference text unique,
   booking_type text not null check (booking_type in ('Group','Individual')),
+  event_type text,
   is_overnight boolean not null default true,
   headcount int not null default 0,
 
@@ -107,6 +110,7 @@ create table if not exists public.bookings (
   date_range daterange generated always as (daterange(arrival_date, departure_date, '[]')) stored,
 
   catering_required boolean not null default false,
+  chapel_required boolean not null default false,
   notes text,
 
   status public.booking_status not null default 'Pending',

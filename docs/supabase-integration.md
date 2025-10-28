@@ -1,6 +1,6 @@
 # Supabase + Google Apps Script Integration
 
-These steps provision the Supabase schema that mirrors the data model exposed in the Next.js app and wire Google Apps Script (GAS) submissions into the `upsert_booking_snapshot` RPC. The schema aligns with the mock TypeScript models found in `src/lib/mock-data.ts`, so the UI will work once you replace the mock queries with Supabase calls.【F:src/lib/mock-data.ts†L1-L122】 All SQL is checked into version control under `infra/supabase/migration/001_booking_schema.sql` and `infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql` for reproducible environments; apply those files (or paste the blocks below) using the Supabase SQL editor.【F:infra/supabase/migration/001_booking_schema.sql†L1-L266】【F:infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql†L1-L94】
+These steps provision the Supabase schema that mirrors the data model exposed in the Next.js app and wire Google Apps Script (GAS) submissions into the `upsert_booking_snapshot` RPC. The schema aligns with the mock TypeScript models found in `src/lib/mock-data.ts`, so the UI will work once you replace the mock queries with Supabase calls.【F:src/lib/mock-data.ts†L1-L122】 All SQL is checked into version control under `infra/supabase/migration/001_booking_schema.sql`, `infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql`, and `infra/supabase/migration/003_add_booking_contact_fields.sql` for reproducible environments; apply those files (or paste the blocks below) using the Supabase SQL editor.【F:infra/supabase/migration/001_booking_schema.sql†L1-L266】【F:infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql†L1-L94】【F:infra/supabase/migration/003_add_booking_contact_fields.sql†L1-L17】
 
 ## 1. Supabase schema & security
 
@@ -114,9 +114,12 @@ create table if not exists public.bookings (
   customer_user_id uuid references auth.users(id) on delete set null,
   customer_email text not null,
   customer_name text,
+  contact_name text,
+  contact_phone text,
 
   reference text unique,
   booking_type text not null check (booking_type in ('Group','Individual')),
+  event_type text,
   is_overnight boolean not null default true,
   headcount int not null default 0,
 
@@ -126,6 +129,7 @@ create table if not exists public.bookings (
   date_range daterange generated always as (daterange(arrival_date, departure_date, '[]')) stored,
 
   catering_required boolean not null default false,
+  chapel_required boolean not null default false,
   notes text,
 
   status public.booking_status not null default 'Pending',
@@ -457,7 +461,7 @@ end;
 $$;
 ```
 
-If you've already run the initial schema migration, apply `infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql` to seed the default spaces and enable the Whole Centre hire expansion logic without dropping any data.
+If you've already run the initial schema migration, apply `infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql` to seed the default spaces and enable the Whole Centre hire expansion logic without dropping any data. Then run `infra/supabase/migration/003_add_booking_contact_fields.sql` to add the booking contact fields and `chapel_required` flag to existing environments.
 
 ## 2. Google Apps Script wiring
 
