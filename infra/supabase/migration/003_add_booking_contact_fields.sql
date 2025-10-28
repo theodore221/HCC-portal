@@ -69,17 +69,17 @@ begin
   on conflict (external_id) do update set
     customer_email     = excluded.customer_email,
     customer_name      = excluded.customer_name,
-    contact_name       = coalesce(excluded.contact_name, public.bookings.contact_name),
-    contact_phone      = coalesce(excluded.contact_phone, public.bookings.contact_phone),
+    contact_name       = coalesce(excluded.contact_name, b.contact_name),
+    contact_phone      = coalesce(excluded.contact_phone, b.contact_phone),
     booking_type       = excluded.booking_type,
-    event_type         = coalesce(excluded.event_type, public.bookings.event_type),
+    event_type         = coalesce(excluded.event_type, b.event_type),
     is_overnight       = excluded.is_overnight,
     headcount          = excluded.headcount,
     arrival_date       = excluded.arrival_date,
     departure_date     = excluded.departure_date,
     catering_required  = excluded.catering_required,
     chapel_required    = excluded.chapel_required,
-    status             = coalesce(nullif(snap->>'status','')::public.booking_status, public.bookings.status),
+    status             = coalesce(nullif(snap->>'status','')::public.booking_status, b.status),
     notes              = excluded.notes
   returning id into bid;
 
