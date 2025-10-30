@@ -1,18 +1,31 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
+import { getHomePathForRole } from "@/lib/auth/paths";
+import { getCurrentProfile } from "@/lib/auth/server";
 
 const navItems = [
   { href: "/staff", label: "Dashboard" },
   { href: "/staff/schedule", label: "Schedule" },
 ];
 
-export default function StaffLayout({
+export default async function StaffLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { session, profile } = await getCurrentProfile();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (profile?.role !== "staff") {
+    redirect(getHomePathForRole(profile?.role ?? null, profile?.booking_reference ?? null));
+  }
+
   return (
     <DashboardShell
       title="Staff workspace"
