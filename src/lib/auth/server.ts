@@ -25,10 +25,10 @@ export async function getCurrentProfile(): Promise<CurrentProfileResult> {
     .eq("id", session.user.id)
     .maybeSingle();
 
-  if (error) {
+  if (error && error.code !== "PGRST116") {
     console.error("Failed to load profile", error);
     return { session, profile: null };
   }
 
-  return { session, profile };
+  return { session, profile: profile ?? null };
 }
