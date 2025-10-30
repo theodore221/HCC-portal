@@ -34,16 +34,22 @@ export default function LoginPage() {
         .maybeSingle();
 
       if (profileError) {
-        setError("We couldn't load your profile. Please try again.");
-        setLoading(null);
-        return;
+        console.error("Failed to load profile", profileError);
       }
 
-      const destination =
-        redirectTo ?? getHomePathForRole((profile?.role as ProfileRole | null) ?? null, profile?.booking_reference ?? null);
+      const profileRole = (profile?.role as ProfileRole | null) ?? null;
+      const bookingReference = profile?.booking_reference ?? null;
+      let destination =
+        redirectTo ??
+        getHomePathForRole(profileError ? null : profileRole, profileError ? null : bookingReference);
+
+      if (!redirectTo && (profileError || !profileRole)) {
+        destination = "/portal";
+      }
 
       setPassword("");
       setLoading(null);
+      setError(null);
       router.replace(destination);
       router.refresh();
     },
@@ -116,7 +122,7 @@ export default function LoginPage() {
           Use your Holy Cross Centre credentials to access your workspace.
         </p>
       </header>
-      <form className="space-y-4" onSubmit={handlePasswordSignIn}>
+      <form autoComplete="off" className="space-y-4" onSubmit={handlePasswordSignIn}>
         <div className="space-y-2">
           <label className="text-sm font-medium text-olive-800" htmlFor="email">
             Email
@@ -127,8 +133,12 @@ export default function LoginPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@holycrosscentre.org"
+            name="email"
             required
-            autoComplete="email"
+            autoCapitalize="none"
+            autoComplete="off"
+            autoCorrect="off"
+            inputMode="email"
           />
         </div>
         <div className="space-y-2">
@@ -151,6 +161,7 @@ export default function LoginPage() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Enter your password"
+            name="password"
             autoComplete="current-password"
           />
         </div>
