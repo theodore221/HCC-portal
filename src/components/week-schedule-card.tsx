@@ -21,26 +21,27 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  MOCK_BOOKINGS,
-  MOCK_MEAL_JOBS,
-  type BookingSummary,
-  type MealJob,
-} from "@/lib/mock-data";
+import type { EnrichedMealJob } from "@/lib/catering";
 
 interface ScheduleRow {
   id: string;
   groupName: string;
   spaces: string[];
-  meals: MealJob[];
+  meals: EnrichedMealJob[];
   coffeeCount: number;
+}
+
+export interface ScheduleBooking {
+  id: string;
+  groupName: string;
+  spaces: string[];
 }
 
 interface WeekScheduleCardProps {
   title?: string;
   subtitle?: string;
-  bookings?: BookingSummary[];
-  mealJobs?: MealJob[];
+  bookings: ScheduleBooking[];
+  mealJobs: EnrichedMealJob[];
 }
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -49,7 +50,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   timeZone: "UTC",
 });
 
-function getMealLabel(meal: MealJob) {
+function getMealLabel(meal: EnrichedMealJob) {
   const mealDate = new Date(meal.date);
   const formattedDate = Number.isNaN(mealDate.getTime())
     ? meal.date
@@ -61,8 +62,8 @@ function getMealLabel(meal: MealJob) {
 export function WeekScheduleCard({
   title = "Week schedule",
   subtitle = "Spaces and meals across groups",
-  bookings = MOCK_BOOKINGS,
-  mealJobs = MOCK_MEAL_JOBS,
+  bookings,
+  mealJobs,
 }: WeekScheduleCardProps) {
   const scheduleData = React.useMemo<ScheduleRow[]>(() => {
     return bookings.map((booking) => {

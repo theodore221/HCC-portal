@@ -11,12 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
-import {
-  enrichMealJobs,
-  formatDateLabel,
-  type EnrichedMealJob,
-} from "@/lib/catering";
-import { MOCK_BOOKINGS, MOCK_MEAL_JOBS } from "@/lib/mock-data";
+import { formatDateLabel, type EnrichedMealJob } from "@/lib/catering";
 
 interface MealJobsGridCardProps {
   title?: string;
@@ -35,10 +30,7 @@ export function MealJobsGridCard({
   onViewDetails,
   onMarkServed,
 }: MealJobsGridCardProps) {
-  const enrichedJobs = useMemo<EnrichedMealJob[]>(() => {
-    if (jobs) return jobs;
-    return enrichMealJobs(MOCK_MEAL_JOBS, MOCK_BOOKINGS);
-  }, [jobs]);
+  const enrichedJobs = useMemo<EnrichedMealJob[]>(() => jobs ?? [], [jobs]);
 
   const groupedByDate = useMemo(() => {
     const grouped = enrichedJobs.reduce<Record<string, EnrichedMealJob[]>>(

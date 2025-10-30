@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+
 import { Stepper } from "@/components/ui/stepper";
 import {
   Card,
@@ -19,20 +20,52 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MOCK_BOOKINGS, MOCK_MEAL_JOBS, MOCK_ROOMS, MOCK_DIETARIES } from "@/lib/mock-data";
+import {
+  getBookingByReference,
+  type MealJobWithRelations,
+} from "@/lib/queries/bookings";
+import { enrichMealJobs } from "@/lib/catering";
+import { toBookingSummary, toDietaryProfiles, toRoomSummaries } from "@/lib/mappers";
 
 const steps = ["Deposit", "Catering", "Rooming", "Summary"];
 
-export default function CustomerPortal({
+export default async function CustomerPortal({
   params,
 }: {
   params: { bookingRef: string };
 }) {
-  const booking = MOCK_BOOKINGS.find((b) => b.reference === params.bookingRef);
-  if (!booking) return notFound();
-  const currentStep = booking.status === "DepositReceived" ? 2 : booking.status === "Approved" ? 1 : 0;
-  const cateringJobs = MOCK_MEAL_JOBS.filter((job) => job.bookingId === booking.id);
-  const rooms = MOCK_ROOMS;
+  const detail = await getBookingByReference(params.bookingRef);
+  if (!detail) return notFound();
+
+  const booking = toBookingSummary(detail);
+  const roomSummaries = toRoomSummaries(detail.room_assignments);
+  const dietaryProfiles = toDietaryProfiles(detail.dietary_profiles);
+
+  const mealJobs: MealJobWithRelations[] = detail.meal_jobs.map((job) => ({
+    ...job,
+    booking_id: detail.id,
+    booking: {
+      id: detail.id,
+      reference: detail.reference,
+      customer_name: detail.customer_name,
+      customer_email: detail.customer_email,
+      headcount: detail.headcount,
+      arrival_date: detail.arrival_date,
+      departure_date: detail.departure_date,
+      is_overnight: detail.is_overnight,
+      catering_required: detail.catering_required,
+      status: detail.status,
+    },
+    assigned_caterer: null,
+  }));
+
+  const enrichedJobs = enrichMealJobs(mealJobs);
+  const currentStep =
+    booking.status === "DepositReceived"
+      ? 2
+      : booking.status === "Approved"
+      ? 1
+      : 0;
 
   return (
     <div className="space-y-8">
@@ -40,7 +73,7 @@ export default function CustomerPortal({
       <Card>
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle>{`Booking reference ${booking.reference}`}</CardTitle>
+            <CardTitle>{`Booking reference ${booking.reference ?? "—"}`}</CardTitle>
             <CardDescription>{`${booking.groupName} · ${booking.headcount} guests`}</CardDescription>
           </div>
           <StatusChip status={booking.status} />
@@ -58,7 +91,7 @@ export default function CustomerPortal({
               <InfoBlock label="Bank" value="Holy Cross Centre" />
               <InfoBlock label="BSB" value="033-123" />
               <InfoBlock label="Account" value="124 567 890" />
-              <InfoBlock label="Reference" value={booking.reference} />
+              <InfoBlock label="Reference" value={booking.reference ?? "—"} />
             </div>
           </section>
           <section className="space-y-3">
@@ -70,9 +103,11 @@ export default function CustomerPortal({
               percolated coffee option.
             </p>
             <div className="grid gap-4 md:grid-cols-2">
-              {cateringJobs.map((job) => (
-                <MealSlotCard key={job.id} job={job} />
-              ))}
+              {enrichedJobs.length ? (
+                enrichedJobs.map((job) => <MealSlotCard key={job.id} job={job} />)
+              ) : (
+                <p className="text-sm text-olive-700">No meal jobs scheduled for this booking.</p>
+              )}
             </div>
             <Button className="w-full md:w-auto" variant="outline">
               Add dietary note
@@ -93,26 +128,34 @@ export default function CustomerPortal({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {MOCK_DIETARIES.map((item) => (
-                    <TableRow key={item.name}>
-                      <TableCell className="font-medium text-olive-900">{item.name}</TableCell>
-                      <TableCell>{item.dietType}</TableCell>
-                      <TableCell>{item.allergy || "—"}</TableCell>
-                      <TableCell>
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            item.severity === "Fatal"
-                              ? "bg-red-100 text-red-700"
-                              : item.severity === "High"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-olive-100 text-olive-800"
-                          }`}
-                        >
-                          {item.severity}
-                        </span>
+                  {dietaryProfiles.length ? (
+                    dietaryProfiles.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium text-olive-900">{item.personName}</TableCell>
+                        <TableCell>{item.dietType}</TableCell>
+                        <TableCell>{item.allergy || "—"}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                              item.severity === "Fatal"
+                                ? "bg-red-100 text-red-700"
+                                : item.severity === "High"
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-olive-100 text-olive-800"
+                            }`}
+                          >
+                            {item.severity ?? "Unknown"}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-sm text-olive-600">
+                        No dietary profiles recorded yet.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -122,9 +165,11 @@ export default function CustomerPortal({
               3 · Rooming planner
             </h3>
             <div className="grid gap-4 md:grid-cols-3">
-              {rooms.map((room) => (
-                <RoomCard key={room.id} room={room} />
-              ))}
+              {roomSummaries.length ? (
+                roomSummaries.map((room) => <RoomCard key={room.id} room={room} />)
+              ) : (
+                <p className="text-sm text-olive-700">No room assignments captured yet.</p>
+              )}
             </div>
             <div className="flex flex-col gap-3 rounded-xl border border-dashed border-olive-200 bg-white/60 p-4 text-sm text-olive-700 sm:flex-row sm:items-center sm:justify-between">
               <div>Upload a CSV or XLSX template to import your guest list in bulk.</div>

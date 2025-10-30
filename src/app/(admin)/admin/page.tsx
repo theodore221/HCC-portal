@@ -5,14 +5,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MOCK_BOOKINGS, MOCK_MEAL_JOBS } from "@/lib/mock-data";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatDateRange } from "@/lib/utils";
+import { getBookingsForAdmin, getAssignedMealJobs } from "@/lib/queries/bookings";
+import { toBookingSummaries } from "@/lib/mappers";
+import { enrichMealJobs } from "@/lib/catering";
 
-export default function AdminDashboard() {
-  const pending = MOCK_BOOKINGS.filter((b) => b.status === "Pending");
-  const depositPending = MOCK_BOOKINGS.filter((b) => b.status === "DepositPending");
-  const depositReceived = MOCK_BOOKINGS.filter((b) => b.status === "DepositReceived");
+export default async function AdminDashboard() {
+  const bookings = await getBookingsForAdmin();
+  const bookingSummaries = toBookingSummaries(bookings);
+  const pending = bookingSummaries.filter((b) => b.status === "Pending");
+  const depositPending = bookingSummaries.filter((b) => b.status === "DepositPending");
+  const depositReceived = bookingSummaries.filter((b) => b.status === "DepositReceived");
+  const mealJobs = await getAssignedMealJobs();
+  const enrichedJobs = enrichMealJobs(mealJobs);
 
   return (
     <div className="space-y-6">
@@ -53,7 +59,7 @@ export default function AdminDashboard() {
                         {formatDateRange(booking.arrival, booking.departure)}
                       </p>
                       <p className="mt-2 text-xs text-olive-700">
-                        Spaces requested: {booking.spaces.join(", ")}
+                        Spaces requested: {booking.spaces.join(", ") || "TBC"}
                       </p>
                     </div>
                     <StatusChip status={booking.status} />
@@ -76,7 +82,7 @@ export default function AdminDashboard() {
               Updated jobs
             </p>
             <ul className="mt-3 space-y-3 text-sm text-olive-800">
-              {MOCK_MEAL_JOBS.slice(0, 4).map((job) => (
+              {enrichedJobs.slice(0, 4).map((job) => (
                 <li
                   key={job.id}
                   className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-soft"
@@ -84,7 +90,7 @@ export default function AdminDashboard() {
                   <div>
                     <p className="font-semibold text-olive-900">{job.timeSlot}</p>
                     <p className="text-xs text-olive-700">
-                      {job.date} · Booking {job.bookingId}
+                      {job.date} · {job.groupName}
                     </p>
                   </div>
                   <span className="text-xs font-medium text-olive-700">
@@ -92,6 +98,11 @@ export default function AdminDashboard() {
                   </span>
                 </li>
               ))}
+              {!enrichedJobs.length && (
+                <li className="rounded-xl border border-dashed border-olive-200 bg-white/70 px-4 py-3 text-olive-700">
+                  No catering jobs scheduled.
+                </li>
+              )}
             </ul>
           </CardContent>
         </Card>
