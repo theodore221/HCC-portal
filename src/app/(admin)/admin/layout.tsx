@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
+import { getHomePathForRole } from "@/lib/auth/paths";
+import { getCurrentProfile } from "@/lib/auth/server";
 
 const navItems = [
   { href: "/admin", label: "Dashboard" },
@@ -13,11 +16,21 @@ const navItems = [
   { href: "/admin/audit", label: "Audit" },
 ];
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { session, profile } = await getCurrentProfile();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  if (profile?.role !== "admin") {
+    redirect(getHomePathForRole(profile?.role ?? null, profile?.booking_reference ?? null));
+  }
+
   return (
     <DashboardShell
       title="Admin control panel"
