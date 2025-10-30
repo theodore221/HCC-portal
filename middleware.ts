@@ -72,7 +72,11 @@ export async function middleware(req: NextRequest) {
     if (profile?.role === "customer") {
       const profileRef = profile.booking_reference;
       if (!profileRef) {
-        return NextResponse.redirect(new URL("/portal", req.url));
+        if (requestedRef) {
+          return NextResponse.redirect(new URL("/portal", req.url));
+        }
+
+        return res;
       }
 
       if (requestedRef && requestedRef !== profileRef && !hasGuestAccess) {
