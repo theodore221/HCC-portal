@@ -8,13 +8,18 @@ import {
 } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusChip } from "@/components/ui/status-chip";
-import { MOCK_BOOKINGS } from "@/lib/mock-data";
+import { getBookingsForAdmin } from "@/lib/queries/bookings";
+import { toBookingSummaries } from "@/lib/mappers";
 import { formatDateRange } from "@/lib/utils";
 
-export default function HomePage() {
-  const upcoming = MOCK_BOOKINGS.filter((booking) =>
-    ["Approved", "DepositReceived", "InProgress"].includes(booking.status)
-  ).slice(0, 3);
+export default async function HomePage() {
+  const adminBookings = await getBookingsForAdmin();
+  const summaries = toBookingSummaries(adminBookings);
+  const upcoming = summaries
+    .filter((booking) =>
+      ["Approved", "DepositReceived", "InProgress"].includes(booking.status)
+    )
+    .slice(0, 3);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
@@ -79,12 +84,17 @@ export default function HomePage() {
                       {formatDateRange(booking.arrival, booking.departure)}
                     </p>
                     <p className="mt-2 text-xs text-olive-700">
-                      {booking.headcount} guests · Spaces: {booking.spaces.join(", ")}
+                      {booking.headcount} guests · Spaces: {booking.spaces.join(", ") || "TBC"}
                     </p>
                   </div>
                   <StatusChip status={booking.status} />
                 </li>
               ))}
+              {!upcoming.length && (
+                <li className="rounded-xl border border-dashed border-olive-200 bg-white/70 p-4 text-sm text-olive-700">
+                  No approved bookings scheduled yet.
+                </li>
+              )}
             </ul>
           </CardContent>
         </Card>

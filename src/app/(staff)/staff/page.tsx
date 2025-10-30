@@ -6,10 +6,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
-import { MOCK_MEAL_JOBS } from "@/lib/mock-data";
+import { getAssignedMealJobs } from "@/lib/queries/bookings";
+import { enrichMealJobs } from "@/lib/catering";
 
-export default function StaffDashboard() {
-  const todaysJobs = MOCK_MEAL_JOBS.slice(0, 2);
+export default async function StaffDashboard() {
+  const jobs = await getAssignedMealJobs();
+  const enrichedJobs = enrichMealJobs(jobs);
+  const today = new Date().toISOString().slice(0, 10);
+  const todaysJobs = enrichedJobs.filter((job) => job.date === today);
+  const displayJobs = todaysJobs.length ? todaysJobs : enrichedJobs.slice(0, 2);
 
   return (
     <div className="space-y-6">
@@ -36,9 +41,11 @@ export default function StaffDashboard() {
             Today
           </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {todaysJobs.map((job) => (
-              <MealSlotCard key={job.id} job={job} />
-            ))}
+            {displayJobs.length ? (
+              displayJobs.map((job) => <MealSlotCard key={job.id} job={job} />)
+            ) : (
+              <p className="text-sm text-olive-700">No catering services scheduled.</p>
+            )}
           </div>
         </CardContent>
       </Card>

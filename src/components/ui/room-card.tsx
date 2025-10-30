@@ -1,6 +1,6 @@
-import { Room } from "@/lib/mock-data";
+import type { RoomSummary } from "@/lib/models";
 
-export function RoomCard({ room }: { room: Room }) {
+export function RoomCard({ room }: { room: RoomSummary }) {
   const filledBeds = room.occupants.length;
   const capacity = room.baseBeds + (room.extraBedAllowed ? 1 : 0);
   const hasExtra = filledBeds > room.baseBeds;
