@@ -75,13 +75,42 @@ create table if not exists public.menu_items (
 );
 
 create table if not exists public.profiles (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  role text not null check (role in ('Admin','Staff','Caterer','Customer')),
-  display_name text,
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  full_name text,
+  role text not null check (role in ('admin','staff','caterer','customer')),
+  booking_reference text,
+  guest_token text,
   caterer_id uuid references public.caterers(id) on delete set null,
   created_at timestamptz not null default now()
 );
 create index if not exists idx_profiles_role on public.profiles(role);
+create unique index if not exists idx_profiles_email_unique on public.profiles(lower(email)) where email is not null;
+create unique index if not exists idx_profiles_booking_reference on public.profiles(booking_reference) where booking_reference is not null;
+create unique index if not exists idx_profiles_guest_token on public.profiles(guest_token) where guest_token is not null;
+
+insert into public.profiles (id, email, full_name, role, booking_reference, guest_token, caterer_id, created_at)
+select
+  u.id,
+  lower(u.email),
+  coalesce(u.raw_user_meta_data->>'full_name', split_part(u.email, '@', 1)),
+  case lower(coalesce(u.raw_user_meta_data->>'role', ''))
+    when 'admin' then 'admin'
+    when 'staff' then 'staff'
+    when 'caterer' then 'caterer'
+    else 'customer'
+  end,
+  nullif(u.raw_user_meta_data->>'booking_reference', ''),
+  nullif(u.raw_user_meta_data->>'guest_token', ''),
+  case
+    when (u.raw_user_meta_data->>'caterer_id') ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      then (u.raw_user_meta_data->>'caterer_id')::uuid
+    else null
+  end,
+  coalesce(u.created_at, now())
+from auth.users u
+where u.email is not null
+  and not exists (select 1 from public.profiles p where p.id = u.id);
 
 -- 1.3 Core bookings & operations tables
 create table if not exists public.bookings (
@@ -277,20 +306,20 @@ select u.id as user_id,
        p.role,
        p.caterer_id
 from auth.users u
-left join public.profiles p on p.user_id = u.id
+left join public.profiles p on p.id = u.id
 where u.id = auth.uid();
 
 create policy "profiles self" on public.profiles
-for select using (auth.uid() = user_id);
+for select using (auth.uid() = id);
 
 create policy "bookings staff read" on public.bookings
-for select using (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for select using (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 create policy "bookings staff insert" on public.bookings
-for insert with check (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for insert with check (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 create policy "bookings staff update" on public.bookings
-for update using (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for update using (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 create policy "bookings caterer read" on public.bookings
 for select using (
@@ -298,7 +327,7 @@ for select using (
     select 1
     from public.v_me m
     join public.meal_jobs mj on mj.assigned_caterer_id = m.caterer_id
-    where m.role = 'Caterer'
+    where m.role = 'caterer'
       and mj.booking_id = bookings.id
   )
 );
@@ -308,39 +337,39 @@ for select using (
   exists (
     select 1
     from public.v_me m
-    where m.role = 'Customer'
+    where m.role = 'customer'
       and bookings.customer_user_id = m.user_id
   )
 );
 
 create policy "meal_jobs staff all" on public.meal_jobs
-for all using (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')))
-with check (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for all using (exists (select 1 from public.v_me m where m.role in ('admin','staff')))
+with check (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 create policy "meal_jobs caterer read" on public.meal_jobs
-for select using (exists (select 1 from public.v_me m where m.role = 'Caterer' and m.caterer_id = meal_jobs.assigned_caterer_id));
+for select using (exists (select 1 from public.v_me m where m.role = 'caterer' and m.caterer_id = meal_jobs.assigned_caterer_id));
 
 create policy "space_reservations staff all" on public.space_reservations
-for all using (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')))
-with check (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for all using (exists (select 1 from public.v_me m where m.role in ('admin','staff')))
+with check (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 create policy "room_assignments staff all" on public.room_assignments
-for all using (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')))
-with check (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for all using (exists (select 1 from public.v_me m where m.role in ('admin','staff')))
+with check (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 create policy "dietary_profiles staff all" on public.dietary_profiles
-for all using (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')))
-with check (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for all using (exists (select 1 from public.v_me m where m.role in ('admin','staff')))
+with check (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 create policy "staff_tasks staff all" on public.staff_tasks
-for all using (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')))
-with check (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for all using (exists (select 1 from public.v_me m where m.role in ('admin','staff')))
+with check (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 create policy "notifications self" on public.notifications
 for select using (auth.uid() = user_id);
 
 create policy "booking_tokens staff read" on public.booking_guest_tokens
-for select using (exists (select 1 from public.v_me m where m.role in ('Admin','Staff')));
+for select using (exists (select 1 from public.v_me m where m.role in ('admin','staff')));
 
 -- 1.6 RPC: Google snapshot ingest
 create or replace function public.upsert_booking_snapshot(snap jsonb)

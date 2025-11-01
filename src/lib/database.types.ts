@@ -4,9 +4,11 @@ export interface ProfileRecord {
   id: string;
   email: string | null;
   full_name: string | null;
-  role: ProfileRole | null;
+  role: ProfileRole;
   booking_reference: string | null;
   guest_token: string | null;
+  caterer_id: string | null;
+  created_at: string;
 }
 
 export type Database = {
