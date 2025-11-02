@@ -39,18 +39,13 @@ alter table public.profiles
 
 -- 3. Refresh the role constraint to use the lower-case values expected by the app
 alter table public.profiles drop constraint if exists profiles_role_check;
-
--- 4. Normalise existing data before re-applying the check constraint
-update public.profiles
-set role = lower(trim(role))
-where role is not null and role <> lower(trim(role));
-
-update public.profiles
-set role = 'customer'
-where role is null or role not in ('admin','staff','caterer','customer');
-
 alter table public.profiles add constraint profiles_role_check
   check (role in ('admin','staff','caterer','customer'));
+
+-- 4. Normalise existing data
+update public.profiles
+set role = lower(role)
+where role <> lower(role);
 
 update public.profiles as p
 set
