@@ -8,7 +8,6 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getHomePathForRole } from "@/lib/auth/paths";
-import type { ProfileRole } from "@/lib/database.types";
 import { sbBrowser } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
@@ -37,7 +36,7 @@ export default function LoginPage() {
         console.error("Failed to load profile", profileError);
       }
 
-      const profileRole = (profile?.role as ProfileRole | null) ?? null;
+      const profileRole = profile?.role ?? null;
       const bookingReference = profile?.booking_reference ?? null;
       let destination =
         redirectTo ??
@@ -57,13 +56,14 @@ export default function LoginPage() {
   );
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    void (async () => {
+      const { data } = await supabase.auth.getSession();
       const userId = data.session?.user.id;
       if (userId) {
         setLoading((current) => current ?? "password");
         void navigateToWorkspace(userId);
       }
-    });
+    })();
   }, [navigateToWorkspace, supabase]);
 
   const handlePasswordSignIn = async (event: FormEvent<HTMLFormElement>) => {
