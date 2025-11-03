@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getHomePathForRole } from "@/lib/auth/paths";
-import type { ProfileRole } from "@/lib/database.types";
+import type { Database, ProfileRole } from "@/lib/database.types";
 import { sbBrowser } from "@/lib/supabase-browser";
 
 export default function PasswordSetupPage() {
@@ -41,6 +41,24 @@ export default function PasswordSetupPage() {
 
       setUserId(sessionUser.id);
 
+      const { data: ensuredProfile, error: ensureProfileError } = await supabase.rpc<
+        Database["public"]["Functions"]["ensure_profile_for_current_user"]["Returns"]
+      >("ensure_profile_for_current_user");
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (ensureProfileError) {
+        console.error("Failed to ensure profile", ensureProfileError);
+        setError("We couldn't prepare your account. Please try again.");
+        setInitializing(false);
+        return;
+      }
+
+      setRole(ensuredProfile?.role ?? null);
+      setBookingReference(ensuredProfile?.booking_reference ?? null);
+
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role, booking_reference, password_initialized_at")
@@ -58,14 +76,19 @@ export default function PasswordSetupPage() {
         return;
       }
 
-      if (profile?.password_initialized_at) {
-        router.replace(getHomePathForRole(profile.role ?? null, profile.booking_reference ?? null));
+      const resolvedRole = profile?.role ?? ensuredProfile?.role ?? null;
+      const resolvedBookingReference = profile?.booking_reference ?? ensuredProfile?.booking_reference ?? null;
+      const passwordInitializedAt =
+        profile?.password_initialized_at ?? ensuredProfile?.password_initialized_at ?? null;
+
+      if (passwordInitializedAt) {
+        router.replace(getHomePathForRole(resolvedRole, resolvedBookingReference));
         router.refresh();
         return;
       }
 
-      setRole(profile?.role ?? null);
-      setBookingReference(profile?.booking_reference ?? null);
+      setRole(resolvedRole);
+      setBookingReference(resolvedBookingReference);
       setInitializing(false);
     })();
 

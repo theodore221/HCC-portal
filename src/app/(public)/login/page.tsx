@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getHomePathForRole } from "@/lib/auth/paths";
+import type { Database } from "@/lib/database.types";
 import { sbBrowser } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
@@ -32,15 +33,31 @@ export default function LoginPage() {
         .eq("id", userId)
         .maybeSingle();
 
-      if (profileError) {
-        console.error("Failed to load profile", profileError);
+      let resolvedProfile = profile;
+      let resolvedError = profileError;
+
+      if (!profileError && !profile) {
+        const { data: ensuredProfile, error: ensureProfileError } = await supabase.rpc<
+          Database["public"]["Functions"]["ensure_profile_for_current_user"]["Returns"]
+        >("ensure_profile_for_current_user");
+
+        if (ensureProfileError) {
+          console.error("Failed to ensure profile", ensureProfileError);
+          resolvedError = ensureProfileError;
+        } else {
+          resolvedProfile = ensuredProfile;
+        }
       }
 
-      const profileRole = profile?.role ?? null;
-      const bookingReference = profile?.booking_reference ?? null;
-      const passwordInitializedAt = profile?.password_initialized_at ?? null;
+      if (resolvedError) {
+        console.error("Failed to load profile", resolvedError);
+      }
 
-      if (!profileError && !passwordInitializedAt) {
+      const profileRole = resolvedProfile?.role ?? null;
+      const bookingReference = resolvedProfile?.booking_reference ?? null;
+      const passwordInitializedAt = resolvedProfile?.password_initialized_at ?? null;
+
+      if (!resolvedError && !passwordInitializedAt) {
         setPassword("");
         setLoading(null);
         setError(null);
@@ -50,9 +67,9 @@ export default function LoginPage() {
       }
       let destination =
         redirectTo ??
-        getHomePathForRole(profileError ? null : profileRole, profileError ? null : bookingReference);
+        getHomePathForRole(resolvedError ? null : profileRole, resolvedError ? null : bookingReference);
 
-      if (!redirectTo && (profileError || !profileRole)) {
+      if (!redirectTo && (resolvedError || !profileRole)) {
         destination = "/portal";
       }
 
