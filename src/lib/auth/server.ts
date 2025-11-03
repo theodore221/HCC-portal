@@ -31,8 +31,10 @@ export async function getCurrentProfile(): Promise<CurrentProfileResult> {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role, booking_reference, guest_token, caterer_id, created_at")
-    .eq("id", user.id)
+    .select(
+      "id, email, full_name, role, booking_reference, guest_token, caterer_id, created_at, password_initialized_at"
+    )
+    .eq("id", session.user.id)
     .maybeSingle();
 
   if (error && error.code !== "PGRST116") {
