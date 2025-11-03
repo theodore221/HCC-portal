@@ -17,12 +17,13 @@ export async function middleware(req: NextRequest) {
 
   const { pathname, search } = req.nextUrl;
   const isLoginRoute = pathname === "/login";
+  const isPasswordSetupRoute = pathname === "/password-setup";
   const isProtectedRoute = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
   if (!session?.user) {
-    if (isLoginRoute || !isProtectedRoute) {
+    if (isLoginRoute || (!isProtectedRoute && !isPasswordSetupRoute)) {
       return res;
     }
 
@@ -33,11 +34,20 @@ export async function middleware(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, booking_reference, guest_token")
+    .select("role, booking_reference, guest_token, password_initialized_at")
     .eq("id", session.user.id)
     .maybeSingle();
 
   const destinationHome = getHomePathForRole(profile?.role ?? null, profile?.booking_reference ?? null);
+  const requiresPasswordSetup = !profile?.password_initialized_at;
+
+  if (requiresPasswordSetup && !isPasswordSetupRoute) {
+    return NextResponse.redirect(new URL("/password-setup", req.url));
+  }
+
+  if (!requiresPasswordSetup && isPasswordSetupRoute) {
+    return NextResponse.redirect(new URL(destinationHome, req.url));
+  }
 
   if (isLoginRoute) {
     return NextResponse.redirect(new URL(destinationHome, req.url));
@@ -91,6 +101,7 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/login",
+    "/password-setup",
     "/admin/:path*",
     "/staff/:path*",
     "/caterer/:path*",
