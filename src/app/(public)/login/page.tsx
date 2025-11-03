@@ -28,7 +28,7 @@ export default function LoginPage() {
     async (userId: string) => {
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("role, booking_reference")
+        .select("role, booking_reference, password_initialized_at")
         .eq("id", userId)
         .maybeSingle();
 
@@ -38,6 +38,16 @@ export default function LoginPage() {
 
       const profileRole = profile?.role ?? null;
       const bookingReference = profile?.booking_reference ?? null;
+      const passwordInitializedAt = profile?.password_initialized_at ?? null;
+
+      if (!profileError && !passwordInitializedAt) {
+        setPassword("");
+        setLoading(null);
+        setError(null);
+        router.replace("/password-setup");
+        router.refresh();
+        return;
+      }
       let destination =
         redirectTo ??
         getHomePathForRole(profileError ? null : profileRole, profileError ? null : bookingReference);

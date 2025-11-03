@@ -9,6 +9,7 @@ export interface ProfileRecord {
   guest_token: string | null;
   caterer_id: string | null;
   created_at: string;
+  password_initialized_at: string | null;
 }
 
 export type Database = {
