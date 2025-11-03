@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
 import {
   Card,
   CardContent,
@@ -8,10 +10,17 @@ import {
 } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { StatusChip } from "@/components/ui/status-chip";
+import { getCurrentProfile } from "@/lib/auth/server";
 import { MOCK_BOOKINGS } from "@/lib/mock-data";
 import { formatDateRange } from "@/lib/utils";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { session } = await getCurrentProfile();
+
+  if (!session) {
+    redirect("/login?redirect=/");
+  }
+
   const upcoming = MOCK_BOOKINGS.filter((booking) =>
     ["Approved", "DepositReceived", "InProgress"].includes(booking.status)
   ).slice(0, 3);
