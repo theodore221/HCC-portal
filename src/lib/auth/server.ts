@@ -9,20 +9,30 @@ export interface CurrentProfileResult {
 }
 
 export async function getCurrentProfile(): Promise<CurrentProfileResult> {
-  const supabase = sbServer();
+  const supabase = await sbServer();
 
-  const {
+  const [{
     data: { session },
-  } = await supabase.auth.getSession();
+  }, {
+    data: { user },
+    error: userError,
+  }] = await Promise.all([
+    supabase.auth.getSession(),
+    supabase.auth.getUser(),
+  ]);
 
-  if (!session?.user) {
+  if (userError) {
+    console.error("Failed to load user", userError);
+  }
+
+  if (!session || !user) {
     return { session: null, profile: null };
   }
 
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("id, email, full_name, role, booking_reference, guest_token, caterer_id, created_at")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .maybeSingle();
 
   if (error && error.code !== "PGRST116") {
