@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 
 import type { Database } from "@/lib/database.types";
 
-export function sbServer() {
-  const cookieStore = cookies();
+export async function sbServer() {
+  const cookieStore = await cookies();
 
   return createServerComponentClient<Database>({
     cookies: () => cookieStore,
