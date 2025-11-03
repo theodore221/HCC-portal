@@ -103,10 +103,7 @@ export default function PasswordSetupPage() {
       return;
     }
 
-    const { error: profileUpdateError } = await supabase
-      .from("profiles")
-      .update({ password_initialized_at: new Date().toISOString() })
-      .eq("id", userId);
+    const { error: profileUpdateError } = await supabase.rpc("set_password_initialized_at");
 
     if (profileUpdateError) {
       console.error("Failed to update password initialization timestamp", profileUpdateError);
