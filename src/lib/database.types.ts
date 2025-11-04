@@ -21,5 +21,15 @@ export type Database = {
         Update: Partial<ProfileRecord>;
       };
     };
+    Functions: {
+      ensure_profile_for_current_user: {
+        Args: Record<string, never>;
+        Returns: ProfileRecord;
+      };
+      set_password_initialized_at: {
+        Args: Record<string, never>;
+        Returns: ProfileRecord;
+      };
+    };
   };
 };
