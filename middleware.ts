@@ -7,6 +7,21 @@ import type { Database } from "./src/lib/database.types";
 
 const PROTECTED_PREFIXES = ["/admin", "/staff", "/caterer", "/portal", "/profile", "/settings"];
 
+function redirectWithCookies(res: NextResponse, url: string | URL) {
+  const redirectResponse = NextResponse.redirect(url);
+
+  const middlewareSetCookie = res.headers.get("x-middleware-set-cookie");
+  if (middlewareSetCookie) {
+    redirectResponse.headers.set("x-middleware-set-cookie", middlewareSetCookie);
+  }
+
+  for (const { name, value, ...options } of res.cookies.getAll()) {
+    redirectResponse.cookies.set({ name, value, ...options });
+  }
+
+  return redirectResponse;
+}
+
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient<Database>({ req, res });
@@ -29,7 +44,7 @@ export async function middleware(req: NextRequest) {
 
     const redirectUrl = new URL("/login", req.url);
     redirectUrl.searchParams.set("redirect", `${pathname}${search}`);
-    return NextResponse.redirect(redirectUrl);
+    return redirectWithCookies(res, redirectUrl);
   }
 
   const { data: profile } = await supabase
@@ -38,35 +53,36 @@ export async function middleware(req: NextRequest) {
     .eq("id", session.user.id)
     .maybeSingle();
 
-  const destinationHome = getHomePathForRole(profile?.role ?? null, profile?.booking_reference ?? null);
+  const role = profile?.role ?? null;
+  const destinationHome = getHomePathForRole(role, profile?.booking_reference ?? null);
   const requiresPasswordSetup = !profile?.password_initialized_at;
 
   if (requiresPasswordSetup && !isPasswordSetupRoute) {
-    return NextResponse.redirect(new URL("/password-setup", req.url));
+    return redirectWithCookies(res, new URL("/password-setup", req.url));
   }
 
   if (!requiresPasswordSetup && isPasswordSetupRoute) {
-    return NextResponse.redirect(new URL(destinationHome, req.url));
+    return redirectWithCookies(res, new URL(destinationHome, req.url));
   }
 
   if (isLoginRoute) {
-    return NextResponse.redirect(new URL(destinationHome, req.url));
+    return redirectWithCookies(res, new URL(destinationHome, req.url));
   }
 
   if (!isProtectedRoute) {
     return res;
   }
 
-  if (pathname.startsWith("/admin") && profile?.role !== "admin") {
-    return NextResponse.redirect(new URL(destinationHome, req.url));
+  if (pathname.startsWith("/admin") && role !== "admin") {
+    return redirectWithCookies(res, new URL(destinationHome, req.url));
   }
 
-  if (pathname.startsWith("/staff") && profile?.role !== "staff") {
-    return NextResponse.redirect(new URL(destinationHome, req.url));
+  if (pathname.startsWith("/staff") && !["staff", "admin"].includes(role)) {
+    return redirectWithCookies(res, new URL(destinationHome, req.url));
   }
 
-  if (pathname.startsWith("/caterer") && profile?.role !== "caterer") {
-    return NextResponse.redirect(new URL(destinationHome, req.url));
+  if (pathname.startsWith("/caterer") && !["caterer", "admin"].includes(role)) {
+    return redirectWithCookies(res, new URL(destinationHome, req.url));
   }
 
   if (pathname.startsWith("/portal")) {
@@ -76,21 +92,24 @@ export async function middleware(req: NextRequest) {
     const hasGuestAccess = Boolean(guestToken && profile?.guest_token && guestToken === profile.guest_token);
 
     if (profile?.role !== "customer" && !hasGuestAccess) {
-      return NextResponse.redirect(new URL(destinationHome, req.url));
+      return redirectWithCookies(res, new URL(destinationHome, req.url));
     }
 
     if (profile?.role === "customer") {
       const profileRef = profile.booking_reference;
       if (!profileRef) {
         if (requestedRef) {
-          return NextResponse.redirect(new URL("/portal", req.url));
+          return redirectWithCookies(res, new URL("/portal", req.url));
         }
 
         return res;
       }
 
       if (requestedRef && requestedRef !== profileRef && !hasGuestAccess) {
-        return NextResponse.redirect(new URL(`/portal/${profileRef}`, req.url));
+        return redirectWithCookies(
+          res,
+          new URL(`/portal/${profileRef}`, req.url)
+        );
       }
     }
   }
