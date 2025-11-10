@@ -38,7 +38,8 @@ export async function middleware(req: NextRequest) {
     .eq("id", session.user.id)
     .maybeSingle();
 
-  const destinationHome = getHomePathForRole(profile?.role ?? null, profile?.booking_reference ?? null);
+  const role = profile?.role ?? null;
+  const destinationHome = getHomePathForRole(role, profile?.booking_reference ?? null);
   const requiresPasswordSetup = !profile?.password_initialized_at;
 
   if (requiresPasswordSetup && !isPasswordSetupRoute) {
@@ -57,15 +58,15 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  if (pathname.startsWith("/admin") && profile?.role !== "admin") {
+  if (pathname.startsWith("/admin") && role !== "admin") {
     return NextResponse.redirect(new URL(destinationHome, req.url));
   }
 
-  if (pathname.startsWith("/staff") && profile?.role !== "staff") {
+  if (pathname.startsWith("/staff") && !["staff", "admin"].includes(role)) {
     return NextResponse.redirect(new URL(destinationHome, req.url));
   }
 
-  if (pathname.startsWith("/caterer") && profile?.role !== "caterer") {
+  if (pathname.startsWith("/caterer") && !["caterer", "admin"].includes(role)) {
     return NextResponse.redirect(new URL(destinationHome, req.url));
   }
 

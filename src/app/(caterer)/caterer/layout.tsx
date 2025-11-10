@@ -22,8 +22,9 @@ export default async function CatererLayout({
     redirect("/login");
   }
 
-  if (profile?.role !== "caterer") {
-    redirect(getHomePathForRole(profile?.role ?? null, profile?.booking_reference ?? null));
+  const role = profile?.role ?? null;
+  if (!role || !["caterer", "admin"].includes(role)) {
+    redirect(getHomePathForRole(role, profile?.booking_reference ?? null));
   }
 
   return (
