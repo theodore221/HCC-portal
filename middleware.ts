@@ -10,6 +10,11 @@ const PROTECTED_PREFIXES = ["/admin", "/staff", "/caterer", "/portal", "/profile
 function redirectWithCookies(res: NextResponse, url: string | URL) {
   const redirectResponse = NextResponse.redirect(url);
 
+  const middlewareSetCookie = res.headers.get("x-middleware-set-cookie");
+  if (middlewareSetCookie) {
+    redirectResponse.headers.set("x-middleware-set-cookie", middlewareSetCookie);
+  }
+
   for (const { name, value, ...options } of res.cookies.getAll()) {
     redirectResponse.cookies.set({ name, value, ...options });
   }
