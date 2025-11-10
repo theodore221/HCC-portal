@@ -6,10 +6,34 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
-import { MOCK_MEAL_JOBS } from "@/lib/mock-data";
+import { enrichMealJobs } from "@/lib/catering";
+import {
+  getAssignedMealJobs,
+  getBookingDisplayName,
+  getBookingsForAdmin,
+} from "@/lib/queries/bookings";
 
-export default function StaffDashboard() {
-  const todaysJobs = MOCK_MEAL_JOBS.slice(0, 2);
+export default async function StaffDashboard() {
+  const [bookings, mealJobsRaw] = await Promise.all([
+    getBookingsForAdmin(),
+    getAssignedMealJobs(),
+  ]);
+  const mealJobs = enrichMealJobs(mealJobsRaw, bookings);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const arrivalsToday = bookings.filter((booking) => booking.arrival_date === today);
+  const departuresToday = bookings.filter((booking) => booking.departure_date === today);
+  const todaysJobs = mealJobs.filter((job) => job.date === today);
+
+  const arrivalsLabel = arrivalsToday.length
+    ? `${arrivalsToday.length} group${arrivalsToday.length === 1 ? "" : "s"}`
+    : "None";
+  const departuresLabel = departuresToday.length
+    ? `${departuresToday.length} group${departuresToday.length === 1 ? "" : "s"}`
+    : "None";
+
+  const arrivalNames = arrivalsToday.map((booking) => getBookingDisplayName(booking)).join(" · ");
+  const departureNames = departuresToday.map((booking) => getBookingDisplayName(booking)).join(" · ");
 
   return (
     <div className="space-y-6">
@@ -20,9 +44,13 @@ export default function StaffDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 text-sm text-olive-800 sm:grid-cols-3">
-            <InfoCard label="Arrivals" value="2 groups" helper="Alpha Youth · Beta School" />
-            <InfoCard label="Departures" value="1 group" helper="Guest Conference" />
-            <InfoCard label="Tasks" value="3 open" helper="Coffee urn prep · AV setup" />
+            <InfoCard label="Arrivals" value={arrivalsLabel} helper={arrivalNames || "No arrivals today"} />
+            <InfoCard label="Departures" value={departuresLabel} helper={departureNames || "No departures today"} />
+            <InfoCard
+              label="Tasks"
+              value={`${todaysJobs.length} open`}
+              helper="Coffee urn prep · AV setup"
+            />
           </div>
         </CardContent>
       </Card>
@@ -36,9 +64,11 @@ export default function StaffDashboard() {
             Today
           </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {todaysJobs.map((job) => (
-              <MealSlotCard key={job.id} job={job} />
-            ))}
+            {todaysJobs.length ? (
+              todaysJobs.map((job) => <MealSlotCard key={job.id} job={job} />)
+            ) : (
+              <p className="text-sm text-olive-700">No services scheduled for today.</p>
+            )}
           </div>
         </CardContent>
       </Card>

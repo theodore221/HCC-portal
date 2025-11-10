@@ -6,10 +6,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
-import { MOCK_MEAL_JOBS } from "@/lib/mock-data";
+import { enrichMealJobs } from "@/lib/catering";
+import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings";
 
-export default function CatererDashboard() {
-  const upcoming = MOCK_MEAL_JOBS.slice(0, 3);
+export default async function CatererDashboard() {
+  const [bookings, mealJobsRaw] = await Promise.all([
+    getBookingsForAdmin(),
+    getAssignedMealJobs(),
+  ]);
+  const upcoming = enrichMealJobs(mealJobsRaw, bookings).slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -23,9 +28,11 @@ export default function CatererDashboard() {
             On deck
           </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {upcoming.map((job) => (
-              <MealSlotCard key={job.id} job={job} />
-            ))}
+            {upcoming.length ? (
+              upcoming.map((job) => <MealSlotCard key={job.id} job={job} />)
+            ) : (
+              <p className="text-sm text-olive-700">No upcoming services assigned.</p>
+            )}
           </div>
         </CardContent>
       </Card>

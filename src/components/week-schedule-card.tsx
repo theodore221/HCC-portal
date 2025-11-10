@@ -21,26 +21,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import type { EnrichedMealJob } from "@/lib/catering";
 import {
-  MOCK_BOOKINGS,
-  MOCK_MEAL_JOBS,
-  type BookingSummary,
-  type MealJob,
-} from "@/lib/mock-data";
+  getBookingDisplayName,
+  type BookingWithMeta,
+} from "@/lib/queries/bookings";
 
 interface ScheduleRow {
   id: string;
   groupName: string;
   spaces: string[];
-  meals: MealJob[];
+  meals: EnrichedMealJob[];
   coffeeCount: number;
 }
 
 interface WeekScheduleCardProps {
   title?: string;
   subtitle?: string;
-  bookings?: BookingSummary[];
-  mealJobs?: MealJob[];
+  bookings: BookingWithMeta[];
+  mealJobs: EnrichedMealJob[];
 }
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -49,7 +48,7 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   timeZone: "UTC",
 });
 
-function getMealLabel(meal: MealJob) {
+function getMealLabel(meal: EnrichedMealJob) {
   const mealDate = new Date(meal.date);
   const formattedDate = Number.isNaN(mealDate.getTime())
     ? meal.date
@@ -61,8 +60,8 @@ function getMealLabel(meal: MealJob) {
 export function WeekScheduleCard({
   title = "Week schedule",
   subtitle = "Spaces and meals across groups",
-  bookings = MOCK_BOOKINGS,
-  mealJobs = MOCK_MEAL_JOBS,
+  bookings,
+  mealJobs,
 }: WeekScheduleCardProps) {
   const scheduleData = React.useMemo<ScheduleRow[]>(() => {
     return bookings.map((booking) => {
@@ -74,7 +73,7 @@ export function WeekScheduleCard({
 
       return {
         id: booking.id,
-        groupName: booking.groupName,
+        groupName: getBookingDisplayName(booking),
         spaces: booking.spaces,
         meals: mealsForBooking,
         coffeeCount,
@@ -110,6 +109,9 @@ export function WeekScheduleCard({
                 {space}
               </Badge>
             ))}
+            {row.original.spaces.length === 0 && (
+              <span className="text-xs text-olive-500">No spaces allocated</span>
+            )}
           </div>
         ),
       },
@@ -131,7 +133,7 @@ export function WeekScheduleCard({
                   <div className="space-y-1">
                     <p className="font-semibold text-olive-900">{meal.timeSlot}</p>
                     <p className="text-olive-700">{meal.date}</p>
-                    <p className="text-olive-600">Menu: {meal.menu.join(", ")}</p>
+                    <p className="text-olive-600">Menu: {meal.menu.join(", ") || "TBC"}</p>
                     <p className="text-olive-600">
                       Coffee service: {meal.percolatedCoffee ? "Yes" : "No"}
                     </p>

@@ -11,7 +11,10 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { StatusChip } from "@/components/ui/status-chip";
 import { getCurrentProfile } from "@/lib/auth/server";
-import { MOCK_BOOKINGS } from "@/lib/mock-data";
+import {
+  getBookingDisplayName,
+  getBookingsForAdmin,
+} from "@/lib/queries/bookings";
 import { formatDateRange } from "@/lib/utils";
 
 export default async function HomePage() {
@@ -21,9 +24,12 @@ export default async function HomePage() {
     redirect("/login?redirect=/");
   }
 
-  const upcoming = MOCK_BOOKINGS.filter((booking) =>
-    ["Approved", "DepositReceived", "InProgress"].includes(booking.status)
-  ).slice(0, 3);
+  const bookings = await getBookingsForAdmin();
+  const upcoming = bookings
+    .filter((booking) =>
+      ["Approved", "DepositReceived", "InProgress"].includes(booking.status),
+    )
+    .slice(0, 3);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
@@ -74,27 +80,33 @@ export default async function HomePage() {
             <CardDescription>Next arrivals on site</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-4">
-              {upcoming.map((booking) => (
-                <li
-                  key={booking.id}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-olive-100 bg-olive-50/80 p-4"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-olive-900">
-                      {booking.groupName}
-                    </p>
-                    <p className="text-xs text-olive-700">
-                      {formatDateRange(booking.arrival, booking.departure)}
-                    </p>
-                    <p className="mt-2 text-xs text-olive-700">
-                      {booking.headcount} guests · Spaces: {booking.spaces.join(", ")}
-                    </p>
-                  </div>
-                  <StatusChip status={booking.status} />
-                </li>
-              ))}
-            </ul>
+            {upcoming.length ? (
+              <ul className="space-y-4">
+                {upcoming.map((booking) => (
+                  <li
+                    key={booking.id}
+                    className="flex items-start justify-between gap-3 rounded-xl border border-olive-100 bg-olive-50/80 p-4"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-olive-900">
+                        {getBookingDisplayName(booking)}
+                      </p>
+                      <p className="text-xs text-olive-700">
+                        {formatDateRange(booking.arrival_date, booking.departure_date)}
+                      </p>
+                      <p className="mt-2 text-xs text-olive-700">
+                        {booking.headcount} guests · Spaces: {booking.spaces.join(", ") || "TBC"}
+                      </p>
+                    </div>
+                    <StatusChip status={booking.status} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-olive-700">
+                No confirmed groups scheduled yet.
+              </p>
+            )}
           </CardContent>
         </Card>
       </aside>

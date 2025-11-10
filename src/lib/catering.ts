@@ -1,6 +1,22 @@
-import { BookingSummary, MealJob } from "@/lib/mock-data";
+import type { Enums } from "@/lib/database.types";
+import {
+  getBookingDisplayName,
+  type BookingWithMeta,
+  type MealJobDetail,
+} from "@/lib/queries/bookings";
 
-export type EnrichedMealJob = MealJob & {
+export type EnrichedMealJob = {
+  id: string;
+  bookingId: string;
+  date: string;
+  meal: Enums<"meal_type">;
+  timeSlot: Enums<"meal_type">;
+  dietaryCounts: Record<string, number>;
+  percolatedCoffee: boolean;
+  assignedCatererId: string | null;
+  assignedCaterer: string | null;
+  status: Enums<"meal_job_status">;
+  menu: string[];
   groupName: string;
   startDate: Date;
   endDate: Date;
@@ -10,7 +26,7 @@ export type EnrichedMealJob = MealJob & {
   timeRangeLabel: string;
 };
 
-const timeSlotMetadata: Record<MealJob["timeSlot"], { start: string; end: string }> = {
+const timeSlotMetadata: Record<Enums<"meal_type">, { start: string; end: string }> = {
   Breakfast: { start: "07:30", end: "08:30" },
   "Morning Tea": { start: "10:30", end: "11:15" },
   Lunch: { start: "12:30", end: "13:30" },
@@ -42,27 +58,37 @@ export function formatTimeRange(start: Date, end: Date) {
 }
 
 export function enrichMealJobs(
-  jobs: MealJob[],
-  bookings: BookingSummary[]
+  jobs: MealJobDetail[],
+  bookings: Array<Pick<BookingWithMeta, "id" | "customer_name" | "customer_email" | "reference">>,
 ): EnrichedMealJob[] {
   const bookingMap = new Map(bookings.map((booking) => [booking.id, booking]));
 
   const enriched = jobs.map((job) => {
-    const metadata = timeSlotMetadata[job.timeSlot];
-    const startDate = metadata ? toDate(job.date, metadata.start) : toDate(job.date, "12:00");
-    const endDate = metadata ? toDate(job.date, metadata.end) : new Date(startDate.getTime() + 60 * 60 * 1000);
-    const booking = bookingMap.get(job.bookingId);
+    const metadata = timeSlotMetadata[job.meal];
+    const startDate = metadata ? toDate(job.service_date, metadata.start) : toDate(job.service_date, "12:00");
+    const endDate = metadata ? toDate(job.service_date, metadata.end) : new Date(startDate.getTime() + 60 * 60 * 1000);
+    const booking = bookingMap.get(job.booking_id);
 
     return {
-      ...job,
-      groupName: booking?.groupName ?? "Unassigned group",
+      id: job.id,
+      bookingId: job.booking_id,
+      date: job.service_date,
+      meal: job.meal,
+      timeSlot: job.meal,
+      dietaryCounts: job.counts_by_diet,
+      percolatedCoffee: job.percolated_coffee,
+      assignedCatererId: job.assigned_caterer_id,
+      assignedCaterer: job.assigned_caterer_name,
+      status: job.status,
+      menu: job.menu_labels,
+      groupName: booking ? getBookingDisplayName(booking) : "Unassigned group",
       startDate,
       endDate,
       startISOString: startDate.toISOString(),
       endISOString: endDate.toISOString(),
-      formattedDate: formatDateLabel(job.date),
-      timeRangeLabel: `${job.timeSlot} • ${formatTimeRange(startDate, endDate)}`,
-    };
+      formattedDate: formatDateLabel(job.service_date),
+      timeRangeLabel: `${job.meal} • ${formatTimeRange(startDate, endDate)}`,
+    } satisfies EnrichedMealJob;
   });
 
   return enriched.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
