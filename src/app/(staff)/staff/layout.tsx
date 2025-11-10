@@ -22,8 +22,9 @@ export default async function StaffLayout({
     redirect("/login");
   }
 
-  if (profile?.role !== "staff") {
-    redirect(getHomePathForRole(profile?.role ?? null, profile?.booking_reference ?? null));
+  const role = profile?.role ?? null;
+  if (!role || !["staff", "admin"].includes(role)) {
+    redirect(getHomePathForRole(role, profile?.booking_reference ?? null));
   }
 
   return (
