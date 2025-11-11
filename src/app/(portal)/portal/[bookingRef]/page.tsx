@@ -21,13 +21,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { enrichMealJobs } from "@/lib/catering";
+import { getBookingDisplayName } from "@/lib/queries/bookings";
 import {
   getBookingByReference,
-  getBookingDisplayName,
   getDietaryProfilesForBooking,
   getMealJobsForBooking,
   getRoomsForBooking,
-} from "@/lib/queries/bookings";
+} from "@/lib/queries/bookings.server";
 
 const steps = ["Deposit", "Catering", "Rooming", "Summary"];
 

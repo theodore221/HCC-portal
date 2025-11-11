@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { WeekScheduleCard } from "@/components/week-schedule-card";
 import { enrichMealJobs } from "@/lib/catering";
-import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings";
+import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings.server";
 
 export const metadata: Metadata = {
   title: "Schedule overview",

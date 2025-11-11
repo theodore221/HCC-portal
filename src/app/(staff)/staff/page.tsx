@@ -7,11 +7,8 @@ import {
 } from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { enrichMealJobs } from "@/lib/catering";
-import {
-  getAssignedMealJobs,
-  getBookingDisplayName,
-  getBookingsForAdmin,
-} from "@/lib/queries/bookings";
+import { getBookingDisplayName } from "@/lib/queries/bookings";
+import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings.server";
 
 export default async function StaffDashboard() {
   const [bookings, mealJobsRaw] = await Promise.all([

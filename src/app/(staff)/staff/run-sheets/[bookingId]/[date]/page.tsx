@@ -9,12 +9,12 @@ import {
 } from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { enrichMealJobs } from "@/lib/catering";
+import { getBookingDisplayName } from "@/lib/queries/bookings";
 import {
-  getBookingDisplayName,
   getBookingsForAdmin,
   getDietaryProfilesForBooking,
   getMealJobsForBooking,
-} from "@/lib/queries/bookings";
+} from "@/lib/queries/bookings.server";
 
 export default async function RunSheet({
   params,

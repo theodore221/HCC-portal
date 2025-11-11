@@ -11,10 +11,8 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { StatusChip } from "@/components/ui/status-chip";
 import { getCurrentProfile } from "@/lib/auth/server";
-import {
-  getBookingDisplayName,
-  getBookingsForAdmin,
-} from "@/lib/queries/bookings";
+import { getBookingDisplayName } from "@/lib/queries/bookings";
+import { getBookingsForAdmin } from "@/lib/queries/bookings.server";
 import { formatDateRange } from "@/lib/utils";
 
 export default async function HomePage() {

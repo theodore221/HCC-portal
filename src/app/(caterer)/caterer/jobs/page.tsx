@@ -5,7 +5,7 @@ import { enrichMealJobs } from "@/lib/catering";
 import {
   getAssignedMealJobs,
   getBookingsForAdmin,
-} from "@/lib/queries/bookings";
+} from "@/lib/queries/bookings.server";
 
 export const metadata: Metadata = {
   title: "Caterer jobs",

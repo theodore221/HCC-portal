@@ -1,4 +1,4 @@
-import { getBookingsForAdmin } from "@/lib/queries/bookings";
+import { getBookingsForAdmin } from "@/lib/queries/bookings.server";
 import AdminBookingsClient from "./client";
 
 export default async function AdminBookingsPage() {

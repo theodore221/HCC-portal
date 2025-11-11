@@ -1,5 +1,5 @@
 import { enrichMealJobs } from "@/lib/catering";
-import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings";
+import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings.server";
 import AdminCateringJobsClient from "./client";
 
 export default async function AdminCateringJobsPage() {

@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 
 import { enrichMealJobs } from "@/lib/catering";
+import { getBookingDisplayName } from "@/lib/queries/bookings";
 import {
   getBookingsForAdmin,
-  getBookingDisplayName,
   getMealJobsForBooking,
   getRoomsForBooking,
-} from "@/lib/queries/bookings";
+} from "@/lib/queries/bookings.server";
 import BookingDetailClient from "./client";
 
 export default async function BookingDetail({ params }: { params: { id: string } }) {

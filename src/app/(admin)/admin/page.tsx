@@ -8,11 +8,11 @@ import {
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatDateRange } from "@/lib/utils";
 import { enrichMealJobs } from "@/lib/catering";
+import { getBookingDisplayName } from "@/lib/queries/bookings";
 import {
-  getBookingsForAdmin,
-  getBookingDisplayName,
   getAssignedMealJobs,
-} from "@/lib/queries/bookings";
+  getBookingsForAdmin,
+} from "@/lib/queries/bookings.server";
 
 export default async function AdminDashboard() {
   const bookings = await getBookingsForAdmin();
