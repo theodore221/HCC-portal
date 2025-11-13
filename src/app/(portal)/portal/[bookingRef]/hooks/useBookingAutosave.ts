@@ -88,6 +88,7 @@ export function useBookingAutosave<T extends MetadataRecord = MetadataRecord>(
   const initialSerializedRef = useRef<string>(
     JSON.stringify(initialRef.current),
   );
+  const lastBookingIdRef = useRef<string>(bookingId);
   const [metadata, setMetadata] = useState<T>(initialRef.current);
   const [status, setStatus] = useState<AutosaveStatus>(() =>
     computeStatus("idle", null, null),
@@ -334,6 +335,41 @@ export function useBookingAutosave<T extends MetadataRecord = MetadataRecord>(
   useEffect(() => {
     latestMetadataRef.current = metadata;
   }, [metadata]);
+
+  useEffect(() => {
+    const nextInitial = (initialData ?? ({} as T)) as T;
+    const serializedInitial = JSON.stringify(nextInitial);
+
+    const hasSameBooking = lastBookingIdRef.current === bookingId;
+    const hasSameInitial = serializedInitial === initialSerializedRef.current;
+
+    if (hasSameBooking && hasSameInitial) {
+      return;
+    }
+
+    lastBookingIdRef.current = bookingId;
+    initialRef.current = nextInitial;
+    initialSerializedRef.current = serializedInitial;
+    latestMetadataRef.current = nextInitial;
+    latestSerializedRef.current = serializedInitial;
+    lastSavedSerializedRef.current = serializedInitial;
+    hasPendingChangesRef.current = false;
+    operationsInFlightRef.current = 0;
+    lastSavedAtRef.current = null;
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+
+    if (mountedRef.current) {
+      setMetadata(nextInitial);
+      setStatusSafely(() => computeStatus("idle", null, null));
+    }
+  }, [bookingId, initialData, setStatusSafely]);
 
   useEffect(() => {
     return () => {
