@@ -52,6 +52,7 @@ export type Database = {
           deposit_status: Database["public"]["Enums"]["payment_status"];
           deposit_received_at: string | null;
           deposit_reference: string | null;
+          portal_metadata: Json | null;
         };
         Insert: Partial<Database["public"]["Tables"]["bookings"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["bookings"]["Row"]>;
