@@ -11,12 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
-import {
-  enrichMealJobs,
-  formatDateLabel,
-  type EnrichedMealJob,
-} from "@/lib/catering";
-import { MOCK_BOOKINGS, MOCK_MEAL_JOBS } from "@/lib/mock-data";
+import { formatDateLabel, type EnrichedMealJob } from "@/lib/catering";
 
 interface MealJobsGridCardProps {
   title?: string;
@@ -30,18 +25,13 @@ interface MealJobsGridCardProps {
 export function MealJobsGridCard({
   title = "Upcoming week",
   description = "Meals assigned to you",
-  jobs,
+  jobs = [],
   emptyMessage = "No catering services scheduled.",
   onViewDetails,
   onMarkServed,
 }: MealJobsGridCardProps) {
-  const enrichedJobs = useMemo<EnrichedMealJob[]>(() => {
-    if (jobs) return jobs;
-    return enrichMealJobs(MOCK_MEAL_JOBS, MOCK_BOOKINGS);
-  }, [jobs]);
-
   const groupedByDate = useMemo(() => {
-    const grouped = enrichedJobs.reduce<Record<string, EnrichedMealJob[]>>(
+    const grouped = jobs.reduce<Record<string, EnrichedMealJob[]>>(
       (acc, job) => {
         if (!acc[job.date]) {
           acc[job.date] = [];
@@ -49,12 +39,12 @@ export function MealJobsGridCard({
         acc[job.date].push(job);
         return acc;
       },
-      {}
+      {},
     );
 
     const sortedDates = Object.keys(grouped).sort();
     return { grouped, sortedDates };
-  }, [enrichedJobs]);
+  }, [jobs]);
 
   return (
     <Card>
@@ -71,12 +61,12 @@ export function MealJobsGridCard({
         {groupedByDate.sortedDates.map((dateKey) => {
           const jobsForDate = groupedByDate.grouped[dateKey];
           const groupNames = Array.from(
-            new Set(jobsForDate.map((job) => job.groupName))
+            new Set(jobsForDate.map((job) => job.groupName)),
           ).join(", ");
           const totalMeals = jobsForDate.reduce((total, job) => {
             const perJobTotal = Object.values(job.dietaryCounts).reduce(
               (sum, value) => sum + value,
-              0
+              0,
             );
             return total + perJobTotal;
           }, 0);
@@ -96,7 +86,7 @@ export function MealJobsGridCard({
                   </p>
                 </div>
                 <div className="flex flex-col gap-1 text-xs text-olive-700 sm:items-end">
-                  <span className="font-medium">{groupNames}</span>
+                  <span className="font-medium">{groupNames || "Group TBC"}</span>
                   <span>
                     {totalMeals} {totalMeals === 1 ? "meal" : "meals"}
                   </span>

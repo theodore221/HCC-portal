@@ -1,9 +1,17 @@
 import { WeekScheduleCard } from "@/components/week-schedule-card";
+import { enrichMealJobs } from "@/lib/catering";
+import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings.server";
 
-export default function StaffSchedule() {
+export default async function StaffSchedule() {
+  const [bookings, mealJobsRaw] = await Promise.all([
+    getBookingsForAdmin(),
+    getAssignedMealJobs(),
+  ]);
+  const mealJobs = enrichMealJobs(mealJobsRaw, bookings);
+
   return (
     <div className="space-y-6">
-      <WeekScheduleCard />
+      <WeekScheduleCard bookings={bookings} mealJobs={mealJobs} />
     </div>
   );
 }

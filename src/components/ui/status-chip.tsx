@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { Badge } from "./badge";
-import { BookingStatus } from "@/lib/mock-data";
+import type { BookingStatus } from "@/lib/queries/bookings";
 
 const variantForStatus: Record<
   BookingStatus,

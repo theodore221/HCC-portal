@@ -5,14 +5,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MOCK_BOOKINGS, MOCK_MEAL_JOBS } from "@/lib/mock-data";
 import { StatusChip } from "@/components/ui/status-chip";
 import { formatDateRange } from "@/lib/utils";
+import { enrichMealJobs } from "@/lib/catering";
+import { getBookingDisplayName } from "@/lib/queries/bookings";
+import {
+  getAssignedMealJobs,
+  getBookingsForAdmin,
+} from "@/lib/queries/bookings.server";
 
-export default function AdminDashboard() {
-  const pending = MOCK_BOOKINGS.filter((b) => b.status === "Pending");
-  const depositPending = MOCK_BOOKINGS.filter((b) => b.status === "DepositPending");
-  const depositReceived = MOCK_BOOKINGS.filter((b) => b.status === "DepositReceived");
+export default async function AdminDashboard() {
+  const bookings = await getBookingsForAdmin();
+  const mealJobs = await getAssignedMealJobs();
+  const enrichedJobs = enrichMealJobs(mealJobs, bookings);
+
+  const pending = bookings.filter((b) => b.status === "Pending");
+  const depositPending = bookings.filter((b) => b.status === "DepositPending");
+  const depositReceived = bookings.filter((b) => b.status === "DepositReceived");
 
   return (
     <div className="space-y-6">
@@ -43,27 +52,30 @@ export default function AdminDashboard() {
             <CardTitle>Bookings awaiting action</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-4">
-              {pending.map((booking) => (
-                <li key={booking.id} className="rounded-xl border border-olive-100 bg-olive-50/70 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-olive-900">{booking.groupName}</p>
-                      <p className="text-xs text-olive-700">
-                        {formatDateRange(booking.arrival, booking.departure)}
-                      </p>
-                      <p className="mt-2 text-xs text-olive-700">
-                        Spaces requested: {booking.spaces.join(", ")}
-                      </p>
+            {pending.length ? (
+              <ul className="space-y-4">
+                {pending.map((booking) => (
+                  <li key={booking.id} className="rounded-xl border border-olive-100 bg-olive-50/70 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-olive-900">
+                          {getBookingDisplayName(booking)}
+                        </p>
+                        <p className="text-xs text-olive-700">
+                          {formatDateRange(booking.arrival_date, booking.departure_date)}
+                        </p>
+                        <p className="mt-2 text-xs text-olive-700">
+                          Spaces requested: {booking.spaces.join(", ") || "TBC"}
+                        </p>
+                      </div>
+                      <StatusChip status={booking.status} />
                     </div>
-                    <StatusChip status={booking.status} />
-                  </div>
-                </li>
-              ))}
-              {!pending.length && (
-                <p className="text-sm text-olive-700">No bookings waiting for triage.</p>
-              )}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-olive-700">No bookings waiting for triage.</p>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -75,24 +87,28 @@ export default function AdminDashboard() {
             <p className="text-sm font-semibold uppercase tracking-wide text-olive-600">
               Updated jobs
             </p>
-            <ul className="mt-3 space-y-3 text-sm text-olive-800">
-              {MOCK_MEAL_JOBS.slice(0, 4).map((job) => (
-                <li
-                  key={job.id}
-                  className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-soft"
-                >
-                  <div>
-                    <p className="font-semibold text-olive-900">{job.timeSlot}</p>
-                    <p className="text-xs text-olive-700">
-                      {job.date} · Booking {job.bookingId}
-                    </p>
-                  </div>
-                  <span className="text-xs font-medium text-olive-700">
-                    {Object.values(job.dietaryCounts).reduce((acc, value) => acc + value, 0)} meals
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {enrichedJobs.length ? (
+              <ul className="mt-3 space-y-3 text-sm text-olive-800">
+                {enrichedJobs.slice(0, 4).map((job) => (
+                  <li
+                    key={job.id}
+                    className="flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-soft"
+                  >
+                    <div>
+                      <p className="font-semibold text-olive-900">{job.timeSlot}</p>
+                      <p className="text-xs text-olive-700">
+                        {job.date} · Booking {job.bookingId}
+                      </p>
+                    </div>
+                    <span className="text-xs font-medium text-olive-700">
+                      {Object.values(job.dietaryCounts).reduce((acc, value) => acc + value, 0)} meals
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm text-olive-700">No catering updates yet.</p>
+            )}
           </CardContent>
         </Card>
       </div>

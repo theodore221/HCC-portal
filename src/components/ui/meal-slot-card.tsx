@@ -1,6 +1,6 @@
-import { MealJob } from "@/lib/mock-data";
+import type { EnrichedMealJob } from "@/lib/catering";
 
-export function MealSlotCard({ job }: { job: MealJob }) {
+export function MealSlotCard({ job }: { job: EnrichedMealJob }) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-olive-100 bg-white/70 p-4">
       <div className="flex items-center justify-between">
