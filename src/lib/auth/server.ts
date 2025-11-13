@@ -1,15 +1,17 @@
-import type { Session } from "@supabase/supabase-js";
+import type { Session, SupabaseClient } from "@supabase/supabase-js";
 
 import { sbServer } from "@/lib/supabase-server";
-import type { ProfileRecord } from "@/lib/database.types";
+import type { Database, ProfileRecord } from "@/lib/database.types";
 
 export interface CurrentProfileResult {
   session: Session | null;
   profile: ProfileRecord | null;
 }
 
-export async function getCurrentProfile(): Promise<CurrentProfileResult> {
-  const supabase = await sbServer();
+export async function getCurrentProfile(
+  supabaseClient?: SupabaseClient<Database>
+): Promise<CurrentProfileResult> {
+  const supabase = supabaseClient ?? (await sbServer());
 
   const [{
     data: { session },

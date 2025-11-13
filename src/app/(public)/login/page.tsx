@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getHomePathForRole } from "@/lib/auth/paths";
-import type { Database } from "@/lib/database.types";
+import type { ProfileRecord } from "@/lib/database.types";
 import { sbBrowser } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
@@ -25,39 +25,34 @@ export default function LoginPage() {
 
   const supabase = sbBrowser();
 
-  const navigateToWorkspace = useCallback(
-    async (userId: string) => {
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role, booking_reference, password_initialized_at")
-        .eq("id", userId)
-        .maybeSingle();
+  const navigateToWorkspace = useCallback(async () => {
+    try {
+      setMessage(null);
+      setError(null);
 
-      let resolvedProfile = profile;
-      let resolvedError = profileError;
+      const response = await fetch("/api/auth/profile", {
+        method: "GET",
+        credentials: "include",
+      });
 
-      if (!profileError && !profile) {
-        const { data: ensuredProfile, error: ensureProfileError } = await supabase.rpc<
-          Database["public"]["Functions"]["ensure_profile_for_current_user"]["Returns"]
-        >("ensure_profile_for_current_user");
+      const payload = (await response.json().catch(() => null)) as
+        | { data?: ProfileRecord; error?: string }
+        | null;
 
-        if (ensureProfileError) {
-          console.error("Failed to ensure profile", ensureProfileError);
-          resolvedError = ensureProfileError;
-        } else {
-          resolvedProfile = ensuredProfile;
-        }
+      if (!response.ok || !payload?.data) {
+        const message = payload?.error ?? "We couldn't load your profile. Please try again.";
+        console.error("Failed to load profile", response.status, message);
+        setError(message);
+        setLoading(null);
+        return;
       }
 
-      if (resolvedError) {
-        console.error("Failed to load profile", resolvedError);
-      }
+      const profile = payload.data;
+      const profileRole = profile.role ?? null;
+      const bookingReference = profile.booking_reference ?? null;
+      const passwordInitializedAt = profile.password_initialized_at ?? null;
 
-      const profileRole = resolvedProfile?.role ?? null;
-      const bookingReference = resolvedProfile?.booking_reference ?? null;
-      const passwordInitializedAt = resolvedProfile?.password_initialized_at ?? null;
-
-      if (!resolvedError && !passwordInitializedAt) {
+      if (!passwordInitializedAt) {
         setPassword("");
         setLoading(null);
         setError(null);
@@ -65,11 +60,10 @@ export default function LoginPage() {
         router.refresh();
         return;
       }
-      let destination =
-        redirectTo ??
-        getHomePathForRole(resolvedError ? null : profileRole, resolvedError ? null : bookingReference);
 
-      if (!redirectTo && (resolvedError || !profileRole)) {
+      let destination = redirectTo ?? getHomePathForRole(profileRole, bookingReference);
+
+      if (!redirectTo && !profileRole) {
         destination = "/portal";
       }
 
@@ -78,9 +72,12 @@ export default function LoginPage() {
       setError(null);
       router.replace(destination);
       router.refresh();
-    },
-    [redirectTo, router, supabase]
-  );
+    } catch (fetchError) {
+      console.error("Failed to load profile", fetchError);
+      setError("We couldn't load your profile. Please try again.");
+      setLoading(null);
+    }
+  }, [redirectTo, router]);
 
   useEffect(() => {
     void (async () => {
@@ -88,7 +85,7 @@ export default function LoginPage() {
       const userId = data.session?.user.id;
       if (userId) {
         setLoading((current) => current ?? "password");
-        void navigateToWorkspace(userId);
+        void navigateToWorkspace();
       }
     })();
   }, [navigateToWorkspace, supabase]);
@@ -110,7 +107,7 @@ export default function LoginPage() {
       return;
     }
 
-    await navigateToWorkspace(data.user.id);
+    await navigateToWorkspace();
   };
 
   const handleOtpSignIn = async () => {
