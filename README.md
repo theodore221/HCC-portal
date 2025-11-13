@@ -29,6 +29,10 @@ To lint the project:
 npm run lint
 ```
 
+## Environment variables
+
+Copy `.env.example` to `.env.local` and populate the Supabase and email settings before running privileged flows such as booking approval. The sample file includes keys for the Supabase anon + service role clients, the Resend API key, and the site URL used to generate customer magic links. For a schema and automation walkthrough, see the [Supabase setup guide](./docs/supabase-integration.md#1-supabase-schema--security).
+
 ## Shadcn UI setup
 
 To regenerate or extend the component library with the official Shadcn CLI, run the following commands from the project root:
