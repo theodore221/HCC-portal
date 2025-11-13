@@ -9,8 +9,6 @@ import type { Database } from "@/lib/database.types";
 import {
   deriveProfileAttributes,
   extractProfileSeed,
-  MissingBookingLinkError,
-  MissingCatererLinkError,
   normalizeProfile,
   type NormalizedProfile,
   ProfileServiceError,
