@@ -104,7 +104,11 @@ async function ensureCustomerUser(
     );
   }
 
-  const { data: userByEmail, error: lookupError } = await supabase.auth.admin.getUserByEmail(normalizedEmail);
+  const { data: userList, error: lookupError } = await supabase.auth.admin.listUsers({
+    email: normalizedEmail,
+    perPage: 1,
+  });
+
   if (lookupError) {
     throw new BookingServiceError("Unable to verify the customer account for this booking.", {
       status: 500,
@@ -112,8 +116,10 @@ async function ensureCustomerUser(
     });
   }
 
-  if (userByEmail.user) {
-    return { user: userByEmail.user, email: normalizedEmail };
+  const existingUser = userList?.users?.[0];
+
+  if (existingUser) {
+    return { user: existingUser, email: normalizedEmail };
   }
 
   const fullName = booking.customer_name?.trim() || booking.contact_name?.trim() || null;
