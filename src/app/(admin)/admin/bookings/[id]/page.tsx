@@ -9,9 +9,17 @@ import {
 } from "@/lib/queries/bookings.server";
 import BookingDetailClient from "./client";
 
-export default async function BookingDetail({ params }: { params: { id: string } }) {
+type Awaitable<T> = T | Promise<T>;
+
+export default async function BookingDetail({
+  params,
+}: {
+  params: Awaitable<{ id: string }>;
+}) {
+  const { id } = await Promise.resolve(params);
+
   const bookings = await getBookingsForAdmin();
-  const booking = bookings.find((b) => b.id === params.id);
+  const booking = bookings.find((b) => b.id === id);
   if (!booking) return notFound();
 
   const mealJobsRaw = await getMealJobsForBooking(booking.id);
