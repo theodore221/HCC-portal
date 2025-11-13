@@ -2,18 +2,29 @@
 @import "./fullcalendar.css";
 
 :root {
-  --background: #f7f8f5;
-  --foreground: #1c1f17;
-  --olive-50: #f4f6ef;
-  --olive-100: #e3e9d8;
-  --olive-200: #cbd7b5;
-  --olive-300: #afc190;
-  --olive-400: #94ab6c;
-  --olive-500: #7a9452;
-  --olive-600: #62793f;
-  --olive-700: #4b5d2d;
-  --olive-800: #37431f;
-  --olive-900: #242b13;
+  --background: #f8f9fa;
+  --foreground: #1a1a1a;
+  --primary: #2f5233;
+  --primary-light: #4a7c4e;
+  --secondary: #e8f5e9;
+  --accent: #ff6b35;
+  --neutral: #f8f9fa;
+  --text: #1a1a1a;
+  --text-light: #6b7280;
+  --border: #e5e7eb;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --olive-50: #e8f5e9;
+  --olive-100: #d7eadc;
+  --olive-200: #bbd9c4;
+  --olive-300: #9cc9aa;
+  --olive-400: #7cb990;
+  --olive-500: #5daa76;
+  --olive-600: #2f5233;
+  --olive-700: #254026;
+  --olive-800: #1a2e1a;
+  --olive-900: #101f11;
 }
 
 @theme inline {
@@ -24,8 +35,8 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--neutral);
+  color: var(--text);
   font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
@@ -54,11 +65,19 @@ a {
 .text-olive-800 { color: var(--olive-800); }
 .text-olive-900 { color: var(--olive-900); }
 
+.bg-accent { background-color: var(--accent); }
+.text-accent { color: var(--accent); }
+.border-accent { border-color: var(--accent); }
+.bg-neutral { background-color: var(--neutral); }
+.text-neutral { color: var(--neutral); }
+.border-neutral { border-color: var(--neutral); }
+.text-muted { color: var(--text-light); }
+
 .border-olive-200 { border-color: var(--olive-200); }
 .border-olive-300 { border-color: var(--olive-300); }
 
 .shadow-soft {
-  box-shadow: 0 10px 30px rgba(36, 43, 19, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 main {

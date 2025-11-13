@@ -44,7 +44,7 @@ export function UserMenu({ email, name }: UserMenuProps) {
         <Button
           variant="outline"
           size="icon"
-          className="rounded-full border-olive-200 text-olive-700 hover:bg-olive-100"
+          className="rounded-xl border-border text-text-light transition-transform transition-colors duration-200 hover:scale-[1.02] hover:bg-neutral"
           aria-label="Open user menu"
         >
           {signingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserCircle className="h-5 w-5" />}
@@ -53,8 +53,8 @@ export function UserMenu({ email, name }: UserMenuProps) {
       <DropdownMenuContent align="end" className="min-w-[14rem]">
         <DropdownMenuLabel>
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-olive-900">{name ?? email}</p>
-            <p className="text-xs text-olive-600">{email}</p>
+            <p className="text-sm font-semibold text-text">{name ?? email}</p>
+            <p className="text-xs text-text-light">{email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

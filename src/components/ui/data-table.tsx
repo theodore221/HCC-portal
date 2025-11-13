@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   emptyMessage?: React.ReactNode
   renderToolbar?: (table: TanstackTable<TData>) => React.ReactNode
+  zebra?: boolean
 }
 
 export function DataTable<TData, TValue>({
@@ -39,6 +40,7 @@ export function DataTable<TData, TValue>({
   data,
   emptyMessage,
   renderToolbar,
+  zebra = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -77,16 +79,16 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       {renderToolbar?.(table)}
-      <div className="overflow-hidden rounded-2xl border border-olive-100">
+      <div className="overflow-hidden rounded-2xl border border-border/70">
         <Table>
-          <TableHeader className="bg-olive-50">
+          <TableHeader className="bg-neutral">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="border-b border-olive-100">
+              <TableRow key={headerGroup.id} className="border-b border-border/60">
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     className={cn(
-                      "text-left align-middle text-xs font-semibold uppercase tracking-wide text-olive-500",
+                      "text-left align-middle text-xs font-semibold uppercase tracking-wider text-text-light",
                       header.column.columnDef.meta as string | undefined,
                     )}
                   >
@@ -104,10 +106,14 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-olive-100 last:border-b-0"
+                  className={cn(
+                    "border-b border-border/60 transition-colors duration-200 hover:bg-gray-50",
+                    zebra && "odd:bg-neutral/60",
+                    "last:border-b-0 cursor-pointer"
+                  )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="align-middle text-sm text-olive-900">
+                    <TableCell key={cell.id} className="align-middle text-sm text-text">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -115,7 +121,7 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-sm text-olive-600">
+                <TableCell colSpan={columns.length} className="h-24 text-center text-sm text-text-light">
                   {emptyMessage ?? "No results."}
                 </TableCell>
               </TableRow>
@@ -123,7 +129,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-olive-600">
+      <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-text-light">
         <div>
           {totalFiltered > 0
             ? `Showing ${pageStart + 1}-${pageStart + rowCount} of ${totalFiltered}`
@@ -133,7 +139,7 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            className="text-olive-700"
+            className="rounded-full border-border/70 text-text-light hover:bg-neutral"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
@@ -142,7 +148,7 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            className="text-olive-700"
+            className="rounded-full border-border/70 text-text-light hover:bg-neutral"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >
