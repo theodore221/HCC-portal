@@ -236,6 +236,39 @@ async function upsertCustomerProfile(
     existingProfile?.booking_reference
   );
 
+  if (safeBookingReference) {
+    const { data: conflictingProfiles, error: conflictingLookupError } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("booking_reference", safeBookingReference)
+      .neq("id", userId);
+
+    if (conflictingLookupError) {
+      throw new BookingServiceError("Unable to verify existing profiles for this booking.", {
+        status: 500,
+        cause: conflictingLookupError,
+      });
+    }
+
+    if (conflictingProfiles && conflictingProfiles.length > 0) {
+      const { error: conflictingDeleteError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("booking_reference", safeBookingReference)
+        .neq("id", userId);
+
+      if (conflictingDeleteError) {
+        throw new BookingServiceError(
+          "Unable to refresh existing customer profiles for this booking.",
+          {
+            status: 500,
+            cause: conflictingDeleteError,
+          }
+        );
+      }
+    }
+  }
+
   const payload: ProfileRecord = {
     id: userId,
     email,
