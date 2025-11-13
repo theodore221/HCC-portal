@@ -143,7 +143,8 @@ async function upsertCustomerProfile(
   supabase: ServiceSupabaseClient,
   booking: Database["public"]["Tables"]["bookings"]["Row"],
   userId: string,
-  email: string
+  email: string,
+  bookingReference: string
 ): Promise<ProfileRecord> {
   const { data: existingProfile, error: existingProfileError } = await supabase
     .from("profiles")
@@ -165,7 +166,7 @@ async function upsertCustomerProfile(
     email,
     full_name: fullName,
     role: "customer",
-    booking_reference: booking.reference,
+    booking_reference: bookingReference,
     guest_token: existingProfile?.guest_token ?? null,
     caterer_id: existingProfile?.caterer_id ?? null,
     created_at: existingProfile?.created_at ?? new Date().toISOString(),
@@ -282,19 +283,15 @@ export async function approveBookingAndInviteCustomer(
     throw new BookingServiceError("The requested booking could not be found.", { status: 404 });
   }
 
-  if (!booking.reference) {
-    throw new BookingServiceError("This booking does not have a reference assigned yet.", {
-      status: 400,
-    });
-  }
-
   const { user, email } = await ensureCustomerUser(supabase, booking);
 
-  const profile = await upsertCustomerProfile(supabase, booking, user.id, email);
+  const bookingReference = booking.reference ?? booking.id;
+
+  const profile = await upsertCustomerProfile(supabase, booking, user.id, email, bookingReference);
 
   const updatedBooking = await finalizeBookingApproval(supabase, booking, user.id);
 
-  const magicLink = await generatePortalMagicLink(supabase, email, booking.reference);
+  const magicLink = await generatePortalMagicLink(supabase, email, bookingReference);
 
   return {
     booking: updatedBooking,

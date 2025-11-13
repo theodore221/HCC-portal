@@ -58,7 +58,7 @@ export const POST = requirePortalSession(async (_request, { params }, auth) => {
       }),
     });
 
-    return jsonSuccess({ reference: approval.booking.reference, email: toAddress });
+    return jsonSuccess({ reference, email: toAddress });
   } catch (error) {
     if (error instanceof BookingServiceError) {
       return jsonError(error.message, { status: error.status });
