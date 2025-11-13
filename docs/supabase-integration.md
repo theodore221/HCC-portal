@@ -1,18 +1,26 @@
 # Supabase + Google Apps Script Integration
 
-The portal now fronts Supabase through Next.js App Router API routes. Server handlers orchestrate booking edits, drag-and-drop room planning, and autosave flows before delegating to Supabase RPCs. Those handlers call a new `allocate_room_blocks` routine that reconciles front-end room changes with availability, and they continue to invoke existing ingest routines where appropriate. Inside the UI, authenticated users rely on the RLS-aware browser client established by `src/lib/supabase-browser.ts`, so reads and optimistic updates respect the policies defined in this document while the server routes perform privileged orchestration when necessary.【F:src/lib/supabase-browser.ts†L1-L9】
+The portal now treats Supabase as a thin persistence layer while pushing booking logic into the Next.js App Router. Server actions and API routes handle approvals, drag-and-drop room planning, autosave, and other workflows before they touch the database. Those handlers own validation, transactional fan-out, and notifications, and only call into Postgres for straightforward reads or to run the lone cross-system RPC that still matters for automation. Inside the UI, authenticated users rely on the RLS-aware browser client established by `src/lib/supabase-browser.ts`, so reads and optimistic updates respect the policies defined in this document while the server routes perform privileged orchestration when necessary.【F:src/lib/supabase-browser.ts†L1-L9】
 
-Supabase still mirrors the TypeScript models that previously powered the mock data, but operational workflows now land in the database via the API route workflow: client events trigger `/api` handlers, handlers call SQL functions (`allocate_room_blocks`, `upsert_booking_snapshot`, etc.), and responses stream back to the React components. This keeps Realtime subscriptions, optimistic UI state, and Supabase Row Level Security policies in sync with the authoritative data model.
+Supabase continues to mirror the TypeScript models that previously powered the mock data, but the app-first approach means portal interactions land in the database through the App Router tier. Client events trigger `/api` handlers or server actions, those handlers coordinate business rules in TypeScript, and only then do they execute SQL helpers or a limited set of RPCs (notably `upsert_booking_snapshot` for Google Apps Script ingest). This keeps Realtime subscriptions, optimistic UI state, and Supabase Row Level Security policies in sync with the authoritative data model while leaving business logic in the Next.js layer.
 
 ## API workflow overview
 
-### Next.js API routes
-- Profile bootstrap and password confirmation already run through `/api/auth/profile`, which exercises service-layer helpers under `src/server/services` to fetch the logged-in user and issue writes with elevated permissions when required.【F:src/app/(public)/login/page.tsx†L28-L54】【F:src/app/api/auth/profile/route.ts†L1-L38】【F:src/server/services/profiles.ts†L1-L124】
-- Upcoming room, catering, and booking automation routes should follow the same pattern: authenticate with `createServerActionClient`, validate inputs in `src/app/api/_lib`, and call Supabase SQL helpers or RPCs.
+### Fat-app orchestration in Next.js
+- Profile bootstrap and password confirmation already run through `/api/auth/profile`, which exercises service-layer helpers under `src/server/services` to fetch the logged-in user and issue writes with elevated permissions when required.【F:src/app/(public)/login/page.tsx†L28-L54】【F:src/app/api/auth/profile/route.ts†L1-L38】【F:src/server/services/profiles.ts†L1-L194】
+- Booking edits, drag-and-drop room allocation, autosave, and approvals should all reuse the same pattern: authenticate with `createServerActionClient`, validate inputs in `src/app/api/_lib`, coordinate domain logic in TypeScript, and then perform targeted `insert`/`update` calls with Supabase clients.
+- Server actions own transactional cross-entity workflows (e.g., updating bookings and related assignments) so that only sanitized payloads reach the database.
 
-### Room allocation RPC
-- The `allocate_room_blocks` RPC is the canonical way to write room assignments. It receives drag-and-drop payloads from the new room planning API route, checks inventory conflicts, and updates `room_assignments` and `space_reservations` transactionally.
-- Because the RPC owns the business logic, the front end only sends deltas; the database enforces invariants (bed counts, extra bed fees, etc.).
+### When to call Postgres directly
+- `upsert_booking_snapshot` remains the primary RPC and exists solely for Google Apps Script ingest, where the Apps Script runs with service-role credentials and needs an atomic insert/update bridge.【F:infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql†L1-L94】
+- Supabase tables stay the source of truth, but the API routes issue direct row operations instead of new RPCs so the TypeScript layer stays in control of branching logic, validation, and follow-up automation.
+- Only widely shared automation points should prompt new RPCs in the future (for example, an `approve_booking` or `cancel_booking` routine that both the portal and external schedulers call).
+
+### API-first flow
+1. The client issues a request to a Next.js API route or server action (for example, updating a booking, confirming catering, or dragging a room allocation block).
+2. The handler authenticates, loads any supporting records, and runs domain logic in TypeScript, leveraging service helpers such as the profile provisioning utilities when privileged access is required.【F:src/server/services/profiles.ts†L32-L194】
+3. Once the orchestration is complete, the handler persists changes via Supabase table operations or, in the automation case, by invoking `upsert_booking_snapshot`.
+4. Supabase emits Realtime updates that flow back to the RLS-aware clients, keeping UI state synchronized without exposing privileged credentials.
 
 ### RLS-backed clients in the portal
 - Server components and actions instantiate Supabase clients via `@supabase/auth-helpers-nextjs`, using the session cookie supplied by Supabase to enforce RLS for the current user.
@@ -21,8 +29,21 @@ Supabase still mirrors the TypeScript models that previously powered the mock da
 ## Legacy RPCs and automation boundaries
 
 - `upsert_booking_snapshot` remains in place for Google Apps Script ingest. The automation bridge continues to run with the Supabase service-role key so that incoming form submissions can bypass RLS while seeding bookings.【F:infra/supabase/migration/002_seed_spaces_and_snapshot_update.sql†L1-L94】
-- Any new automation (cron jobs, queue workers, the GAS integration) should be the only consumers of the service-role credentials. Store the key in server-only configuration (`SUPABASE_SERVICE_ROLE_KEY`) and never expose it to browser bundles or RLS-backed clients.【F:src/server/services/profiles.ts†L40-L83】
+- Any new automation (cron jobs, queue workers, the GAS integration) should be the only consumers of the service-role credentials. Store the key in server-only configuration (`SUPABASE_SERVICE_ROLE_KEY`) and never expose it to browser bundles or RLS-backed clients.【F:src/server/services/profiles.ts†L39-L83】
 - Other legacy RPCs used by the Apps Script workflow (e.g., reporting helpers) may stay online but should be invoked exclusively from backend processes. Portal reads and writes should flow through the API routes described above so that user interactions remain RLS-safe.
+
+## Approval magic-link route
+
+The approval workflow relies on a Next.js route that issues a one-time magic link whenever staff approve a booking. The route:
+
+- Requires the following environment variables to be configured wherever the handler runs:
+  - `SUPABASE_SERVICE_ROLE_KEY` so the service helper can provision or update customer profiles with privileged access.【F:src/server/services/profiles.ts†L32-L194】
+  - `RESEND_API_KEY` to send the approval email through Resend.
+  - `PUBLIC_SITE_URL` so the generated link points to the deployed portal domain.
+- Calls into the profile service helper to ensure the customer has a Supabase profile connected to their booking, creating one if necessary via the service-role client.
+- Generates a signed token and emails the customer a magic link that routes them back into the portal with the correct booking context.
+
+External systems that need to trigger the same approval flow (for example, a scheduling backend or CRM) should import the TypeScript handler rather than reimplementing the logic. The function lives in the Next.js API route module and can be invoked from other server-only modules as long as they supply the same environment variables and pass in the booking metadata expected by the handler.
 
 ## Environment configuration for API routes
 
@@ -43,27 +64,6 @@ Ensure Vercel/Next.js environment groups include these values before deploying n
 3. **Ship Next.js API routes.** Deploy the updated `/api` handlers that call the new RPCs. Verify they fall back gracefully if the RPC is unavailable.
 4. **Enable client features.** Once the server handlers are live, enable the drag-and-drop and autosave UI toggles so browser sessions begin calling the new routes.
 5. **Monitor Realtime and logs.** Confirm that `room_assignments`, `space_reservations`, and booking updates trigger the expected subscriptions before migrating additional workloads.
-
-## Interaction flows
-
-```mermaid
-sequenceDiagram
-    participant UI as Portal UI (drag & drop)
-    participant API as Next.js API Route
-    participant RPC as Supabase RPC (`allocate_room_blocks`)
-    participant DB as Supabase Tables
-    participant GAS as Google Apps Script
-
-    UI->>API: PUT /api/bookings/{id}/rooms (drag action payload)
-    API->>RPC: Call allocate_room_blocks(payload)
-    RPC->>DB: Upsert room_assignments + space_reservations
-    DB-->>UI: Realtime broadcast (room + availability updates)
-    UI->>API: PATCH /api/bookings/{id} (autosave form)
-    API->>DB: Supabase client update with RLS session
-    GAS->>API: POST /api/bookings/snapshots (legacy ingest)
-    API->>DB: Call upsert_booking_snapshot(snapshot)
-    DB-->>GAS: Booking UUID response
-```
 
 ## 1. Supabase schema & security
 
