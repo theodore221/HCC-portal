@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -214,8 +215,21 @@ export default function BookingDetailClient({
         <div className="space-y-2">
           <div className="flex flex-wrap gap-3">
             <Button variant="outline">Mark as In Triage</Button>
-            <Button onClick={handleApproveBooking} disabled={isApproving}>
-              {isApproving ? "Approving…" : "Approve booking"}
+            <Button
+              type="button"
+              onClick={handleApproveBooking}
+              disabled={isApproving}
+              aria-busy={isApproving}
+              className="gap-2"
+            >
+              {isApproving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  Approving…
+                </>
+              ) : (
+                "Approve booking"
+              )}
             </Button>
             <Button variant="ghost">Record deposit</Button>
           </div>

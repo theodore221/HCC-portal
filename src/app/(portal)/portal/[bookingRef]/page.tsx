@@ -31,12 +31,16 @@ import {
 
 const steps = ["Deposit", "Catering", "Rooming", "Summary"];
 
+type Awaitable<T> = T | Promise<T>;
+
 export default async function CustomerPortal({
   params,
 }: {
-  params: { bookingRef: string };
+  params: Awaitable<{ bookingRef: string }>;
 }) {
-  const booking = await getBookingByReference(params.bookingRef);
+  const { bookingRef } = await Promise.resolve(params);
+
+  const booking = await getBookingByReference(bookingRef);
   if (!booking) return notFound();
 
   const [mealJobsRaw, rooms, dietaryProfiles] = await Promise.all([

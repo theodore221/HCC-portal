@@ -16,13 +16,17 @@ import {
   getMealJobsForBooking,
 } from "@/lib/queries/bookings.server";
 
+type Awaitable<T> = T | Promise<T>;
+
 export default async function RunSheet({
   params,
 }: {
-  params: { bookingId: string; date: string };
+  params: Awaitable<{ bookingId: string; date: string }>;
 }) {
+  const { bookingId, date } = await Promise.resolve(params);
+
   const bookings = await getBookingsForAdmin();
-  const booking = bookings.find((b) => b.id === params.bookingId);
+  const booking = bookings.find((b) => b.id === bookingId);
   if (!booking) return notFound();
 
   const [mealJobsRaw, dietaryProfiles] = await Promise.all([
@@ -30,7 +34,7 @@ export default async function RunSheet({
     getDietaryProfilesForBooking(booking.id),
   ]);
   const mealJobs = enrichMealJobs(mealJobsRaw, [booking]).filter(
-    (job) => job.date === params.date,
+    (job) => job.date === date,
   );
 
   const fatalAllergies = dietaryProfiles.filter((profile) => profile.severity === "Fatal");
@@ -40,7 +44,7 @@ export default async function RunSheet({
       <Card className="print:shadow-none">
         <CardHeader>
           <CardTitle>{`Run sheet · ${getBookingDisplayName(booking)}`}</CardTitle>
-          <CardDescription>{`${params.date} · ${booking.headcount} guests`}</CardDescription>
+          <CardDescription>{`${date} · ${booking.headcount} guests`}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <section className="space-y-3">

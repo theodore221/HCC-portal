@@ -64,7 +64,8 @@ function resolveProfileName(
 
 async function ensureCustomerUser(
   supabase: ServiceSupabaseClient,
-  booking: Database["public"]["Tables"]["bookings"]["Row"]
+  booking: Database["public"]["Tables"]["bookings"]["Row"],
+  bookingReference: string
 ) {
   const normalizedEmail = normalizeEmail(booking.customer_email);
 
@@ -124,7 +125,7 @@ async function ensureCustomerUser(
     app_metadata: {
       profile_seed: {
         role: "customer",
-        booking_reference: booking.reference,
+        booking_reference: bookingReference,
       },
     },
   });
@@ -283,9 +284,9 @@ export async function approveBookingAndInviteCustomer(
     throw new BookingServiceError("The requested booking could not be found.", { status: 404 });
   }
 
-  const { user, email } = await ensureCustomerUser(supabase, booking);
-
   const bookingReference = booking.reference ?? booking.id;
+
+  const { user, email } = await ensureCustomerUser(supabase, booking, bookingReference);
 
   const profile = await upsertCustomerProfile(supabase, booking, user.id, email, bookingReference);
 
