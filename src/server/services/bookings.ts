@@ -3,18 +3,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database, ProfileRecord } from "@/lib/database.types";
+import { BookingServiceError } from "./booking-service-error";
 
-export class BookingServiceError extends Error {
-  public readonly status: number;
-
-  constructor(message: string, options?: { status?: number; cause?: unknown }) {
-    super(message, { cause: options?.cause });
-    this.name = "BookingServiceError";
-    this.status = options?.status ?? 500;
-  }
-}
-
-export interface BookingApprovalResult {
+interface BookingApprovalResult {
   booking: Database["public"]["Tables"]["bookings"]["Row"];
   profile: ProfileRecord;
   magicLink: string;

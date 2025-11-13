@@ -2,10 +2,8 @@ import { Resend } from "resend";
 
 import { jsonError, jsonSuccess } from "@/server/api";
 import { requirePortalSession } from "@/server/auth/require-portal-session";
-import {
-  approveBookingAndInviteCustomer,
-  BookingServiceError,
-} from "@/server/services/bookings";
+import { approveBookingAndInviteCustomer } from "@/server/services/bookings";
+import { BookingServiceError } from "@/server/services/booking-service-error";
 import {
   BookingApprovedEmail,
   bookingApprovedPlainText,
