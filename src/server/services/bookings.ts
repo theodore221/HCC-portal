@@ -91,32 +91,39 @@ async function ensureCustomerUser(
 ) {
   const normalizedEmail = normalizeEmail(booking.customer_email);
 
-  if (booking.customer_user_id) {
-    const { data, error } = await supabase.auth.admin.getUserById(booking.customer_user_id);
+  const reconcileEmailForUser = async (userId: string) => {
+    const { data, error } = await supabase.auth.admin.getUserById(userId);
 
-    if (!error && data.user) {
-      const currentEmail = data.user.email ? normalizeEmail(data.user.email) : null;
+    if (error || !data.user) {
+      return null;
+    }
 
-      if (currentEmail && currentEmail !== normalizedEmail) {
-        const { data: updatedUser, error: updateError } = await supabase.auth.admin.updateUserById(
-          booking.customer_user_id,
-          {
-            email: normalizedEmail,
-            email_confirm: true,
-          }
-        );
+    const currentEmail = data.user.email ? normalizeEmail(data.user.email) : null;
 
-        if (updateError || !updatedUser.user) {
-          throw new BookingServiceError("Unable to update the customer's account email.", {
-            status: 500,
-            cause: updateError,
-          });
-        }
+    if (!currentEmail || currentEmail !== normalizedEmail) {
+      const { data: updatedUser, error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+        email: normalizedEmail,
+        email_confirm: true,
+      });
 
-        return { user: updatedUser.user, email: normalizedEmail };
+      if (updateError || !updatedUser.user) {
+        throw new BookingServiceError("Unable to update the customer's account email.", {
+          status: 500,
+          cause: updateError,
+        });
       }
 
-      return { user: data.user, email: currentEmail ?? normalizedEmail };
+      return { user: updatedUser.user, email: normalizedEmail };
+    }
+
+    return { user: data.user, email: currentEmail ?? normalizedEmail };
+  };
+
+  if (booking.customer_user_id) {
+    const reconciled = await reconcileEmailForUser(booking.customer_user_id);
+
+    if (reconciled) {
+      return reconciled;
     }
 
     console.warn(
@@ -124,6 +131,39 @@ async function ensureCustomerUser(
       booking.id,
       booking.customer_user_id
     );
+  }
+
+  const { data: profileForBooking, error: profileLookupError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("booking_reference", bookingReference)
+    .maybeSingle();
+
+  if (profileLookupError) {
+    throw new BookingServiceError("Unable to verify the customer's profile for this booking.", {
+      status: 500,
+      cause: profileLookupError,
+    });
+  }
+
+  if (profileForBooking?.id) {
+    const reconciled = await reconcileEmailForUser(profileForBooking.id);
+
+    if (reconciled) {
+      return reconciled;
+    }
+
+    const { error: orphanCleanupError } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", profileForBooking.id);
+
+    if (orphanCleanupError) {
+      throw new BookingServiceError("Unable to refresh the customer's profile link for this booking.", {
+        status: 500,
+        cause: orphanCleanupError,
+      });
+    }
   }
 
   const { data: userList, error: lookupError } = await supabase.auth.admin.listUsers({
