@@ -81,7 +81,28 @@ async function ensureCustomerUser(
     const { data, error } = await supabase.auth.admin.getUserById(booking.customer_user_id);
 
     if (!error && data.user) {
-      return { user: data.user, email: normalizedEmail };
+      const currentEmail = data.user.email ? normalizeEmail(data.user.email) : null;
+
+      if (currentEmail && currentEmail !== normalizedEmail) {
+        const { data: updatedUser, error: updateError } = await supabase.auth.admin.updateUserById(
+          booking.customer_user_id,
+          {
+            email: normalizedEmail,
+            email_confirm: true,
+          }
+        );
+
+        if (updateError || !updatedUser.user) {
+          throw new BookingServiceError("Unable to update the customer's account email.", {
+            status: 500,
+            cause: updateError,
+          });
+        }
+
+        return { user: updatedUser.user, email: normalizedEmail };
+      }
+
+      return { user: data.user, email: currentEmail ?? normalizedEmail };
     }
 
     console.warn(
@@ -176,26 +197,40 @@ async function upsertCustomerProfile(
   return upsertedProfile;
 }
 
-async function ensureBookingLink(
+async function finalizeBookingApproval(
   supabase: ServiceSupabaseClient,
   booking: Database["public"]["Tables"]["bookings"]["Row"],
   userId: string
-) {
-  if (booking.customer_user_id === userId) {
-    return;
+): Promise<Database["public"]["Tables"]["bookings"]["Row"]> {
+  const updates: Partial<Database["public"]["Tables"]["bookings"]["Row"]> = {};
+
+  if (booking.customer_user_id !== userId) {
+    updates.customer_user_id = userId;
   }
 
-  const { error } = await supabase
-    .from("bookings")
-    .update({ customer_user_id: userId })
-    .eq("id", booking.id);
+  if (booking.status !== "Approved") {
+    updates.status = "Approved";
+  }
 
-  if (error) {
-    throw new BookingServiceError("Unable to link the booking to the customer account.", {
+  if (Object.keys(updates).length === 0) {
+    return { ...booking, customer_user_id: userId };
+  }
+
+  const { data, error } = await supabase
+    .from("bookings")
+    .update(updates)
+    .eq("id", booking.id)
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    throw new BookingServiceError("Unable to finalize the booking approval state.", {
       status: 500,
       cause: error,
     });
   }
+
+  return data;
 }
 
 async function generatePortalMagicLink(
@@ -266,12 +301,12 @@ export async function approveBookingAndInviteCustomer(
 
   const profile = await upsertCustomerProfile(supabase, booking, user.id, email);
 
-  await ensureBookingLink(supabase, booking, user.id);
+  const updatedBooking = await finalizeBookingApproval(supabase, booking, user.id);
 
   const magicLink = await generatePortalMagicLink(supabase, email, booking.reference);
 
   return {
-    booking: { ...booking, customer_user_id: user.id },
+    booking: updatedBooking,
     profile,
     magicLink,
     userEmail: email,
