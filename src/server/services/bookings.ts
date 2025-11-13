@@ -5,6 +5,18 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database, ProfileRecord } from "@/lib/database.types";
 import { BookingServiceError } from "./booking-service-error";
 
+function pickFirstNonEmpty(...values: Array<string | null | undefined>): string | null {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return null;
+}
+
 interface BookingApprovalResult {
   booking: Database["public"]["Tables"]["bookings"]["Row"];
   profile: ProfileRecord;
@@ -35,13 +47,15 @@ function createServiceRoleClient(): ServiceSupabaseClient {
 }
 
 function normalizeEmail(email: string | null): string {
-  if (!email) {
+  const normalized = pickFirstNonEmpty(email)?.toLowerCase();
+
+  if (!normalized) {
     throw new BookingServiceError("A valid customer email address is required for approval.", {
       status: 400,
     });
   }
 
-  return email.trim().toLowerCase();
+  return normalized;
 }
 
 function resolveProfileName(
@@ -54,12 +68,20 @@ function resolveProfileName(
   userEmail: string
 ): string | null {
   return (
-    booking.customer_name?.trim() ||
-    booking.contact_name?.trim() ||
-    existingProfile?.full_name?.trim() ||
-    userEmail.split("@")[0] ||
-    null
+    pickFirstNonEmpty(
+      booking.customer_name,
+      booking.contact_name,
+      existingProfile?.full_name,
+      userEmail.split("@")[0]
+    ) ?? null
   );
+}
+
+function resolveBookingReference(
+  booking: Database["public"]["Tables"]["bookings"]["Row"],
+  ...fallbacks: Array<string | null | undefined>
+): string {
+  return pickFirstNonEmpty(...fallbacks, booking.reference, booking.id) ?? booking.id;
 }
 
 async function ensureCustomerUser(
@@ -122,7 +144,7 @@ async function ensureCustomerUser(
     return { user: existingUser, email: normalizedEmail };
   }
 
-  const fullName = booking.customer_name?.trim() || booking.contact_name?.trim() || null;
+  const fullName = pickFirstNonEmpty(booking.customer_name, booking.contact_name);
 
   const { data: createdUser, error: createError } = await supabase.auth.admin.createUser({
     email: normalizedEmail,
@@ -168,12 +190,18 @@ async function upsertCustomerProfile(
 
   const fullName = resolveProfileName(booking, existingProfile ?? null, email);
 
+  const safeBookingReference = resolveBookingReference(
+    booking,
+    bookingReference,
+    existingProfile?.booking_reference
+  );
+
   const payload: ProfileRecord = {
     id: userId,
     email,
     full_name: fullName,
     role: "customer",
-    booking_reference: bookingReference,
+    booking_reference: safeBookingReference,
     guest_token: existingProfile?.guest_token ?? null,
     caterer_id: existingProfile?.caterer_id ?? null,
     created_at: existingProfile?.created_at ?? new Date().toISOString(),
@@ -290,7 +318,7 @@ export async function approveBookingAndInviteCustomer(
     throw new BookingServiceError("The requested booking could not be found.", { status: 404 });
   }
 
-  const bookingReference = booking.reference ?? booking.id;
+  const bookingReference = resolveBookingReference(booking);
 
   const { user, email } = await ensureCustomerUser(supabase, booking, bookingReference);
 

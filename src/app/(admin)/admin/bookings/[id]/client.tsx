@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,6 +47,37 @@ export default function BookingDetailClient({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const bookingReferenceLabel =
+    typeof booking.reference === "string" && booking.reference.trim().length > 0
+      ? booking.reference.trim()
+      : booking.id;
+  const arrivalDateLabel = formatDisplayDate(booking.arrival_date);
+  const departureDateLabel = formatDisplayDate(booking.departure_date);
+  const customerNameValue = booking.customer_name?.trim() || "—";
+  const contactNameValue = booking.contact_name?.trim() || "—";
+  const customerEmailValue = booking.customer_email
+    ? (
+        <a
+          href={`mailto:${booking.customer_email}`}
+          className="text-olive-900 underline-offset-2 hover:underline"
+        >
+          {booking.customer_email}
+        </a>
+      )
+    : "—";
+  const contactPhoneValue = booking.contact_phone
+    ? (
+        <a
+          href={`tel:${booking.contact_phone}`}
+          className="text-olive-900 underline-offset-2 hover:underline"
+        >
+          {booking.contact_phone}
+        </a>
+      )
+    : "—";
+  const spacesSummary = booking.spaces.length ? booking.spaces.join(", ") : "None assigned";
+  const conflictSummary = booking.conflicts.length ? booking.conflicts.join(", ") : "None";
+
   useEffect(() => {
     if (!toastMessage) {
       return undefined;
@@ -85,7 +116,8 @@ export default function BookingDetailClient({
           ? (successPayload.data as { reference?: string | null; email?: string | null })
           : null;
 
-      const referenceLabel = data?.reference ?? booking.reference ?? booking.id;
+      const referenceLabel =
+        (typeof data?.reference === "string" && data.reference.trim()) ?? bookingReferenceLabel;
       const recipient = data?.email ?? booking.customer_email ?? null;
 
       setToastMessage(
@@ -101,7 +133,7 @@ export default function BookingDetailClient({
     } finally {
       setIsApproving(false);
     }
-  }, [booking.customer_email, booking.id, booking.reference, router]);
+  }, [booking.customer_email, bookingReferenceLabel, booking.id, router]);
 
   return (
     <>
@@ -153,7 +185,9 @@ export default function BookingDetailClient({
             Summary
           </h3>
           <div className="grid gap-4 md:grid-cols-3">
-            <InfoBlock label="Reference" value={booking.reference ?? "—"} />
+            <InfoBlock label="Reference" value={bookingReferenceLabel} />
+            <InfoBlock label="Booking type" value={booking.booking_type} />
+            <InfoBlock label="Guests" value={`${booking.headcount}`} />
             <InfoBlock
               label="Overnight"
               value={booking.is_overnight ? "Yes" : "No"}
@@ -162,11 +196,21 @@ export default function BookingDetailClient({
               label="Catering"
               value={booking.catering_required ? "Required" : "Not required"}
             />
-            <InfoBlock label="Spaces" value={booking.spaces.join(", ") || "None"} />
-            <InfoBlock
-              label="Conflicts"
-              value={booking.conflicts.length ? booking.conflicts.join(", ") : "None"}
-            />
+            <InfoBlock label="Arrival" value={arrivalDateLabel} />
+            <InfoBlock label="Departure" value={departureDateLabel} />
+            <InfoBlock label="Spaces" value={spacesSummary} />
+            <InfoBlock label="Conflicts" value={conflictSummary} />
+          </div>
+        </section>
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-olive-600">
+            Customer details
+          </h3>
+          <div className="grid gap-4 md:grid-cols-3">
+            <InfoBlock label="Customer" value={customerNameValue} />
+            <InfoBlock label="Email" value={customerEmailValue} />
+            <InfoBlock label="Primary contact" value={contactNameValue} />
+            <InfoBlock label="Contact phone" value={contactPhoneValue} />
           </div>
         </section>
       </TabsContent>
@@ -322,11 +366,19 @@ export default function BookingDetailClient({
   );
 }
 
-function InfoBlock({ label, value }: { label: string; value: string }) {
+function InfoBlock({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div>
+    <div className="space-y-1">
       <p className="text-xs uppercase tracking-wide text-olive-600">{label}</p>
-      <p className="text-sm font-medium text-olive-900">{value}</p>
+      <div className="text-sm font-medium text-olive-900 text-pretty break-words">
+        {value ?? "—"}
+      </div>
     </div>
   );
+}
+
+const displayDateFormatter = new Intl.DateTimeFormat("en-AU", { dateStyle: "medium" });
+
+function formatDisplayDate(value: string) {
+  return displayDateFormatter.format(new Date(value));
 }
