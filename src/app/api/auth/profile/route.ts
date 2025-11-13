@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 
-import {
-  ensureProfileForCurrentUser,
-  markPasswordInitialized,
-  ProfileServiceError,
-} from "@/server/services/profiles";
+import { ensureProfileForCurrentUser, markPasswordInitialized } from "@/server/services/profiles";
+import { ProfileServiceError } from "@/server/services/profile-domain";
 
 function handleProfileError(error: unknown) {
   if (error instanceof ProfileServiceError) {

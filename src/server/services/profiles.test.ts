@@ -4,7 +4,7 @@ import {
   deriveProfileAttributes,
   MissingBookingLinkError,
   MissingCatererLinkError,
-} from "./profiles";
+} from "./profile-domain";
 
 const baseContext = {
   userId: "user-1",
