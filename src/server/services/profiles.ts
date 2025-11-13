@@ -1,14 +1,17 @@
 "use server";
 
 import { createServerActionClient } from "@supabase/auth-helpers-nextjs";
-import type { User } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient as SupabaseJsClient, User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 import type { Database, ProfileRecord, ProfileRole } from "@/lib/database.types";
 
-type SupabaseClient = ReturnType<typeof createSupabaseClient> extends Promise<infer Client>
+type AuthenticatedSupabaseClient = ReturnType<typeof createSupabaseClient> extends Promise<infer Client>
   ? Client
   : never;
+
+type ServiceSupabaseClient = SupabaseJsClient<Database>;
 
 export type NormalizedProfile = ProfileRecord;
 
@@ -189,12 +192,34 @@ async function createSupabaseClient() {
   });
 }
 
+function createServiceRoleClient(): ServiceSupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceRoleKey) {
+    throw new ProfileServiceError(
+      "Supabase service role credentials are not configured for profile provisioning.",
+      { status: 500 }
+    );
+  }
+
+  return createClient<Database>(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
 export async function ensureProfileForCurrentUser(): Promise<NormalizedProfile> {
   const supabase = await createSupabaseClient();
   return ensureProfileWithClient(supabase);
 }
 
-async function ensureProfileWithClient(supabase: SupabaseClient): Promise<NormalizedProfile> {
+async function ensureProfileWithClient(
+  supabase: AuthenticatedSupabaseClient,
+  options?: { serviceSupabase?: ServiceSupabaseClient }
+): Promise<NormalizedProfile> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError) {
@@ -231,8 +256,10 @@ async function ensureProfileWithClient(supabase: SupabaseClient): Promise<Normal
 
   let booking: BookingLookup | null = null;
 
+  const serviceSupabase = options?.serviceSupabase ?? createServiceRoleClient();
+
   if (metadata.booking_reference) {
-    const { data: bookingLookup, error: bookingError } = await supabase
+    const { data: bookingLookup, error: bookingError } = await serviceSupabase
       .from("bookings")
       .select("reference, customer_user_id, customer_email")
       .eq("reference", metadata.booking_reference)
@@ -252,7 +279,7 @@ async function ensureProfileWithClient(supabase: SupabaseClient): Promise<Normal
   let fallbackCatererId: string | null = null;
 
   if (metadata.caterer_id) {
-    const { data: catererLookup, error: catererError } = await supabase
+    const { data: catererLookup, error: catererError } = await serviceSupabase
       .from("caterers")
       .select("id")
       .eq("id", metadata.caterer_id)
@@ -267,7 +294,7 @@ async function ensureProfileWithClient(supabase: SupabaseClient): Promise<Normal
 
     matchedCatererId = catererLookup?.id ?? null;
   } else {
-    const { data: fallbackCaterer, error: fallbackError } = await supabase
+    const { data: fallbackCaterer, error: fallbackError } = await serviceSupabase
       .from("caterers")
       .select("id")
       .eq("user_id", user.id)
@@ -292,7 +319,7 @@ async function ensureProfileWithClient(supabase: SupabaseClient): Promise<Normal
     fallbackCatererId,
   });
 
-  const { data: insertedProfile, error: insertError } = await supabase
+  const { data: insertedProfile, error: insertError } = await serviceSupabase
     .from("profiles")
     .insert({
       id: user.id,
