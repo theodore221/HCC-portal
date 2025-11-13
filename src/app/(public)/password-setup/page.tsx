@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getHomePathForRole } from "@/lib/auth/paths";
-import type { Database, ProfileRole } from "@/lib/database.types";
+import type { ProfileRecord } from "@/lib/database.types";
 import { sbBrowser } from "@/lib/supabase-browser";
 
 export default function PasswordSetupPage() {
@@ -20,8 +20,6 @@ export default function PasswordSetupPage() {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [role, setRole] = useState<ProfileRole | null>(null);
-  const [bookingReference, setBookingReference] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -41,54 +39,36 @@ export default function PasswordSetupPage() {
 
       setUserId(sessionUser.id);
 
-      const { data: ensuredProfile, error: ensureProfileError } = await supabase.rpc<
-        Database["public"]["Functions"]["ensure_profile_for_current_user"]["Returns"]
-      >("ensure_profile_for_current_user");
+      const response = await fetch("/api/auth/profile", {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | { data?: ProfileRecord; error?: string }
+        | null;
 
       if (!isMounted) {
         return;
       }
 
-      if (ensureProfileError) {
-        console.error("Failed to ensure profile", ensureProfileError);
-        setError("We couldn't prepare your account. Please try again.");
+      if (!response.ok || !payload?.data) {
+        const message = payload?.error ?? "We couldn't prepare your account. Please try again.";
+        console.error("Failed to ensure profile", response.status, message);
+        setError(message);
         setInitializing(false);
         return;
       }
 
-      setRole(ensuredProfile?.role ?? null);
-      setBookingReference(ensuredProfile?.booking_reference ?? null);
-
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role, booking_reference, password_initialized_at")
-        .eq("id", sessionUser.id)
-        .maybeSingle();
-
-      if (!isMounted) {
-        return;
-      }
-
-      if (profileError) {
-        console.error("Failed to load profile", profileError);
-        setError("We couldn't load your profile right now. Please try again.");
-        setInitializing(false);
-        return;
-      }
-
-      const resolvedRole = profile?.role ?? ensuredProfile?.role ?? null;
-      const resolvedBookingReference = profile?.booking_reference ?? ensuredProfile?.booking_reference ?? null;
-      const passwordInitializedAt =
-        profile?.password_initialized_at ?? ensuredProfile?.password_initialized_at ?? null;
+      const profile = payload.data;
+      const passwordInitializedAt = profile.password_initialized_at ?? null;
 
       if (passwordInitializedAt) {
-        router.replace(getHomePathForRole(resolvedRole, resolvedBookingReference));
+        router.replace(getHomePathForRole(profile.role, profile.booking_reference));
         router.refresh();
         return;
       }
 
-      setRole(resolvedRole);
-      setBookingReference(resolvedBookingReference);
       setInitializing(false);
     })();
 
@@ -126,18 +106,33 @@ export default function PasswordSetupPage() {
       return;
     }
 
-    const { error: profileUpdateError } = await supabase.rpc("set_password_initialized_at");
+    try {
+      const response = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        credentials: "include",
+      });
 
-    if (profileUpdateError) {
+      const payload = (await response.json().catch(() => null)) as
+        | { data?: ProfileRecord; error?: string }
+        | null;
+
+      if (!response.ok || !payload?.data) {
+        const message = payload?.error ?? "Your password was updated, but we couldn't finish setup. Please try again.";
+        console.error("Failed to update password initialization timestamp", response.status, message);
+        setError(message);
+        setLoading(false);
+        return;
+      }
+
+      const profile = payload.data;
+      const destination = getHomePathForRole(profile.role, profile.booking_reference);
+      router.replace(destination);
+      router.refresh();
+    } catch (profileUpdateError) {
       console.error("Failed to update password initialization timestamp", profileUpdateError);
       setError("Your password was updated, but we couldn't finish setup. Please try again.");
       setLoading(false);
-      return;
     }
-
-    const destination = getHomePathForRole(role, bookingReference);
-    router.replace(destination);
-    router.refresh();
   };
 
   if (initializing) {
