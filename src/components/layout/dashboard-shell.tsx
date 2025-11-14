@@ -77,7 +77,7 @@ export function DashboardShell({
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
       <div className="min-h-screen bg-neutral text-text">
         <aside
-          className="relative fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-white shadow-soft transition-[width] duration-300 lg:flex"
+          className="relative fixed inset-y-0 left-0 z-40 hidden h-screen border-r border-border bg-white shadow-soft transition-[width] duration-300 lg:flex"
           style={isDesktop ? { width: sidebarWidth } : undefined}
         >
           <SidebarContent
@@ -100,10 +100,10 @@ export function DashboardShell({
         </SheetContent>
 
         <main
-          className="transition-[margin-left] duration-300"
+          className="min-h-screen transition-[margin-left] duration-300"
           style={{ marginLeft: layoutOffset }}
         >
-          <div className="px-4 pb-10 pt-6 sm:px-6 lg:px-10">
+          <div className="px-4 pb-10 pt-4 sm:px-6 lg:px-10 lg:pt-4">
             <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <SheetTrigger asChild>
