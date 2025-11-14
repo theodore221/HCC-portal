@@ -132,10 +132,13 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
         ))}
+        <div className="md:col-span-2 lg:col-span-2 xl:col-span-1">
+          <DesignSystemCard />
+        </div>
       </section>
 
       <section className="rounded-2xl border border-border bg-white p-6 shadow-soft">
@@ -196,6 +199,45 @@ function upcomingWithinDays(bookings: BookingWithMeta[], days: number) {
 
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function DesignSystemCard() {
+  const palette = [
+    { label: "Primary", hex: "#2F5233", className: "bg-primary" },
+    { label: "Accent", hex: "#FF6B35", className: "bg-accent" },
+    { label: "Secondary", hex: "#E8F5E9", className: "bg-secondary border border-primary/20" },
+  ];
+
+  return (
+    <div className="flex h-full flex-col justify-between rounded-2xl border border-border bg-white p-6 shadow-soft">
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-wide text-text-light">Design system</p>
+        <h3 className="mt-1 text-lg font-semibold text-text">Brand palette</h3>
+        <p className="mt-2 text-sm text-text-light">
+          Reference hues used throughout the admin dashboard.
+        </p>
+      </div>
+      <div className="mt-6 space-y-4">
+        {palette.map((tone) => (
+          <div key={tone.label} className="flex items-center gap-3">
+            <span
+              className={cn("flex size-10 rounded-full", tone.className)}
+              aria-hidden
+            />
+            <div>
+              <p className="text-sm font-semibold text-text">{tone.label}</p>
+              <p className="text-xs text-text-light">{tone.hex}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 rounded-xl border border-dashed border-border bg-neutral/80 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-light">Typography</p>
+        <p className="text-sm font-semibold text-text">Inter</p>
+        <p className="text-xs text-text-light">Primary sans-serif</p>
+      </div>
+    </div>
+  );
 }
 
 function StatCard({ label, value, helper, icon: Icon, tone }: StatConfig) {
