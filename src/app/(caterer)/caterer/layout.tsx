@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { UtensilsCrossed } from "lucide-react";
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { Button } from "@/components/ui/button";
@@ -36,11 +37,18 @@ export default async function CatererLayout({
         <Button
           asChild
           variant="outline"
-          className="rounded-full border-olive-200 bg-white px-4 py-2 text-sm font-medium text-olive-800 shadow-soft transition-colors hover:bg-olive-50"
+          className="rounded-xl border-border bg-white px-4 py-2 text-sm font-semibold text-text hover:bg-neutral"
         >
-          <Link href="/caterer/jobs">View job board</Link>
+          <Link href="/caterer/jobs">
+            <UtensilsCrossed className="size-4" />
+            View job board
+          </Link>
         </Button>
       }
+      user={{
+        name: profile?.full_name ?? profile?.email ?? undefined,
+        email: profile?.email ?? session?.user.email ?? undefined,
+      }}
     >
       {children}
     </DashboardShell>

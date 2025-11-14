@@ -3,18 +3,27 @@
 import { type ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import {
+  Bed,
+  Bell,
+  Calendar,
+  Home,
+  LayoutDashboard,
+  Menu,
+  PanelLeftClose,
+  PanelRightOpen,
+  Search,
+  Settings,
+  Users,
+  Utensils,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/layout/user-menu";
 
 type NavItem = {
   href: string;
@@ -28,6 +37,10 @@ interface DashboardShellProps {
   children: ReactNode;
   quickActions?: ReactNode;
   filters?: ReactNode;
+  user?: {
+    name?: string | null;
+    email?: string | null;
+  };
 }
 
 export function DashboardShell({
@@ -37,154 +50,249 @@ export function DashboardShell({
   children,
   quickActions,
   filters,
+  user,
 }: DashboardShellProps) {
   const pathname = usePathname();
   const normalizedPath = pathname ?? "";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const updateMatch = () => setIsDesktop(mediaQuery.matches);
+    updateMatch();
+    mediaQuery.addEventListener("change", updateMatch);
+    return () => mediaQuery.removeEventListener("change", updateMatch);
+  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
+  const sidebarWidth = collapsed ? 88 : 280;
+  const layoutOffset = isDesktop ? sidebarWidth : 0;
+
   return (
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-      <div className="relative flex flex-1 flex-col gap-6 lg:grid lg:grid-cols-[220px_1fr] lg:items-start">
-        <MobileNavigation navItems={navItems} pathname={pathname} />
-        <aside className="hidden lg:flex lg:w-[220px] lg:flex-col">
-          <div className="sticky top-24 flex max-h-[calc(100vh-6rem)] flex-1 flex-col overflow-hidden rounded-3xl border border-olive-100 bg-white shadow-soft">
-            <div className="border-b border-olive-100 px-5 py-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-olive-500">
-                Navigation
-              </p>
-            </div>
-            <ScrollArea className="flex-1 px-3 py-4">
-              <NavigationMenu className="w-full justify-start">
-                <NavigationMenuList className="flex w-full flex-col gap-1">
-                  {navItems.map((item) => {
-                    const isActive =
-                      normalizedPath === item.href || normalizedPath.startsWith(`${item.href}/`);
-                    return (
-                      <NavigationMenuItem key={item.href}>
-                        <NavigationMenuLink asChild>
-                          <Link
-                            href={item.href}
-                            className={cn(
-                              "flex w-full items-center rounded-2xl px-4 py-2 text-sm font-medium transition-colors",
-                              isActive
-                                ? "bg-olive-100 text-olive-900 shadow-soft"
-                                : "text-olive-700 hover:bg-olive-50"
-                            )}
-                          >
-                            {item.label}
-                          </Link>
-                        </NavigationMenuLink>
-                      </NavigationMenuItem>
-                    );
-                  })}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </ScrollArea>
-          </div>
+      <div className="min-h-screen bg-neutral text-text">
+        <aside
+          className="relative fixed inset-y-0 left-0 z-40 hidden h-screen border-r border-border bg-white shadow-soft transition-[width] duration-300 lg:flex"
+          style={isDesktop ? { width: sidebarWidth } : undefined}
+        >
+          <SidebarContent
+            navItems={navItems}
+            pathname={normalizedPath}
+            collapsed={collapsed && isDesktop}
+            user={user}
+            onToggleCollapse={isDesktop ? () => setCollapsed((prev) => !prev) : undefined}
+          />
         </aside>
-        <main className="flex flex-1 flex-col gap-6">
-          <header className="rounded-3xl border border-olive-100 bg-olive-50/60 px-4 py-5 shadow-soft sm:px-6">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-start gap-3">
+
+        <SheetContent side="left" className="w-[280px] border-r border-border p-0 lg:hidden">
+          <SidebarContent
+            navItems={navItems}
+            pathname={normalizedPath}
+            collapsed={false}
+            user={user}
+            onNavigate={() => setMobileOpen(false)}
+          />
+        </SheetContent>
+
+        <main
+          className="min-h-screen transition-[margin-left] duration-300"
+          style={{ marginLeft: layoutOffset }}
+        >
+          <div className="px-4 pb-10 pt-4 sm:px-6 lg:px-10 lg:pt-4">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3">
                 <SheetTrigger asChild>
                   <Button
-                    variant="outline"
-                    size="icon"
-                    className="lg:hidden rounded-full border-olive-200 text-olive-700 hover:bg-olive-100"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-xl text-text hover:bg-neutral lg:hidden"
                     aria-label="Open navigation"
                   >
-                    <Menu className="h-5 w-5" />
+                    <Menu className="size-5" />
                   </Button>
                 </SheetTrigger>
-                <div className="space-y-1">
-                  <h1 className="text-xl font-semibold text-olive-900 sm:text-2xl">{title}</h1>
-                  {description ? (
-                    <p className="text-sm text-olive-600">{description}</p>
-                  ) : null}
+                <div>
+                  <h1 className="text-xl font-bold text-text">{title}</h1>
+                  {description ? <p className="text-sm text-text-light">{description}</p> : null}
                 </div>
               </div>
-              <div className="flex w-full flex-col gap-3 lg:w-auto">
-                {filters ? (
-                  <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
-                    {filters}
-                  </div>
-                ) : null}
-                {quickActions ? (
-                  <div className="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
-                    {quickActions}
-                  </div>
-                ) : null}
+
+              <div className="flex items-center gap-3">
+                <div className="hidden md:block">
+                  <SearchField />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="relative rounded-xl text-text-light hover:bg-neutral hover:text-text"
+                  aria-label="View notifications"
+                >
+                  <Bell className="size-5" />
+                  <span className="absolute right-2 top-2 inline-flex size-2 rounded-full bg-danger" />
+                </Button>
+                {quickActions ? <div className="flex items-center gap-2">{quickActions}</div> : null}
               </div>
             </div>
-          </header>
-          <section className="flex-1 rounded-3xl border border-olive-100 bg-white shadow-soft">
-            <div className="px-4 py-6 sm:px-6">
-              <div className="space-y-6">{children}</div>
-            </div>
-          </section>
+
+            {filters ? <div className="mb-6 flex flex-wrap items-center gap-2">{filters}</div> : null}
+            <div className="space-y-6">{children}</div>
+          </div>
         </main>
       </div>
     </Sheet>
   );
 }
 
-interface MobileNavigationProps {
-  navItems: NavItem[];
-  pathname: string | null;
+const navIconByPath: Record<string, (typeof Home)> = {
+  "/": Home,
+  "/admin": LayoutDashboard,
+  "/admin/bookings": Calendar,
+  "/admin/catering": Utensils,
+  "/admin/resources": Settings,
+  "/staff": Users,
+  "/caterer": Utensils,
+};
+
+function getIconForItem(href: string, label: string) {
+  const normalizedHref = href.replace(/\/$/, "");
+  if (navIconByPath[normalizedHref]) {
+    return navIconByPath[normalizedHref];
+  }
+
+  switch (label.toLowerCase()) {
+    case "dashboard":
+      return LayoutDashboard;
+    case "bookings":
+      return Calendar;
+    case "catering":
+    case "catering jobs":
+    case "catering schedule":
+      return Utensils;
+    case "accommodation":
+      return Bed;
+    case "settings":
+      return Settings;
+    case "staff":
+      return Users;
+    default:
+      return Home;
+  }
 }
 
-function MobileNavigation({ navItems, pathname }: MobileNavigationProps) {
+function SidebarContent({
+  navItems,
+  pathname,
+  collapsed,
+  user,
+  onNavigate,
+  onToggleCollapse,
+}: {
+  navItems: NavItem[];
+  pathname: string;
+  collapsed: boolean;
+  user?: DashboardShellProps["user"];
+  onNavigate?: () => void;
+  onToggleCollapse?: () => void;
+}) {
   return (
-    <SheetContent
-      side="left"
-      className="w-[280px] gap-0 border-r border-olive-100 p-0 lg:hidden"
-    >
-      <div className="flex items-center justify-between border-b border-olive-100 px-5 py-4">
-        <p className="text-sm font-semibold text-olive-900">Menu</p>
-        <SheetClose asChild>
+    <div className="flex h-full w-full flex-col">
+      <div
+        className={cn(
+          "flex h-16 items-center border-b border-border",
+          collapsed ? "px-4" : "px-6"
+        )}
+      >
+        <Link
+          href="/"
+          className={cn("flex items-center gap-3", collapsed ? "gap-0" : "gap-3")}
+        >
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold uppercase tracking-[0.12em] text-white">
+            HCC
+          </div>
+          {!collapsed ? (
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text">Holy Cross Centre</p>
+              <p className="text-xs text-text-light">Admin Portal</p>
+            </div>
+          ) : null}
+        </Link>
+        {onToggleCollapse ? (
           <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full border-olive-200 text-olive-700 hover:bg-olive-100"
-            aria-label="Close navigation"
+            variant="ghost"
+            size="icon-sm"
+            className="ml-auto rounded-xl text-text-light hover:bg-neutral hover:text-text"
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-pressed={collapsed}
           >
-            <X className="h-5 w-5" />
+            {collapsed ? <PanelRightOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
           </Button>
-        </SheetClose>
+        ) : null}
       </div>
-      <ScrollArea className="h-[calc(100vh-4.5rem)] px-3 py-4">
-        <NavigationMenu className="w-full justify-start">
-          <NavigationMenuList className="flex w-full flex-col gap-1">
-            {navItems.map((item) => {
-              const isActive =
-                pathname === item.href || pathname?.startsWith(`${item.href}/`);
-              return (
-                <NavigationMenuItem key={item.href}>
-                  <SheetClose asChild>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          "flex w-full items-center rounded-2xl px-4 py-2 text-sm font-medium transition-colors",
-                          isActive
-                            ? "bg-olive-100 text-olive-900 shadow-soft"
-                            : "text-olive-700 hover:bg-olive-50"
-                        )}
-                      >
-                        {item.label}
-                      </Link>
-                    </NavigationMenuLink>
-                  </SheetClose>
-                </NavigationMenuItem>
-              );
-            })}
-          </NavigationMenuList>
-        </NavigationMenu>
+      <ScrollArea className={cn("flex-1 min-h-0 py-6", collapsed ? "px-3" : "px-4")}>
+        <nav className="space-y-2">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const Icon = getIconForItem(item.href, item.label);
+            return (
+              <SheetClose asChild key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:scale-[1.02]",
+                    isActive ? "bg-secondary text-primary" : "text-text-light hover:bg-neutral hover:text-text",
+                    collapsed && "justify-center gap-0 px-0"
+                  )}
+                  onClick={onNavigate}
+                >
+                  <Icon className="size-5" />
+                  {!collapsed ? (
+                    <span className="truncate">{item.label}</span>
+                  ) : (
+                    <span className="sr-only">{item.label}</span>
+                  )}
+                </Link>
+              </SheetClose>
+            );
+          })}
+        </nav>
       </ScrollArea>
-    </SheetContent>
+      <div
+        className={cn(
+          "mt-auto border-t border-border py-5",
+          collapsed ? "flex justify-center px-4" : "px-6"
+        )}
+      >
+        {user?.email ? (
+          <UserMenu
+            email={user.email}
+            name={user?.name}
+            variant="sidebar"
+            collapsed={collapsed}
+          />
+        ) : (
+          <div className="flex size-10 items-center justify-center rounded-full bg-primary/90 text-sm font-semibold text-white">
+            HCC
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SearchField() {
+  return (
+    <div className="relative">
+      <Input
+        placeholder="Search bookings..."
+        className="h-10 w-64 rounded-xl border border-border bg-neutral pl-10 text-sm text-text placeholder:text-text-light focus:border-primary focus:ring-2 focus:ring-primary/20"
+      />
+      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-light" aria-hidden />
+    </div>
   );
 }
