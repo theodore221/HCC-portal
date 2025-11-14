@@ -9,12 +9,12 @@ module.exports = {
     extend: {
       colors: {
         primary: "#2F5233",
-        primaryLight: "#4A7C4E",
+        "primary-light": "#4A7C4E",
         secondary: "#E8F5E9",
         accent: "#FF6B35",
         neutral: "#F8F9FA",
         text: "#1A1A1A",
-        textLight: "#6B7280",
+        "text-light": "#6B7280",
         border: "#E5E7EB",
         success: "#10B981",
         warning: "#F59E0B",
