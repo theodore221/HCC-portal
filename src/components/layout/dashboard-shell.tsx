@@ -87,16 +87,6 @@ export function DashboardShell({
             user={user}
             onToggleCollapse={isDesktop ? () => setCollapsed((prev) => !prev) : undefined}
           />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="absolute -right-3 top-16 hidden h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-text shadow-soft hover:bg-neutral hover:text-text focus-visible:ring-2 focus-visible:ring-primary lg:flex"
-            onClick={() => setCollapsed((prev) => !prev)}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-pressed={collapsed}
-          >
-            {collapsed ? <PanelRightOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
-          </Button>
         </aside>
 
         <SheetContent side="left" className="w-[280px] border-r border-border p-0 lg:hidden">
@@ -109,59 +99,46 @@ export function DashboardShell({
           />
         </SheetContent>
 
-        <header
-          className="fixed top-0 right-0 z-30 flex h-16 items-center justify-between border-b border-border bg-white/95 px-4 shadow-soft transition-[left] duration-300 backdrop-blur-sm sm:px-6"
-          style={{ left: layoutOffset }}
-        >
-          <div className="flex items-center gap-3">
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-xl text-text hover:bg-neutral lg:hidden"
-                aria-label="Open navigation"
-              >
-                <Menu className="size-5" />
-              </Button>
-            </SheetTrigger>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="hidden rounded-xl text-text-light hover:bg-neutral hover:text-text lg:inline-flex"
-              onClick={() => setCollapsed((prev) => !prev)}
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              aria-pressed={collapsed}
-            >
-              {collapsed ? <PanelRightOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
-            </Button>
-            <div>
-              <h1 className="text-xl font-bold text-text">{title}</h1>
-              {description ? <p className="text-sm text-text-light">{description}</p> : null}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="relative hidden md:block">
-              <SearchField />
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="relative rounded-xl text-text-light hover:bg-neutral hover:text-text"
-              aria-label="View notifications"
-            >
-              <Bell className="size-5" />
-              <span className="absolute right-2 top-2 inline-flex size-2 rounded-full bg-danger" />
-            </Button>
-            {quickActions ? <div className="flex items-center gap-2">{quickActions}</div> : null}
-          </div>
-        </header>
-
         <main
           className="transition-[margin-left] duration-300"
           style={{ marginLeft: layoutOffset }}
         >
-          <div className="px-4 pb-10 pt-20 sm:px-6 lg:px-10">
+          <div className="px-4 pb-10 pt-6 sm:px-6 lg:px-10">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3">
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="rounded-xl text-text hover:bg-neutral lg:hidden"
+                    aria-label="Open navigation"
+                  >
+                    <Menu className="size-5" />
+                  </Button>
+                </SheetTrigger>
+                <div>
+                  <h1 className="text-xl font-bold text-text">{title}</h1>
+                  {description ? <p className="text-sm text-text-light">{description}</p> : null}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="hidden md:block">
+                  <SearchField />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="relative rounded-xl text-text-light hover:bg-neutral hover:text-text"
+                  aria-label="View notifications"
+                >
+                  <Bell className="size-5" />
+                  <span className="absolute right-2 top-2 inline-flex size-2 rounded-full bg-danger" />
+                </Button>
+                {quickActions ? <div className="flex items-center gap-2">{quickActions}</div> : null}
+              </div>
+            </div>
+
             {filters ? <div className="mb-6 flex flex-wrap items-center gap-2">{filters}</div> : null}
             <div className="space-y-6">{children}</div>
           </div>
@@ -257,7 +234,7 @@ function SidebarContent({
           </Button>
         ) : null}
       </div>
-      <ScrollArea className={cn("flex-1 py-6", collapsed ? "px-3" : "px-4")}> 
+      <ScrollArea className={cn("flex-1 min-h-0 py-6", collapsed ? "px-3" : "px-4")}>
         <nav className="space-y-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -287,7 +264,7 @@ function SidebarContent({
       </ScrollArea>
       <div
         className={cn(
-          "border-t border-border py-5",
+          "mt-auto border-t border-border py-5",
           collapsed ? "flex justify-center px-4" : "px-6"
         )}
       >
