@@ -77,7 +77,7 @@ export function DashboardShell({
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
       <div className="min-h-screen bg-neutral text-text">
         <aside
-          className="fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-white shadow-soft transition-[width] duration-300 lg:flex"
+          className="relative fixed inset-y-0 left-0 z-40 hidden border-r border-border bg-white shadow-soft transition-[width] duration-300 lg:flex"
           style={isDesktop ? { width: sidebarWidth } : undefined}
         >
           <SidebarContent
@@ -87,6 +87,16 @@ export function DashboardShell({
             user={user}
             onToggleCollapse={isDesktop ? () => setCollapsed((prev) => !prev) : undefined}
           />
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="absolute -right-3 top-16 hidden h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-text shadow-soft hover:bg-neutral hover:text-text focus-visible:ring-2 focus-visible:ring-primary lg:flex"
+            onClick={() => setCollapsed((prev) => !prev)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-pressed={collapsed}
+          >
+            {collapsed ? <PanelRightOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+          </Button>
         </aside>
 
         <SheetContent side="left" className="w-[280px] border-r border-border p-0 lg:hidden">
