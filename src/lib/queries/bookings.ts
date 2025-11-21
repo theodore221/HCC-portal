@@ -20,5 +20,10 @@ export type RoomWithAssignments = Tables<"rooms"> & {
 export type DietaryProfile = Tables<"dietary_profiles">;
 
 export function getBookingDisplayName(booking: Tables<"bookings">) {
-  return booking.customer_name ?? booking.customer_email ?? booking.reference ?? "Unknown group";
+  return (
+    booking.customer_name ??
+    booking.customer_email ??
+    booking.reference ??
+    "Unknown group"
+  );
 }

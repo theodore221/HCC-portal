@@ -5,6 +5,8 @@ import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpRight,
+  Bed,
+  CheckCircle2,
   Filter,
   MoreHorizontal,
   Search,
@@ -45,9 +47,7 @@ import { cn } from "@/lib/utils";
 
 const statusOptions: { label: string; value: BookingStatus }[] = [
   { label: "Pending", value: "Pending" },
-  { label: "In triage", value: "InTriage" },
   { label: "Approved", value: "Approved" },
-  { label: "Deposit pending", value: "DepositPending" },
   { label: "Deposit received", value: "DepositReceived" },
   { label: "In progress", value: "InProgress" },
   { label: "Completed", value: "Completed" },
@@ -85,19 +85,24 @@ function formatDateRangeLabel(arrival: string, departure: string) {
 
 const columns: ColumnDef<BookingWithMeta>[] = [
   {
-    accessorKey: "reference",
+    accessorKey: "arrival_date",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Reference" />
+      <DataTableColumnHeader column={column} title="Dates" />
     ),
     cell: ({ row }) => (
-      <div className="flex flex-col gap-1">
-        <span className="font-semibold text-text">{row.original.reference ?? "—"}</span>
-        <span className="text-xs uppercase tracking-wide text-text-light/80">
-          #{row.original.id}
+      <div className="flex flex-col text-sm text-text">
+        <span className="font-medium">
+          {formatDateRangeLabel(
+            row.original.arrival_date,
+            row.original.departure_date
+          )}
+        </span>
+        <span className="text-xs font-semibold text-primary">
+          {row.original.nights} nights
         </span>
       </div>
     ),
-    sortingFn: "alphanumeric",
+    sortingFn: "datetime",
   },
   {
     accessorKey: "customer_name",
@@ -105,11 +110,19 @@ const columns: ColumnDef<BookingWithMeta>[] = [
       <DataTableColumnHeader column={column} title="Group" />
     ),
     cell: ({ row }) => (
-      <div className="flex flex-col gap-1 text-sm text-text">
-        <span className="font-medium">{getBookingDisplayName(row.original)}</span>
-        <span className="text-xs text-text-light">
-          {row.original.headcount} guests · {row.original.is_overnight ? "Overnight" : "Day use"}
+      <div className="flex flex-col gap-1.5 text-sm text-text">
+        <span className="font-medium">
+          {getBookingDisplayName(row.original)}
         </span>
+        {row.original.is_overnight && (
+          <Badge
+            variant="secondary"
+            className="w-fit gap-1.5 bg-primary/10 px-2 py-0.5 text-primary hover:bg-primary/20"
+          >
+            <Bed className="size-3.5" />
+            <span className="text-[11px] font-semibold">Overnight</span>
+          </Badge>
+        )}
       </div>
     ),
     filterFn: (row, _columnId, filterValue) => {
@@ -122,32 +135,37 @@ const columns: ColumnDef<BookingWithMeta>[] = [
     },
   },
   {
-    accessorKey: "arrival_date",
+    accessorKey: "contact_name",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Dates" />
+      <DataTableColumnHeader column={column} title="Contact" />
     ),
     cell: ({ row }) => (
       <div className="flex flex-col text-sm text-text">
-        <span>{formatDateRangeLabel(row.original.arrival_date, row.original.departure_date)}</span>
-        <span className="text-xs text-text-light">
-          {row.original.is_overnight ? "Includes accommodation" : "Day booking"}
-        </span>
+        <span>{row.original.contact_name || "—"}</span>
+        {row.original.contact_phone && (
+          <span className="text-xs text-text-light">
+            {row.original.contact_phone}
+          </span>
+        )}
       </div>
     ),
-    sortingFn: "datetime",
   },
   {
     accessorKey: "headcount",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Headcount" />
+      <DataTableColumnHeader
+        column={column}
+        title="Headcount"
+        className="justify-center"
+      />
     ),
     cell: ({ row }) => (
-      <div className="text-right text-sm font-semibold text-text">
+      <div className="text-center text-sm font-semibold text-text">
         {row.original.headcount}
       </div>
     ),
     enableColumnFilter: false,
-    meta: "text-right",
+    meta: "text-center",
   },
   {
     id: "spaces",
@@ -273,7 +291,6 @@ export default function AdminBookingsClient({
 
   const toolbarBadges = [
     { label: "Pending", status: "Pending" as BookingStatus },
-    { label: "In triage", status: "InTriage" as BookingStatus },
     { label: "Approved", status: "Approved" as BookingStatus },
   ];
 
@@ -319,13 +336,24 @@ export default function AdminBookingsClient({
             emptyMessage={<TableEmptyState />}
             zebra
             renderToolbar={(table) => {
-              const searchValue = (table.getColumn("customer_name")?.getFilterValue() as string) ?? "";
-              const statusFilter = (table.getColumn("status")?.getFilterValue() as BookingStatus[] | undefined) ?? [];
+              const searchValue =
+                (table
+                  .getColumn("customer_name")
+                  ?.getFilterValue() as string) ?? "";
+              const statusFilter =
+                (table.getColumn("status")?.getFilterValue() as
+                  | BookingStatus[]
+                  | undefined) ?? [];
 
-              const toggleStatus = (status: BookingStatus, enabled: boolean) => {
+              const toggleStatus = (
+                status: BookingStatus,
+                enabled: boolean
+              ) => {
                 const column = table.getColumn("status");
                 if (!column) return;
-                const current = new Set((column.getFilterValue() as BookingStatus[] | undefined) ?? []);
+                const current = new Set(
+                  (column.getFilterValue() as BookingStatus[] | undefined) ?? []
+                );
                 if (enabled) {
                   current.add(status);
                 } else {
@@ -369,7 +397,9 @@ export default function AdminBookingsClient({
                       <Input
                         value={searchValue}
                         onChange={(event) =>
-                          table.getColumn("customer_name")?.setFilterValue(event.target.value)
+                          table
+                            .getColumn("customer_name")
+                            ?.setFilterValue(event.target.value)
                         }
                         placeholder="Search by group or reference"
                         className="rounded-full border-border/70 bg-white pl-9"
@@ -382,7 +412,10 @@ export default function AdminBookingsClient({
                           size="sm"
                           className="gap-2 rounded-full border-border/70 text-text-light hover:bg-neutral"
                         >
-                          <SlidersHorizontal className="size-4" aria-hidden="true" />
+                          <SlidersHorizontal
+                            className="size-4"
+                            aria-hidden="true"
+                          />
                           Advanced filters
                         </Button>
                       </DropdownMenuTrigger>
@@ -393,11 +426,15 @@ export default function AdminBookingsClient({
                           <DropdownMenuCheckboxItem
                             key={value}
                             checked={statusFilter.includes(value)}
-                            onCheckedChange={(checked) => toggleStatus(value, Boolean(checked))}
+                            onCheckedChange={(checked) =>
+                              toggleStatus(value, Boolean(checked))
+                            }
                             className="capitalize"
                           >
                             {label}
-                            <DropdownMenuShortcut>{statusCounts[value] ?? 0}</DropdownMenuShortcut>
+                            <DropdownMenuShortcut>
+                              {statusCounts[value] ?? 0}
+                            </DropdownMenuShortcut>
                           </DropdownMenuCheckboxItem>
                         ))}
                       </DropdownMenuContent>
@@ -410,7 +447,10 @@ export default function AdminBookingsClient({
                       <Filter className="size-4" aria-hidden />
                       Export list
                     </Button>
-                    <Button size="sm" className="rounded-full bg-primary px-5 text-white hover:bg-primary/90">
+                    <Button
+                      size="sm"
+                      className="rounded-full bg-primary px-5 text-white hover:bg-primary/90"
+                    >
                       New booking
                     </Button>
                   </div>
@@ -432,12 +472,18 @@ function TableEmptyState() {
     <div className="mx-auto flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-dashed border-border/70 bg-neutral/60 px-8 py-10 text-center">
       <Sparkles className="size-12 text-text-light" aria-hidden />
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold text-text">No bookings match your filters</h3>
+        <h3 className="text-sm font-semibold text-text">
+          No bookings match your filters
+        </h3>
         <p className="text-sm text-text-light">
-          Try adjusting your filters or start a new booking to add to the pipeline.
+          Try adjusting your filters or start a new booking to add to the
+          pipeline.
         </p>
       </div>
-      <Button size="sm" className="rounded-full bg-primary px-5 text-white hover:bg-primary/90">
+      <Button
+        size="sm"
+        className="rounded-full bg-primary px-5 text-white hover:bg-primary/90"
+      >
         Create booking
       </Button>
     </div>
