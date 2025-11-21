@@ -24,7 +24,12 @@ interface UserMenuProps {
   collapsed?: boolean;
 }
 
-export function UserMenu({ email, name, variant = "icon", collapsed = false }: UserMenuProps) {
+export function UserMenu({
+  email,
+  name,
+  variant = "icon",
+  collapsed = false,
+}: UserMenuProps) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const supabase = sbBrowser();
@@ -57,7 +62,11 @@ export function UserMenu({ email, name, variant = "icon", collapsed = false }: U
         aria-label="Open user menu"
         disabled={signingOut}
       >
-        {signingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserCircle className="h-5 w-5" />}
+        {signingOut ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <UserCircle className="h-5 w-5" />
+        )}
       </Button>
     ) : (
       <Button
@@ -75,25 +84,29 @@ export function UserMenu({ email, name, variant = "icon", collapsed = false }: U
         </div>
         {!collapsed ? (
           <div className="min-w-0 flex-1 text-left">
-            <p className="truncate text-sm font-semibold text-text">{displayName}</p>
+            <p className="truncate text-sm font-semibold text-text">
+              {displayName}
+            </p>
             <p className="truncate text-xs text-text-light">{email}</p>
           </div>
         ) : (
           <span className="sr-only">{displayName}</span>
         )}
-        {!collapsed ? <ChevronsUpDown className="size-4 text-text-light" aria-hidden /> : null}
+        {!collapsed ? (
+          <ChevronsUpDown className="size-4 text-text-light" aria-hidden />
+        ) : null}
       </Button>
     );
 
   const contentProps =
     variant === "sidebar"
       ? {
-          align: collapsed ? "center" : "start",
-          side: collapsed ? "right" : "top",
+          align: (collapsed ? "center" : "start") as "center" | "start",
+          side: (collapsed ? "right" : "top") as "right" | "top",
           sideOffset: collapsed ? 8 : 12,
         }
       : {
-          align: "end",
+          align: "end" as const,
           sideOffset: 8,
         };
 

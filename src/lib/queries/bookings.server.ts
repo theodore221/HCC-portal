@@ -7,38 +7,40 @@ import type {
   RoomWithAssignments,
 } from "./bookings";
 
-function parseCounts(json: Tables<"meal_jobs">["counts_by_diet"]): Record<string, number> {
+function parseCounts(
+  json: Tables<"meal_jobs">["counts_by_diet"]
+): Record<string, number> {
   if (!json || typeof json !== "object" || Array.isArray(json)) {
     return {};
   }
 
-  return Object.entries(json as Record<string, unknown>).reduce<Record<string, number>>(
-    (acc, [key, value]) => {
-      if (typeof value === "number") {
-        acc[key] = value;
-      } else if (typeof value === "string") {
-        const parsed = Number(value);
-        if (!Number.isNaN(parsed)) {
-          acc[key] = parsed;
-        }
+  return Object.entries(json as Record<string, unknown>).reduce<
+    Record<string, number>
+  >((acc, [key, value]) => {
+    if (typeof value === "number") {
+      acc[key] = value;
+    } else if (typeof value === "string") {
+      const parsed = Number(value);
+      if (!Number.isNaN(parsed)) {
+        acc[key] = parsed;
       }
-      return acc;
-    },
-    {},
-  );
+    }
+    return acc;
+  }, {});
 }
 
 function conflictLabel(
   conflict: Views<"v_space_conflicts">,
   bookingLookup: Map<string, Tables<"bookings">>,
-  spaceLookup: Map<string, Tables<"spaces">>,
+  spaceLookup: Map<string, Tables<"spaces">>
 ): string {
   const spaceName = conflict.space_id
     ? spaceLookup.get(conflict.space_id)?.name ?? conflict.space_id
     : "Unknown space";
   const dateLabel = conflict.service_date ?? "Date TBC";
   const other = conflict.conflicts_with
-    ? bookingLookup.get(conflict.conflicts_with)?.reference ?? conflict.conflicts_with
+    ? bookingLookup.get(conflict.conflicts_with)?.reference ??
+      conflict.conflicts_with
     : null;
 
   return other
@@ -49,26 +51,44 @@ function conflictLabel(
 export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
   const supabase = await sbServer();
 
-  const [{ data: bookings, error: bookingsError }, { data: reservations, error: reservationsError }, { data: spaces, error: spacesError }, { data: conflicts, error: conflictsError }]
-    = await Promise.all([
-      supabase.from("bookings").select("*").order("arrival_date", { ascending: true }),
-      supabase.from("space_reservations").select("booking_id, space_id, status"),
-      supabase.from("spaces").select("id, name"),
-      supabase.from("v_space_conflicts").select("booking_id, conflicts_with, space_id, service_date"),
-    ]);
+  const [
+    { data: bookings, error: bookingsError },
+    { data: reservations, error: reservationsError },
+    { data: spaces, error: spacesError },
+    { data: conflicts, error: conflictsError },
+  ] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("*")
+      .order("arrival_date", { ascending: true }),
+    supabase.from("space_reservations").select("booking_id, space_id, status"),
+    supabase.from("spaces").select("id, name"),
+    supabase
+      .from("v_space_conflicts")
+      .select("booking_id, conflicts_with, space_id, service_date"),
+  ]);
 
-  if (bookingsError) throw new Error(`Failed to load bookings: ${bookingsError.message}`);
-  if (reservationsError) throw new Error(`Failed to load space reservations: ${reservationsError.message}`);
-  if (spacesError) throw new Error(`Failed to load spaces: ${spacesError.message}`);
-  if (conflictsError) throw new Error(`Failed to load conflicts: ${conflictsError.message}`);
+  if (bookingsError)
+    throw new Error(`Failed to load bookings: ${bookingsError.message}`);
+  if (reservationsError)
+    throw new Error(
+      `Failed to load space reservations: ${reservationsError.message}`
+    );
+  if (spacesError)
+    throw new Error(`Failed to load spaces: ${spacesError.message}`);
+  if (conflictsError)
+    throw new Error(`Failed to load conflicts: ${conflictsError.message}`);
 
   const spaceLookup = new Map((spaces ?? []).map((space) => [space.id, space]));
-  const bookingLookup = new Map((bookings ?? []).map((booking) => [booking.id, booking]));
+  const bookingLookup = new Map(
+    (bookings ?? []).map((booking) => [booking.id, booking])
+  );
 
   const spacesByBooking = new Map<string, Set<string>>();
   for (const reservation of reservations ?? []) {
     if (!reservation.booking_id) continue;
-    const set = spacesByBooking.get(reservation.booking_id) ?? new Set<string>();
+    const set =
+      spacesByBooking.get(reservation.booking_id) ?? new Set<string>();
     const label = reservation.space_id
       ? spaceLookup.get(reservation.space_id)?.name ?? reservation.space_id
       : null;
@@ -89,12 +109,16 @@ export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
 
   return (bookings ?? []).map((booking) => ({
     ...booking,
-    spaces: Array.from(spacesByBooking.get(booking.id) ?? []).sort((a, b) => a.localeCompare(b)),
+    spaces: Array.from(spacesByBooking.get(booking.id) ?? []).sort((a, b) =>
+      a.localeCompare(b)
+    ),
     conflicts: conflictsByBooking.get(booking.id) ?? [],
   }));
 }
 
-export async function getBookingByReference(reference: string): Promise<BookingWithMeta | null> {
+export async function getBookingByReference(
+  reference: string
+): Promise<BookingWithMeta | null> {
   const supabase = await sbServer();
   const { data: booking, error } = await supabase
     .from("bookings")
@@ -105,35 +129,49 @@ export async function getBookingByReference(reference: string): Promise<BookingW
   if (error) throw new Error(`Failed to load booking: ${error.message}`);
   if (!booking) return null;
 
-  const [{ data: reservations, error: reservationsError }, { data: conflicts, error: conflictsError }, { data: spaces, error: spacesError }] =
-    await Promise.all([
-      supabase
-        .from("space_reservations")
-        .select("space_id")
-        .eq("booking_id", booking.id),
-      supabase
-        .from("v_space_conflicts")
-        .select("booking_id, conflicts_with, space_id, service_date")
-        .eq("booking_id", booking.id),
-      supabase.from("spaces").select("id, name"),
-    ]);
+  const [
+    { data: reservations, error: reservationsError },
+    { data: conflicts, error: conflictsError },
+    { data: spaces, error: spacesError },
+  ] = await Promise.all([
+    supabase
+      .from("space_reservations")
+      .select("space_id")
+      .eq("booking_id", booking.id),
+    supabase
+      .from("v_space_conflicts")
+      .select("booking_id, conflicts_with, space_id, service_date")
+      .eq("booking_id", booking.id),
+    supabase.from("spaces").select("id, name"),
+  ]);
 
-  if (reservationsError) throw new Error(`Failed to load spaces for booking: ${reservationsError.message}`);
-  if (conflictsError) throw new Error(`Failed to load conflicts for booking: ${conflictsError.message}`);
-  if (spacesError) throw new Error(`Failed to load spaces metadata: ${spacesError.message}`);
+  if (reservationsError)
+    throw new Error(
+      `Failed to load spaces for booking: ${reservationsError.message}`
+    );
+  if (conflictsError)
+    throw new Error(
+      `Failed to load conflicts for booking: ${conflictsError.message}`
+    );
+  if (spacesError)
+    throw new Error(`Failed to load spaces metadata: ${spacesError.message}`);
 
   const spaceLookup = new Map((spaces ?? []).map((space) => [space.id, space]));
   const bookingLookup = new Map([[booking.id, booking]]);
 
-  const spacesForBooking = (reservations ?? []).reduce<string[]>((acc, reservation) => {
-    if (!reservation.space_id) return acc;
-    const label = spaceLookup.get(reservation.space_id)?.name ?? reservation.space_id;
-    if (!acc.includes(label)) acc.push(label);
-    return acc;
-  }, []);
+  const spacesForBooking = (reservations ?? []).reduce<string[]>(
+    (acc, reservation) => {
+      if (!reservation.space_id) return acc;
+      const label =
+        spaceLookup.get(reservation.space_id)?.name ?? reservation.space_id;
+      if (!acc.includes(label)) acc.push(label);
+      return acc;
+    },
+    []
+  );
 
   const conflictMessages = (conflicts ?? []).map((conflict) =>
-    conflictLabel(conflict, bookingLookup, spaceLookup),
+    conflictLabel(conflict, bookingLookup, spaceLookup)
   );
 
   return {
@@ -143,7 +181,10 @@ export async function getBookingByReference(reference: string): Promise<BookingW
   };
 }
 
-async function getMenuLabelsForJobs(supabase: Awaited<ReturnType<typeof sbServer>>, jobIds: string[]) {
+async function getMenuLabelsForJobs(
+  supabase: Awaited<ReturnType<typeof sbServer>>,
+  jobIds: string[]
+) {
   if (!jobIds.length) return new Map<string, string[]>();
 
   const { data: items, error } = await supabase
@@ -152,7 +193,9 @@ async function getMenuLabelsForJobs(supabase: Awaited<ReturnType<typeof sbServer
     .in("meal_job_id", jobIds);
   if (error) throw new Error(`Failed to load meal job items: ${error.message}`);
 
-  const menuItemIds = Array.from(new Set((items ?? []).map((item) => item.menu_item_id)));
+  const menuItemIds = Array.from(
+    new Set((items ?? []).map((item) => item.menu_item_id))
+  );
   if (!menuItemIds.length) {
     return new Map();
   }
@@ -161,12 +204,17 @@ async function getMenuLabelsForJobs(supabase: Awaited<ReturnType<typeof sbServer
     .from("menu_items")
     .select("id, label")
     .in("id", menuItemIds);
-  if (menuError) throw new Error(`Failed to load menu items: ${menuError.message}`);
+  if (menuError)
+    throw new Error(`Failed to load menu items: ${menuError.message}`);
 
-  const menuLookup = new Map((menuItems ?? []).map((item) => [item.id, item.label]));
+  const menuLookup = new Map(
+    (menuItems ?? []).map((item) => [item.id, item.label])
+  );
   const map = new Map<string, string[]>();
   for (const item of items ?? []) {
-    const label = item.menu_item_id ? menuLookup.get(item.menu_item_id) : undefined;
+    const label = item.menu_item_id
+      ? menuLookup.get(item.menu_item_id)
+      : undefined;
     if (!item.meal_job_id || !label) continue;
     const list = map.get(item.meal_job_id) ?? [];
     if (!list.includes(label)) list.push(label);
@@ -183,7 +231,7 @@ async function getMenuLabelsForJobs(supabase: Awaited<ReturnType<typeof sbServer
 
 async function getCatererNames(
   supabase: Awaited<ReturnType<typeof sbServer>>,
-  catererIds: string[],
+  catererIds: string[]
 ): Promise<Map<string, string>> {
   if (!catererIds.length) return new Map();
 
@@ -199,7 +247,7 @@ async function getCatererNames(
 function mapMealJobs(
   jobs: Tables<"meal_jobs">[] | null,
   menuLabels: Map<string, string[]>,
-  catererLookup: Map<string, string>,
+  catererLookup: Map<string, string>
 ): MealJobDetail[] {
   return (jobs ?? []).map((job) => ({
     ...job,
@@ -211,7 +259,9 @@ function mapMealJobs(
   }));
 }
 
-export async function getMealJobsForBooking(bookingId: string): Promise<MealJobDetail[]> {
+export async function getMealJobsForBooking(
+  bookingId: string
+): Promise<MealJobDetail[]> {
   const supabase = await sbServer();
   const { data: jobs, error } = await supabase
     .from("meal_jobs")
@@ -225,7 +275,11 @@ export async function getMealJobsForBooking(bookingId: string): Promise<MealJobD
   const jobIds = (jobs ?? []).map((job) => job.id);
   const menuLabels = await getMenuLabelsForJobs(supabase, jobIds);
   const catererIds = Array.from(
-    new Set((jobs ?? []).map((job) => job.assigned_caterer_id).filter(Boolean) as string[]),
+    new Set(
+      (jobs ?? [])
+        .map((job) => job.assigned_caterer_id)
+        .filter(Boolean) as string[]
+    )
   );
   const caterers = await getCatererNames(supabase, catererIds);
 
@@ -233,7 +287,7 @@ export async function getMealJobsForBooking(bookingId: string): Promise<MealJobD
 }
 
 export async function getAssignedMealJobs(
-  catererId?: string,
+  catererId?: string
 ): Promise<MealJobDetail[]> {
   const supabase = await sbServer();
   const query = supabase
@@ -251,14 +305,20 @@ export async function getAssignedMealJobs(
   const jobIds = (jobs ?? []).map((job) => job.id);
   const menuLabels = await getMenuLabelsForJobs(supabase, jobIds);
   const catererIds = Array.from(
-    new Set((jobs ?? []).map((job) => job.assigned_caterer_id).filter(Boolean) as string[]),
+    new Set(
+      (jobs ?? [])
+        .map((job) => job.assigned_caterer_id)
+        .filter(Boolean) as string[]
+    )
   );
   const caterers = await getCatererNames(supabase, catererIds);
 
   return mapMealJobs(jobs, menuLabels, caterers);
 }
 
-export async function getRoomsForBooking(bookingId: string): Promise<RoomWithAssignments[]> {
+export async function getRoomsForBooking(
+  bookingId: string
+): Promise<RoomWithAssignments[]> {
   const supabase = await sbServer();
   const { data: assignments, error } = await supabase
     .from("room_assignments")
@@ -267,9 +327,12 @@ export async function getRoomsForBooking(bookingId: string): Promise<RoomWithAss
     .order("room_id", { ascending: true })
     .order("bed_number", { ascending: true });
 
-  if (error) throw new Error(`Failed to load room assignments: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to load room assignments: ${error.message}`);
 
-  const roomIds = Array.from(new Set((assignments ?? []).map((assignment) => assignment.room_id)));
+  const roomIds = Array.from(
+    new Set((assignments ?? []).map((assignment) => assignment.room_id))
+  );
   if (!roomIds.length) {
     return [];
   }
@@ -278,7 +341,8 @@ export async function getRoomsForBooking(bookingId: string): Promise<RoomWithAss
     .from("rooms")
     .select("*")
     .in("id", roomIds);
-  if (roomsError) throw new Error(`Failed to load rooms: ${roomsError.message}`);
+  if (roomsError)
+    throw new Error(`Failed to load rooms: ${roomsError.message}`);
 
   const roomLookup = new Map((rooms ?? []).map((room) => [room.id, room]));
   const grouped = new Map<string, Tables<"room_assignments">[]>();
@@ -290,12 +354,13 @@ export async function getRoomsForBooking(bookingId: string): Promise<RoomWithAss
 
   return Array.from(roomLookup.values()).map((room) => ({
     ...room,
-    assignments: grouped.get(room.id)?.sort((a, b) => a.bed_number - b.bed_number) ?? [],
+    assignments:
+      grouped.get(room.id)?.sort((a, b) => a.bed_number - b.bed_number) ?? [],
   }));
 }
 
 export async function getDietaryProfilesForBooking(
-  bookingId: string,
+  bookingId: string
 ): Promise<DietaryProfile[]> {
   const supabase = await sbServer();
   const { data, error } = await supabase
@@ -304,6 +369,7 @@ export async function getDietaryProfilesForBooking(
     .eq("booking_id", bookingId)
     .order("person_name", { ascending: true });
 
-  if (error) throw new Error(`Failed to load dietary profiles: ${error.message}`);
+  if (error)
+    throw new Error(`Failed to load dietary profiles: ${error.message}`);
   return data ?? [];
 }

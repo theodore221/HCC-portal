@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import interactionPlugin from "@fullcalendar/interaction";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import type { EventClickArg, DateClickArg, DatesSetArg } from "@fullcalendar/core";
+import type { DateClickArg } from "@fullcalendar/interaction";
+import type { EventClickArg, DatesSetArg } from "@fullcalendar/core";
 
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { formatDateLabel } from "@/lib/catering";
@@ -86,7 +87,8 @@ export function CateringJobsCalendar({ jobs }: CateringJobsCalendarProps) {
             </h3>
           </div>
           <span className="text-xs font-medium text-olive-700">
-            {jobsForSelectedDate.length} {jobsForSelectedDate.length === 1 ? "service" : "services"}
+            {jobsForSelectedDate.length}{" "}
+            {jobsForSelectedDate.length === 1 ? "service" : "services"}
           </span>
         </div>
         {jobsForSelectedDate.length ? (
@@ -94,8 +96,12 @@ export function CateringJobsCalendar({ jobs }: CateringJobsCalendarProps) {
             {jobsForSelectedDate.map((job) => (
               <div key={job.id} className="space-y-2">
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-semibold text-olive-800">{job.groupName}</p>
-                  <span className="text-xs text-olive-700">{job.timeRangeLabel}</span>
+                  <p className="text-sm font-semibold text-olive-800">
+                    {job.groupName}
+                  </p>
+                  <span className="text-xs text-olive-700">
+                    {job.timeRangeLabel}
+                  </span>
                 </div>
                 <MealSlotCard job={job} />
               </div>
@@ -109,9 +115,13 @@ export function CateringJobsCalendar({ jobs }: CateringJobsCalendarProps) {
         {selectedJob ? (
           <div className="rounded-lg border border-olive-200 bg-olive-50 p-3 text-xs text-olive-700">
             <p className="font-semibold text-olive-900">Selected service</p>
-            <p className="font-medium text-olive-800">{selectedJob.groupName}</p>
+            <p className="font-medium text-olive-800">
+              {selectedJob.groupName}
+            </p>
             <p>{selectedJob.timeRangeLabel}</p>
-            <p>Assigned caterer: {selectedJob.assignedCaterer ?? "Unassigned"}</p>
+            <p>
+              Assigned caterer: {selectedJob.assignedCaterer ?? "Unassigned"}
+            </p>
           </div>
         ) : null}
       </div>
