@@ -240,7 +240,7 @@ function SidebarContent({
               <p className="text-sm font-semibold text-text">
                 Holy Cross Centre
               </p>
-              <p className="text-xs text-text-light">Admin Portal</p>
+              <p className="text-xs text-text-light">Web Portal</p>
             </div>
           ) : null}
         </Link>
