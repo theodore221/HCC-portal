@@ -222,10 +222,13 @@ const columns: ColumnDef<BookingWithMeta>[] = [
         {row.original.conflicts.length > 0 && (
           <Badge
             variant="destructive"
-            className="size-6 rounded-full p-0 flex items-center justify-center"
-            title={`${row.original.conflicts.length} conflicts`}
+            className="flex items-center gap-1.5 px-3 py-1"
+            title={`${row.original.conflicts.length} conflict${
+              row.original.conflicts.length === 1 ? "" : "s"
+            }`}
           >
             <AlertTriangle className="size-3.5" />
+            <span className="text-xs font-semibold">Conflicts</span>
           </Badge>
         )}
       </div>
