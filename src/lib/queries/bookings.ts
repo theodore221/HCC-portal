@@ -19,6 +19,10 @@ export type RoomWithAssignments = Tables<"rooms"> & {
 
 export type DietaryProfile = Tables<"dietary_profiles">;
 
+export type Space = Pick<Tables<"spaces">, "id" | "name" | "capacity">;
+
+export type SpaceReservation = Tables<"space_reservations">;
+
 export function getBookingDisplayName(booking: Tables<"bookings">) {
   return (
     booking.customer_name ??
