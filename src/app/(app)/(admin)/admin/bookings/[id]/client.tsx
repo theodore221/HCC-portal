@@ -1,7 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -44,6 +46,7 @@ export default function BookingDetailClient({
   allSpaces,
   reservations,
   conflicts,
+  conflictingBookings,
 }: {
   booking: BookingWithMeta;
   displayName: string;
@@ -77,7 +80,15 @@ export default function BookingDetailClient({
               </span>
             </div>
           </div>
-          <StatusChip status={booking.status} />
+          <div className="flex items-center gap-3">
+            {conflicts.length > 0 && (
+              <Badge variant="destructive" className="gap-1.5 px-3 py-1">
+                <AlertTriangle className="size-3.5" />
+                Conflicts
+              </Badge>
+            )}
+            <StatusChip status={booking.status} />
+          </div>
         </CardHeader>
         <CardContent>
           <TabsList className="flex flex-wrap items-center gap-2 rounded-full bg-neutral p-1">

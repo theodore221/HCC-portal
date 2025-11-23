@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import {
   CheckCircle2,
   AlertTriangle,
+  Users,
+  Calendar,
+  ArrowRight,
   ArrowRightLeft,
-  DollarSign,
-  Check,
+  ExternalLink,
+  Info,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +21,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ConflictBanner } from "@/components/ui/conflict-banner";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   updateBookingStatus,
   recordDeposit,
@@ -27,7 +45,8 @@ import type {
   Space,
   SpaceReservation,
 } from "@/lib/queries/bookings";
-import type { Tables, Views } from "@/lib/database.types";
+import type { Views } from "@/lib/database.types";
+import { cn } from "@/lib/utils";
 
 interface ConflictingBooking {
   id: string;
@@ -72,7 +91,7 @@ export function TriageTab({
     });
   };
 
-  // Group reservations by space_id
+  // Group reservations by space_id to handle "Whole Centre" or multi-day blocks logically
   const reservationsBySpace = reservations.reduce((acc, res) => {
     if (!acc[res.space_id]) {
       acc[res.space_id] = [];
@@ -81,223 +100,281 @@ export function TriageTab({
     return acc;
   }, {} as Record<string, typeof reservations>);
 
-  // Group conflicts by space_id for easy lookup
-  const conflictsBySpace = conflicts.reduce((acc, conflict) => {
-    if (conflict.space_id) {
-      if (!acc[conflict.space_id]) {
-        acc[conflict.space_id] = [];
-      }
-      acc[conflict.space_id].push(conflict);
-    }
-    return acc;
-  }, {} as Record<string, typeof conflicts>);
+  const totalIssues = booking.conflicts.length;
 
   return (
-    <div className="space-y-8 rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-      <section>
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-text-light">
-          Conflict review
-        </h3>
-        {booking.conflicts.length > 0 && (
-          <ConflictBanner issues={booking.conflicts} />
-        )}
-      </section>
-
-      <section className="grid gap-6 md:grid-cols-2">
-        {/* Requested Spaces */}
-        <div className="rounded-2xl border border-border/70 bg-neutral p-5">
-          <p className="mb-4 text-sm font-semibold text-text">
-            Requested spaces
+    <div className="space-y-6">
+      {/* Top Summary Header */}
+      <div className="flex flex-col gap-4 rounded-2xl border border-olive-100 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-olive-900">
+            Triage & Approval
+          </h2>
+          <p className="text-sm text-olive-600">
+            Resolve {totalIssues} {totalIssues === 1 ? "conflict" : "conflicts"}{" "}
+            before approving this request.
           </p>
-          <div className="space-y-4">
-            {Object.entries(reservationsBySpace).length > 0 ? (
-              Object.entries(reservationsBySpace).map(([spaceId, resList]) => {
-                const currentSpace = spaces.find((s) => s.id === spaceId);
-                const spaceConflicts = conflictsBySpace[spaceId] || [];
-                const hasConflict = spaceConflicts.length > 0;
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleRecordDeposit}
+            disabled={
+              isPending ||
+              booking.deposit_status === "Paid" ||
+              booking.status !== "Approved"
+            }
+            className="border-olive-200 hover:bg-olive-50"
+          >
+            {booking.deposit_status === "Paid" ? (
+              <span className="flex items-center gap-2 text-olive-700">
+                <CheckCircle2 className="h-4 w-4" /> Deposit Paid
+              </span>
+            ) : (
+              "Record Deposit"
+            )}
+          </Button>
+          <Button
+            onClick={handleApprove}
+            disabled={
+              isPending || booking.status === "Approved" || totalIssues > 0
+            }
+            className={cn(
+              totalIssues > 0
+                ? "opacity-50 cursor-not-allowed"
+                : "bg-primary hover:bg-primary/90"
+            )}
+          >
+            {booking.status === "Approved" ? (
+              <span className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" /> Approved
+              </span>
+            ) : (
+              "Approve Booking"
+            )}
+          </Button>
+        </div>
+      </div>
 
-                // Get unique conflicting bookings for this space
-                const spaceConflictingBookings = conflictingBookings.filter(
-                  (cb) => spaceConflicts.some((c) => c.conflicts_with === cb.id)
-                );
+      {/* Space Requests List */}
+      <div className="space-y-4">
+        {Object.entries(reservationsBySpace).map(([spaceId, resList]) => {
+          const currentSpace = spaces.find((s) => s.id === spaceId);
 
-                return (
-                  <div
-                    key={spaceId}
-                    className="flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1">
+          // Conflict Logic
+          const spaceConflicts = conflicts.filter(
+            (c) => c.space_id === spaceId
+          );
+          const hasConflict = spaceConflicts.length > 0;
+
+          // Identify the specific conflicting bookings
+          const blockers = conflictingBookings.filter((cb) =>
+            spaceConflicts.some((c) => c.conflicts_with === cb.id)
+          );
+
+          // Capacity Logic
+          const capacity = currentSpace?.capacity || 0;
+          const isOverCapacity = capacity > 0 && booking.headcount > capacity;
+          const capacityPercentage = Math.min(
+            100,
+            Math.round((booking.headcount / capacity) * 100)
+          );
+
+          return (
+            <Card
+              key={spaceId}
+              className={cn(
+                "overflow-hidden border transition-all duration-200",
+                hasConflict
+                  ? "border-red-200 bg-red-50/30 shadow-sm"
+                  : isOverCapacity
+                  ? "border-amber-200 bg-amber-50/30"
+                  : "border-olive-100 bg-white"
+              )}
+            >
+              <CardContent className="p-0">
+                <div className="flex flex-col md:flex-row">
+                  {/* Left: The Request Details */}
+                  <div className="flex-1 p-6">
+                    <div className="mb-4 flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-olive-900 text-lg">
+                            {currentSpace?.name}
+                          </h3>
+                          {hasConflict && (
+                            <Badge
+                              variant="destructive"
+                              className="rounded-full px-2"
+                            >
+                              Conflict
+                            </Badge>
+                          )}
+                          {!hasConflict && isOverCapacity && (
+                            <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 rounded-full px-2">
+                              Over Capacity
+                            </Badge>
+                          )}
+                          {!hasConflict && !isOverCapacity && (
+                            <Badge
+                              variant="outline"
+                              className="text-olive-600 border-olive-200 bg-olive-50 rounded-full px-2"
+                            >
+                              Available
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-olive-600 mt-1">
+                          Requested for{" "}
+                          <span className="font-medium text-olive-800">
+                            {resList.length}{" "}
+                            {resList.length === 1 ? "day" : "days"}
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* Space Switcher */}
+                      <div className="w-[200px]">
+                        <label className="text-[10px] uppercase tracking-wider font-bold text-olive-500 mb-1.5 block">
+                          Switch Space
+                        </label>
                         <Select
                           disabled={isPending}
                           value={spaceId}
                           onValueChange={(newSpaceId) => {
-                            // Update all reservations for this space to the new space
                             resList.forEach((res) =>
                               handleSpaceChange(res.id, newSpaceId)
                             );
                           }}
                         >
-                          <SelectTrigger className="h-9 w-full border-none bg-transparent p-0 text-base font-semibold text-text shadow-none focus:ring-0">
-                            <SelectValue placeholder="Select a space">
-                              {currentSpace?.name}
-                            </SelectValue>
+                          <SelectTrigger className="h-9 bg-white border-olive-200 text-sm shadow-sm">
+                            <SelectValue placeholder="Select space" />
                           </SelectTrigger>
                           <SelectContent>
                             {spaces.map((space) => (
                               <SelectItem key={space.id} value={space.id}>
-                                {space.name} ({space.capacity} cap)
+                                <div className="flex items-center justify-between w-full gap-4">
+                                  <span>{space.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Cap: {space.capacity ?? "-"}
+                                  </span>
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {hasConflict && (
-                          <span className="flex items-center rounded-full bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
-                            <AlertTriangle className="mr-1 h-3 w-3" />
-                            Conflict
-                          </span>
-                        )}
-                      </div>
                     </div>
 
-                    {/* Dates List */}
-                    <div className="space-y-1 pl-1">
-                      {resList.map((res) => (
-                        <div
-                          key={res.id}
-                          className="flex items-center text-sm text-text-light"
+                    {/* Capacity Visualization */}
+                    <div className="mt-6">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="font-medium text-olive-700 flex items-center gap-1.5">
+                          <Users className="size-3.5" />
+                          Capacity Usage
+                        </span>
+                        <span
+                          className={cn(
+                            "font-semibold",
+                            isOverCapacity ? "text-red-600" : "text-olive-900"
+                          )}
                         >
-                          <span className="w-24 font-medium">
-                            {new Date(res.service_date).toLocaleDateString(
-                              undefined,
-                              {
-                                weekday: "short",
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )}
-                          </span>
-                          <span>
-                            {res.start_time && res.end_time
-                              ? `${res.start_time.slice(
-                                  0,
-                                  5
-                                )} - ${res.end_time.slice(0, 5)}`
-                              : "All day"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Conflict Details */}
-                    {hasConflict && (
-                      <div className="mt-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-                        <p className="mb-2 text-xs font-semibold text-destructive">
-                          Conflicts with:
-                        </p>
-                        <div className="space-y-2">
-                          {spaceConflictingBookings.map((cb) => (
-                            <div
-                              key={cb.id}
-                              className="flex flex-col gap-1 text-xs text-text"
-                            >
-                              <div className="flex items-center justify-between font-medium">
-                                <span>
-                                  {cb.reference || "No Ref"} •{" "}
-                                  {cb.contact_name ||
-                                    cb.customer_name ||
-                                    "Unknown Contact"}
-                                </span>
-                                <span className="rounded-full bg-white px-2 py-0.5 text-[10px] border border-border/50">
-                                  {cb.status}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                          {booking.headcount} / {capacity || "∞"} Guests
+                        </span>
                       </div>
-                    )}
+                      <div className="h-2 w-full bg-neutral rounded-full overflow-hidden border border-black/5">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all duration-500",
+                            isOverCapacity ? "bg-red-500" : "bg-olive-500"
+                          )}
+                          style={{ width: `${capacityPercentage}%` }}
+                        />
+                      </div>
+                      {isOverCapacity && (
+                        <p className="text-xs text-red-600 mt-2 flex items-center gap-1.5 bg-white/50 p-2 rounded border border-red-100">
+                          <AlertTriangle className="size-3.5" />
+                          This group exceeds the recommended limit for{" "}
+                          {currentSpace?.name}. Consider moving to a larger
+                          space or approving as an exception.
+                        </p>
+                      )}
+                    </div>
                   </div>
-                );
-              })
-            ) : (
-              <p className="text-xs text-text-light">No spaces assigned yet.</p>
-            )}
-          </div>
-        </div>
 
-        {/* Capacity & Warnings */}
-        <div className="rounded-2xl border border-border/70 bg-neutral p-5">
-          <p className="mb-4 text-sm font-semibold text-text">
-            Capacity & warnings
-          </p>
-          <ul className="space-y-3 text-sm text-text">
-            {Object.entries(reservationsBySpace).map(([spaceId, resList]) => {
-              const space = spaces.find((s) => s.id === spaceId);
-              if (!space) return null;
-              const isOverCapacity =
-                space.capacity && booking.headcount > space.capacity;
+                  {/* Right: The Conflict Context (if any) */}
+                  {hasConflict && (
+                    <div className="relative md:w-[380px] border-t md:border-t-0 md:border-l border-red-100 bg-red-50/50 p-6">
+                      <div className="absolute top-6 right-6">
+                        <Ban className="h-16 w-16 text-red-100 -rotate-12" />
+                      </div>
 
-              return (
-                <li
-                  key={spaceId}
-                  className="flex items-center justify-between rounded-xl bg-white p-3 shadow-sm"
-                >
-                  <span>{space.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-text-light">
-                      {booking.headcount} / {space.capacity || "—"}
-                    </span>
-                    {isOverCapacity ? (
-                      <span className="flex items-center text-xs font-bold text-destructive">
-                        <AlertTriangle className="mr-1 h-3 w-3" />
-                        Over cap
-                      </span>
-                    ) : (
-                      <span className="flex items-center text-xs font-bold text-success">
-                        <Check className="mr-1 h-3 w-3" />
-                        OK
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-            {Object.keys(reservationsBySpace).length === 0 && (
-              <li className="text-xs text-text-light">
-                No spaces to check capacity for.
-              </li>
-            )}
-          </ul>
-        </div>
-      </section>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-red-800 mb-4 flex items-center gap-2">
+                        <AlertTriangle className="size-4" />
+                        Blocked By
+                      </h4>
 
-      <div className="flex flex-wrap gap-3 pt-4">
-        <Button
-          onClick={handleApprove}
-          disabled={isPending || booking.status === "Approved"}
-          className="gap-2"
-        >
-          <CheckCircle2 className="h-4 w-4" />
-          {booking.status === "Approved" ? "Approved" : "Approve booking"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleRecordDeposit}
-          disabled={
-            isPending ||
-            booking.deposit_status === "Paid" ||
-            booking.status !== "Approved"
-          }
-          className="gap-2"
-        >
-          <DollarSign className="h-4 w-4" />
-          {booking.deposit_status === "Paid"
-            ? "Deposit recorded"
-            : "Record deposit"}
-        </Button>
+                      <div className="space-y-3 relative z-10">
+                        {blockers.map((blocker) => (
+                          <div
+                            key={blocker.id}
+                            className="bg-white rounded-xl p-3 shadow-sm border border-red-100"
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <p className="font-semibold text-sm text-olive-900">
+                                  {blocker.customer_name ||
+                                    blocker.contact_name ||
+                                    "Unknown Group"}
+                                </p>
+                                <p className="text-xs text-olive-500 font-mono">
+                                  {blocker.reference}
+                                </p>
+                              </div>
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] px-1.5 h-5"
+                              >
+                                {blocker.status}
+                              </Badge>
+                            </div>
+
+                            <div className="text-xs text-olive-700 bg-neutral rounded p-2 mb-2">
+                              <p className="flex items-center gap-1.5">
+                                <Calendar className="size-3" />
+                                {
+                                  spaceConflicts.filter(
+                                    (c) => c.conflicts_with === blocker.id
+                                  ).length
+                                }{" "}
+                                overlap dates
+                              </p>
+                            </div>
+
+                            <Button
+                              asChild
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-between text-xs h-7 hover:bg-olive-50 text-olive-600"
+                            >
+                              <Link
+                                href={`/admin/bookings/${blocker.id}`}
+                                target="_blank"
+                              >
+                                View booking{" "}
+                                <ExternalLink className="size-3 ml-2" />
+                              </Link>
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

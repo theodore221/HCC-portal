@@ -12,6 +12,7 @@ import {
   Search,
   SlidersHorizontal,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -215,7 +216,20 @@ const columns: ColumnDef<BookingWithMeta>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
-    cell: ({ row }) => <StatusChip status={row.original.status} />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <StatusChip status={row.original.status} />
+        {row.original.conflicts.length > 0 && (
+          <Badge
+            variant="destructive"
+            className="size-6 rounded-full p-0 flex items-center justify-center"
+            title={`${row.original.conflicts.length} conflicts`}
+          >
+            <AlertTriangle className="size-3.5" />
+          </Badge>
+        )}
+      </div>
+    ),
     filterFn: (row, columnId, filterValue) => {
       const statuses = filterValue as BookingStatus[] | undefined;
       if (!statuses?.length) return true;

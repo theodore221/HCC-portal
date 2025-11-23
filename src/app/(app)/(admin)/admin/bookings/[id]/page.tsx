@@ -16,10 +16,11 @@ import type { Views } from "@/lib/database.types";
 export default async function BookingDetail({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const bookings = await getBookingsForAdmin();
-  const booking = bookings.find((b) => b.id === params.id);
+  const booking = bookings.find((b) => b.id === id);
   if (!booking) return notFound();
 
   const mealJobsRaw = await getMealJobsForBooking(booking.id);
@@ -28,31 +29,86 @@ export default async function BookingDetail({
   const displayName = getBookingDisplayName(booking);
 
   const supabase: any = await sbServer();
-  const [{ data: allSpaces }, { data: reservations }, { data: conflicts }] =
-    await Promise.all([
-      supabase
-        .from("spaces")
-        .select("id, name, capacity")
-        .eq("active", true)
-        .order("name"),
-      supabase
-        .from("space_reservations")
-        .select("*")
-        .eq("booking_id", booking.id),
-      supabase
-        .from("v_space_conflicts")
-        .select("*")
-        .eq("booking_id", booking.id),
-    ]);
 
-  const typedConflicts =
-    (conflicts as unknown as Views<"v_space_conflicts">[]) ?? [];
+  // 1. Fetch all necessary data
+  const [
+    { data: allSpaces },
+    { data: bookingReservations },
+    { data: potentialConflictingReservations },
+  ] = await Promise.all([
+    supabase
+      .from("spaces")
+      .select("id, name, capacity")
+      .eq("active", true)
+      .order("name"),
+    supabase
+      .from("space_reservations")
+      .select("*")
+      .eq("booking_id", booking.id),
+    supabase
+      .from("space_reservations")
+      .select("*")
+      .gte("service_date", booking.arrival_date)
+      .lte("service_date", booking.departure_date)
+      .neq("booking_id", booking.id), // Exclude current booking
+  ]);
 
-  // Fetch details for conflicting bookings
+  // 2. Compute Conflicts in App Layer
+  const conflicts: Views<"v_space_conflicts">[] = [];
+  const myReservations = (bookingReservations as SpaceReservation[]) ?? [];
+  const othersReservations =
+    (potentialConflictingReservations as SpaceReservation[]) ?? [];
+
+  console.log(`[Conflict Debug] My Reservations: ${myReservations.length}`);
+  console.log(
+    `[Conflict Debug] Other Reservations: ${othersReservations.length}`
+  );
+  if (myReservations.length > 0) {
+    console.log(
+      `[Conflict Debug] Sample My Res Date:`,
+      myReservations[0].service_date,
+      typeof myReservations[0].service_date
+    );
+  }
+  if (othersReservations.length > 0) {
+    console.log(
+      `[Conflict Debug] Sample Other Res Date:`,
+      othersReservations[0].service_date,
+      typeof othersReservations[0].service_date
+    );
+  }
+
+  for (const myRes of myReservations) {
+    for (const otherRes of othersReservations) {
+      // Must be same space and same day
+      if (
+        myRes.space_id !== otherRes.space_id ||
+        myRes.service_date !== otherRes.service_date
+      ) {
+        continue;
+      }
+
+      // Check time overlap
+      // If times are null, assume full day (00:00 - 23:59)
+      const myStart = myRes.start_time ?? "00:00";
+      const myEnd = myRes.end_time ?? "23:59";
+      const otherStart = otherRes.start_time ?? "00:00";
+      const otherEnd = otherRes.end_time ?? "23:59";
+
+      if (myStart < otherEnd && otherStart < myEnd) {
+        conflicts.push({
+          booking_id: booking.id,
+          space_id: myRes.space_id,
+          service_date: myRes.service_date,
+          conflicts_with: otherRes.booking_id,
+        });
+      }
+    }
+  }
+
+  // 3. Fetch details for conflicting bookings
   const conflictingBookingIds = Array.from(
-    new Set(
-      typedConflicts.map((c) => c.conflicts_with).filter(Boolean) as string[]
-    )
+    new Set(conflicts.map((c) => c.conflicts_with).filter(Boolean) as string[])
   );
 
   let conflictingBookingsData: any[] = [];
@@ -67,9 +123,6 @@ export default async function BookingDetail({
     }
   }
 
-  // Force recompile
-  console.log("Conflicting bookings data:", conflictingBookingsData);
-
   return (
     <BookingDetailClient
       booking={booking}
@@ -77,8 +130,8 @@ export default async function BookingDetail({
       mealJobs={mealJobs}
       rooms={rooms}
       allSpaces={(allSpaces as unknown as Space[]) ?? []}
-      reservations={(reservations as unknown as SpaceReservation[]) ?? []}
-      conflicts={typedConflicts}
+      reservations={myReservations}
+      conflicts={conflicts}
       conflictingBookings={conflictingBookingsData ?? []}
     />
   );
