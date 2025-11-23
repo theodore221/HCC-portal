@@ -17,10 +17,14 @@ import { RoomCard } from "@/components/ui/room-card";
 import { Button } from "@/components/ui/button";
 import { formatDateRange } from "@/lib/utils";
 import type { EnrichedMealJob } from "@/lib/catering";
+import { TriageTab } from "./triage-tab";
 import type {
   BookingWithMeta,
   RoomWithAssignments,
+  Space,
+  SpaceReservation,
 } from "@/lib/queries/bookings";
+import type { Tables, Views } from "@/lib/database.types";
 
 const tabConfig = [
   { value: "overview", label: "Overview" },
@@ -37,11 +41,24 @@ export default function BookingDetailClient({
   displayName,
   mealJobs,
   rooms,
+  allSpaces,
+  reservations,
+  conflicts,
 }: {
   booking: BookingWithMeta;
   displayName: string;
   mealJobs: EnrichedMealJob[];
   rooms: RoomWithAssignments[];
+  allSpaces: Space[];
+  reservations: SpaceReservation[];
+  conflicts: Views<"v_space_conflicts">[];
+  conflictingBookings: {
+    id: string;
+    reference: string | null;
+    status: string;
+    contact_name: string | null;
+    customer_name: string | null;
+  }[];
 }) {
   return (
     <Tabs defaultValue="overview" className="space-y-6">
@@ -82,23 +99,47 @@ export default function BookingDetailClient({
         <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
           <SectionHeading>Status timeline</SectionHeading>
           <div className="grid gap-4 sm:grid-cols-4">
-            <div className="rounded-2xl border border-border/70 bg-white p-4 text-sm text-text shadow-soft">
-              <p className="font-semibold text-text">Approved</p>
-              <p className="text-xs text-text-light">Date placeholder</p>
+            <div
+              className={`rounded-2xl border p-4 text-sm shadow-soft ${
+                booking.status === "Approved" ||
+                booking.status === "DepositReceived" ||
+                booking.status === "InProgress" ||
+                booking.status === "Completed"
+                  ? "bg-secondary border-secondary text-secondary-foreground"
+                  : "bg-white border-border/70 text-text"
+              }`}
+            >
+              <p className="font-semibold">Approved</p>
+              <p className="text-xs opacity-80">
+                {booking.status === "Approved" ||
+                booking.status === "DepositReceived" ||
+                booking.status === "InProgress" ||
+                booking.status === "Completed"
+                  ? new Date(booking.updated_at).toLocaleDateString()
+                  : "Pending"}
+              </p>
             </div>
-            <div className="rounded-2xl border border-border/70 bg-white p-4 text-sm text-text shadow-soft">
-              <p className="font-semibold text-text">Deposit received</p>
-              <p className="text-xs text-text-light">
+            <div
+              className={`rounded-2xl border p-4 text-sm shadow-soft ${
+                booking.deposit_received_at
+                  ? "bg-secondary border-secondary text-secondary-foreground"
+                  : "bg-white border-border/70 text-text"
+              }`}
+            >
+              <p className="font-semibold">Deposit received</p>
+              <p className="text-xs opacity-80">
                 {booking.deposit_received_at
                   ? new Date(booking.deposit_received_at).toLocaleDateString()
                   : "Pending"}
               </p>
             </div>
             <div
-              className={`rounded-2xl border border-border/70 p-4 text-sm shadow-soft ${
+              className={`rounded-2xl border p-4 text-sm shadow-soft ${
                 !booking.is_overnight
-                  ? "bg-neutral text-text-light opacity-50 border-dashed"
-                  : "bg-white text-text"
+                  ? "bg-neutral text-text-light opacity-50 border-dashed border-border/70"
+                  : rooms.length > 0
+                  ? "bg-secondary border-secondary text-secondary-foreground"
+                  : "bg-white border-border/70 text-text"
               }`}
             >
               <p className="font-semibold">Room List received</p>
@@ -111,10 +152,12 @@ export default function BookingDetailClient({
               </p>
             </div>
             <div
-              className={`rounded-2xl border border-border/70 p-4 text-sm shadow-soft ${
+              className={`rounded-2xl border p-4 text-sm shadow-soft ${
                 !booking.catering_required
-                  ? "bg-neutral text-text-light opacity-50 border-dashed"
-                  : "bg-white text-text"
+                  ? "bg-neutral text-text-light opacity-50 border-dashed border-border/70"
+                  : mealJobs.length > 0
+                  ? "bg-secondary border-secondary text-secondary-foreground"
+                  : "bg-white border-border/70 text-text"
               }`}
             >
               <p className="font-semibold">Catering Selections received</p>
@@ -200,58 +243,14 @@ export default function BookingDetailClient({
         </div>
       </TabsContent>
 
-      <TabsContent
-        value="triage"
-        className="space-y-8 rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft"
-      >
-        <section>
-          <SectionHeading>Conflict review</SectionHeading>
-          <ConflictBanner issues={booking.conflicts} />
-        </section>
-        <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-border/70 bg-neutral p-4">
-            <p className="text-sm font-semibold text-text">Requested spaces</p>
-            <ul className="mt-3 space-y-2 text-sm text-text">
-              {booking.spaces.length ? (
-                booking.spaces.map((space) => (
-                  <li
-                    key={space}
-                    className="flex items-center justify-between text-text"
-                  >
-                    <span>{space}</span>
-                    <span className="text-xs text-text-light">
-                      Hold confirmed
-                    </span>
-                  </li>
-                ))
-              ) : (
-                <li className="text-xs text-text-light">
-                  No spaces assigned yet.
-                </li>
-              )}
-            </ul>
-          </div>
-          <details className="rounded-2xl border border-border/70 bg-neutral p-4">
-            <summary className="cursor-pointer text-sm font-semibold text-text">
-              Capacity &amp; warnings
-            </summary>
-            <ul className="mt-3 space-y-2 text-sm text-text">
-              <li>
-                Headcount {booking.headcount} vs beds 80 ·{" "}
-                <span className="font-semibold text-success">OK</span>
-              </li>
-              {booking.conflicts.map((conflict) => (
-                <li key={conflict}>{conflict}</li>
-              ))}
-              {!booking.conflicts.length && <li>No conflicts detected.</li>}
-            </ul>
-          </details>
-        </section>
-        <div className="flex flex-wrap gap-3">
-          <Button variant="outline">Mark as In Triage</Button>
-          <Button>Approve booking</Button>
-          <Button variant="ghost">Record deposit</Button>
-        </div>
+      <TabsContent value="triage">
+        <TriageTab
+          booking={booking}
+          reservations={reservations}
+          spaces={allSpaces}
+          conflicts={conflicts}
+          conflictingBookings={conflictingBookings}
+        />
       </TabsContent>
 
       <TabsContent
