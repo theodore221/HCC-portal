@@ -115,6 +115,18 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["meal_jobs"]["Row"]>;
         Relationships: [];
       };
+      meal_prices: {
+        Row: {
+          id: string;
+          meal_type: Database["public"]["Enums"]["meal_type"];
+          price: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["meal_prices"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["meal_prices"]["Row"]>;
+        Relationships: [];
+      };
       menu_items: {
         Row: {
           id: string;
@@ -122,6 +134,8 @@ export type Database = {
           allergens: string[] | null;
           dietary_tags: string[] | null;
           default_caterer_id: string | null;
+          meal_type: Database["public"]["Enums"]["meal_type"] | null;
+          price: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["menu_items"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["menu_items"]["Row"]>;
@@ -159,9 +173,31 @@ export type Database = {
           extra_bed_allowed: boolean;
           extra_bed_fee: number | null;
           active: boolean;
+          room_type_id: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["rooms"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["rooms"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "rooms_room_type_id_fkey";
+            columns: ["room_type_id"];
+            referencedRelation: "room_types";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      room_types: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          price: number;
+          capacity: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["room_types"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["room_types"]["Row"]>;
         Relationships: [];
       };
       space_reservations: {
@@ -189,6 +225,7 @@ export type Database = {
           capacity: number | null;
           features: string[] | null;
           active: boolean;
+          price: number | null;
         };
         Insert: Partial<Database["public"]["Tables"]["spaces"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["spaces"]["Row"]>;
@@ -241,7 +278,9 @@ export type Database = {
         | "Morning Tea"
         | "Lunch"
         | "Afternoon Tea"
-        | "Dinner";
+        | "Dinner"
+        | "Dessert"
+        | "Supper";
       payment_kind: "Deposit" | "Balance";
       payment_status: "Pending" | "Paid" | "Failed" | "Cancelled";
       severity: "Low" | "Moderate" | "High" | "Fatal";
