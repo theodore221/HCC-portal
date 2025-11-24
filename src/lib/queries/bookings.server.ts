@@ -5,6 +5,7 @@ import type {
   DietaryProfile,
   MealJobDetail,
   RoomWithAssignments,
+  SpaceReservation,
 } from "./bookings";
 
 function parseCounts(
@@ -48,6 +49,41 @@ function conflictLabel(
     : `${spaceName} · ${dateLabel}`;
 }
 
+function deriveConflicts(
+  bookingId: string,
+  myReservations: SpaceReservation[],
+  otherReservations: SpaceReservation[]
+): Views<"v_space_conflicts">[] {
+  const conflicts: Views<"v_space_conflicts">[] = [];
+
+  for (const myRes of myReservations) {
+    for (const otherRes of otherReservations) {
+      if (
+        myRes.space_id !== otherRes.space_id ||
+        myRes.service_date !== otherRes.service_date
+      ) {
+        continue;
+      }
+
+      const myStart = myRes.start_time ?? "00:00";
+      const myEnd = myRes.end_time ?? "23:59";
+      const otherStart = otherRes.start_time ?? "00:00";
+      const otherEnd = otherRes.end_time ?? "23:59";
+
+      if (myStart < otherEnd && otherStart < myEnd) {
+        conflicts.push({
+          booking_id: bookingId,
+          space_id: myRes.space_id,
+          service_date: myRes.service_date,
+          conflicts_with: otherRes.booking_id,
+        });
+      }
+    }
+  }
+
+  return conflicts;
+}
+
 export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
   const supabase = await sbServer();
 
@@ -55,17 +91,15 @@ export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
     { data: bookings, error: bookingsError },
     { data: reservations, error: reservationsError },
     { data: spaces, error: spacesError },
-    { data: conflicts, error: conflictsError },
   ] = await Promise.all([
     supabase
       .from("bookings")
       .select("*")
       .order("arrival_date", { ascending: true }),
-    supabase.from("space_reservations").select("booking_id, space_id, status"),
-    supabase.from("spaces").select("id, name"),
     supabase
-      .from("v_space_conflicts")
-      .select("booking_id, conflicts_with, space_id, service_date"),
+      .from("space_reservations")
+      .select("booking_id, space_id, service_date, start_time, end_time, status"),
+    supabase.from("spaces").select("id, name"),
   ]);
 
   if (bookingsError)
@@ -76,8 +110,6 @@ export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
     );
   if (spacesError)
     throw new Error(`Failed to load spaces: ${spacesError.message}`);
-  if (conflictsError)
-    throw new Error(`Failed to load conflicts: ${conflictsError.message}`);
 
   const spaceLookup = new Map((spaces ?? []).map((space) => [space.id, space]));
   const bookingLookup = new Map(
@@ -99,12 +131,26 @@ export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
   }
 
   const conflictsByBooking = new Map<string, string[]>();
-  for (const conflict of conflicts ?? []) {
-    if (!conflict.booking_id) continue;
-    const label = conflictLabel(conflict, bookingLookup, spaceLookup);
-    const list = conflictsByBooking.get(conflict.booking_id) ?? [];
-    list.push(label);
-    conflictsByBooking.set(conflict.booking_id, list);
+  for (const booking of bookings ?? []) {
+    const myReservations = (reservations ?? []).filter(
+      (res) => res.booking_id === booking.id
+    );
+    const overlappingReservations = (reservations ?? []).filter(
+      (res) =>
+        res.booking_id !== booking.id &&
+        res.service_date >= booking.arrival_date &&
+        res.service_date <= booking.departure_date
+    );
+
+    const conflicts = deriveConflicts(
+      booking.id,
+      myReservations,
+      overlappingReservations
+    );
+    const labels = conflicts.map((conflict) =>
+      conflictLabel(conflict, bookingLookup, spaceLookup)
+    );
+    conflictsByBooking.set(booking.id, labels);
   }
 
   return (bookings ?? []).map((booking) => ({
