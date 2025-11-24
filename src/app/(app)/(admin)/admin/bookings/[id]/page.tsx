@@ -47,7 +47,7 @@ export default async function BookingDetail({
       .eq("booking_id", booking.id),
     supabase
       .from("space_reservations")
-      .select("*")
+      .select("*, booking:bookings(status)")
       .gte("service_date", booking.arrival_date)
       .lte("service_date", booking.departure_date)
       .neq("booking_id", booking.id), // Exclude current booking
@@ -57,26 +57,14 @@ export default async function BookingDetail({
   const conflicts: Views<"v_space_conflicts">[] = [];
   const myReservations = (bookingReservations as SpaceReservation[]) ?? [];
   const othersReservations =
-    (potentialConflictingReservations as SpaceReservation[]) ?? [];
+    (potentialConflictingReservations as (SpaceReservation & {
+      booking: { status: string } | null;
+    })[]) ?? [];
 
   console.log(`[Conflict Debug] My Reservations: ${myReservations.length}`);
   console.log(
     `[Conflict Debug] Other Reservations: ${othersReservations.length}`
   );
-  if (myReservations.length > 0) {
-    console.log(
-      `[Conflict Debug] Sample My Res Date:`,
-      myReservations[0].service_date,
-      typeof myReservations[0].service_date
-    );
-  }
-  if (othersReservations.length > 0) {
-    console.log(
-      `[Conflict Debug] Sample Other Res Date:`,
-      othersReservations[0].service_date,
-      typeof othersReservations[0].service_date
-    );
-  }
 
   for (const myRes of myReservations) {
     for (const otherRes of othersReservations) {
@@ -96,6 +84,24 @@ export default async function BookingDetail({
       const otherEnd = otherRes.end_time ?? "23:59";
 
       if (myStart < otherEnd && otherStart < myEnd) {
+        // Priority Logic:
+        // If I am Confirmed/Approved, I only care about other Confirmed/Approved bookings.
+        // If I am Pending, I care about EVERYONE.
+
+        const myStatus = booking.status;
+        const otherStatus = otherRes.booking?.status;
+
+        const iAmPriority =
+          myStatus === "Confirmed" ||
+          myStatus === "Approved" ||
+          myStatus === "DepositReceived"; // Treat DepositReceived as high priority too just in case
+        const otherIsPending = otherStatus === "Pending";
+
+        if (iAmPriority && otherIsPending) {
+          // Ignore this conflict
+          continue;
+        }
+
         conflicts.push({
           booking_id: booking.id,
           space_id: myRes.space_id,

@@ -1,36 +1,29 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { AlertTriangle } from "lucide-react";
+import { useTransition, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusChip } from "@/components/ui/status-chip";
-import { ConflictBanner } from "@/components/ui/conflict-banner";
 import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { AuditTimeline } from "@/components/ui/audit-timeline";
 import { RoomCard } from "@/components/ui/room-card";
 import { Button } from "@/components/ui/button";
-import { formatDateRange } from "@/lib/utils";
+import { formatDateRange, cn } from "@/lib/utils";
 import type { EnrichedMealJob } from "@/lib/catering";
-import { TriageTab } from "./triage-tab";
+import { SpacesTab } from "./spaces-tab";
+import { updateBookingStatus, recordDeposit } from "./actions";
 import type {
   BookingWithMeta,
   RoomWithAssignments,
   Space,
   SpaceReservation,
 } from "@/lib/queries/bookings";
-import type { Tables, Views } from "@/lib/database.types";
+import type { Views } from "@/lib/database.types";
 
 const tabConfig = [
   { value: "overview", label: "Overview" },
-  { value: "triage", label: "Triage" },
   { value: "spaces", label: "Spaces" },
   { value: "accommodation", label: "Accommodation" },
   { value: "catering", label: "Catering" },
@@ -63,6 +56,22 @@ export default function BookingDetailClient({
     customer_name: string | null;
   }[];
 }) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleApprove = () => {
+    startTransition(async () => {
+      await updateBookingStatus(booking.id, "Approved");
+    });
+  };
+
+  const handleRecordDeposit = () => {
+    startTransition(async () => {
+      await recordDeposit(booking.id);
+    });
+  };
+
+  const totalIssues = booking.conflicts.length;
+
   return (
     <Tabs defaultValue="overview" className="space-y-6">
       <Card className="shadow-soft">
@@ -91,17 +100,63 @@ export default function BookingDetailClient({
           </div>
         </CardHeader>
         <CardContent>
-          <TabsList className="flex flex-wrap items-center gap-2 rounded-full bg-neutral p-1">
-            {tabConfig.map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                className="rounded-full px-4 py-2 text-sm font-semibold text-text-light transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-text data-[state=active]:shadow-sm"
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <TabsList className="flex flex-wrap items-center gap-2 rounded-full bg-neutral p-1">
+              {tabConfig.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-text-light transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-text data-[state=active]:shadow-sm"
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={handleRecordDeposit}
+                disabled={
+                  isPending ||
+                  booking.deposit_status === "Paid" ||
+                  booking.status !== "Approved"
+                }
+                className="border-olive-200 hover:bg-olive-50"
               >
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+                {booking.deposit_status === "Paid" ? (
+                  <span className="flex items-center gap-2 text-olive-700">
+                    <CheckCircle2 className="h-4 w-4" /> Deposit Paid
+                  </span>
+                ) : (
+                  "Record Deposit"
+                )}
+              </Button>
+              <Button
+                onClick={handleApprove}
+                disabled={
+                  isPending ||
+                  booking.status === "Approved" ||
+                  booking.status === "Confirmed" ||
+                  totalIssues > 0
+                }
+                className={cn(
+                  totalIssues > 0
+                    ? "opacity-50 cursor-not-allowed"
+                    : "bg-primary hover:bg-primary/90"
+                )}
+              >
+                {booking.status === "Approved" ||
+                booking.status === "Confirmed" ? (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4" /> Approved
+                  </span>
+                ) : (
+                  "Approve Booking"
+                )}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -262,26 +317,14 @@ export default function BookingDetailClient({
         </div>
       </TabsContent>
 
-      <TabsContent value="triage">
-        <TriageTab
+      <TabsContent value="spaces">
+        <SpacesTab
           booking={booking}
           reservations={reservations}
           spaces={allSpaces}
           conflicts={conflicts}
           conflictingBookings={conflictingBookings}
         />
-      </TabsContent>
-
-      <TabsContent
-        value="spaces"
-        className="space-y-6 rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft"
-      >
-        <section>
-          <SectionHeading>Spaces timeline</SectionHeading>
-          <div className="rounded-2xl border border-border/70 bg-neutral p-4 text-sm text-text">
-            Timeline visual placeholder showing holds per day.
-          </div>
-        </section>
       </TabsContent>
 
       <TabsContent

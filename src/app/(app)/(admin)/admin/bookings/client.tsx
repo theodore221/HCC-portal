@@ -316,32 +316,6 @@ export default function AdminBookingsClient({
   return (
     <div className="space-y-8">
       <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle className="text-lg text-text">Bookings</CardTitle>
-            <CardDescription className="text-sm text-text-light">
-              Filter by status, dates, catering or spaces
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-3 text-sm text-text-light">
-          {toolbarBadges.map(({ label, status }) => (
-            <span
-              key={status}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full border border-border/60 bg-neutral px-4 py-1 text-xs font-semibold text-text",
-                statusBadgeStyles[status]
-              )}
-            >
-              <span>{label}</span>
-              <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-semibold text-text">
-                {statusCounts[status] ?? 0}
-              </span>
-            </span>
-          ))}
-        </CardContent>
-      </Card>
-      <Card>
         <CardHeader>
           <CardTitle className="text-lg text-text">Bookings list</CardTitle>
           <CardDescription className="text-sm text-text-light">
