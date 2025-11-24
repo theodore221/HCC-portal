@@ -36,6 +36,11 @@ const statusConfig: Record<
     className: "border-success/20 bg-success/10 text-success",
     icon: CheckCircle2,
   },
+  Confirmed: {
+    label: "Confirmed",
+    className: "border-success/20 bg-success/10 text-success",
+    icon: CheckCircle2,
+  },
   DepositPending: {
     label: "Deposit pending",
     className: "border-warning/20 bg-warning/10 text-warning",

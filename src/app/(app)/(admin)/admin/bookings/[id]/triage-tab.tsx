@@ -137,7 +137,10 @@ export function TriageTab({
           <Button
             onClick={handleApprove}
             disabled={
-              isPending || booking.status === "Approved" || totalIssues > 0
+              isPending ||
+              booking.status === "Approved" ||
+              booking.status === "Confirmed" ||
+              totalIssues > 0
             }
             className={cn(
               totalIssues > 0
@@ -145,7 +148,7 @@ export function TriageTab({
                 : "bg-primary hover:bg-primary/90"
             )}
           >
-            {booking.status === "Approved" ? (
+            {booking.status === "Approved" || booking.status === "Confirmed" ? (
               <span className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" /> Approved
               </span>

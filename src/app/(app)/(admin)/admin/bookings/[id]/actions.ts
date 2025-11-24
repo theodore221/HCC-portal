@@ -25,6 +25,7 @@ export async function recordDeposit(bookingId: string) {
   const { error } = await supabase
     .from("bookings")
     .update({
+      status: "Confirmed",
       deposit_status: "Paid",
       deposit_received_at: new Date().toISOString(),
     })

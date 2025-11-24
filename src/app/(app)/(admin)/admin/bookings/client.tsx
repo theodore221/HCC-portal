@@ -49,6 +49,7 @@ import { cn } from "@/lib/utils";
 const statusOptions: { label: string; value: BookingStatus }[] = [
   { label: "Pending", value: "Pending" },
   { label: "Approved", value: "Approved" },
+  { label: "Confirmed", value: "Confirmed" },
   { label: "Deposit received", value: "DepositReceived" },
   { label: "In progress", value: "InProgress" },
   { label: "Completed", value: "Completed" },
@@ -59,6 +60,7 @@ const statusBadgeStyles: Partial<Record<BookingStatus, string>> = {
   Pending: "border-warning/20 bg-warning/10 text-warning",
   InTriage: "border-primary/20 bg-primary/10 text-primary",
   Approved: "border-success/20 bg-success/10 text-success",
+  Confirmed: "border-success/20 bg-success/10 text-success",
   DepositPending: "border-warning/20 bg-warning/10 text-warning",
   DepositReceived: "border-success/20 bg-success/10 text-success",
   InProgress: "border-primary/20 bg-primary/10 text-primary",

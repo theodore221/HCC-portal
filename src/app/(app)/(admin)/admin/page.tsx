@@ -52,6 +52,7 @@ const statusTone: Record<BookingStatus, { label: string; tone: Tone }> = {
   Pending: { label: "Pending", tone: "warning" },
   InTriage: { label: "In triage", tone: "primary" },
   Approved: { label: "Approved", tone: "primary" },
+  Confirmed: { label: "Confirmed", tone: "success" },
   DepositPending: { label: "Deposit pending", tone: "warning" },
   DepositReceived: { label: "Deposit received", tone: "success" },
   InProgress: { label: "In progress", tone: "primary" },
@@ -66,9 +67,13 @@ export default async function AdminDashboard() {
 
   const pending = bookings.filter((b) => b.status === "Pending");
   const depositPending = bookings.filter((b) => b.status === "DepositPending");
-  const depositReceived = bookings.filter((b) => b.status === "DepositReceived");
+  const depositReceived = bookings.filter(
+    (b) => b.status === "DepositReceived" || b.status === "Confirmed"
+  );
   const activeCatering = enrichedJobs.length;
-  const activeBookings = bookings.filter((b) => !["Cancelled", "Completed"].includes(b.status)).length;
+  const activeBookings = bookings.filter(
+    (b) => !["Cancelled", "Completed"].includes(b.status)
+  ).length;
   const arrivalsThisWeek = upcomingWithinDays(bookings, 7);
 
   const stats: StatConfig[] = [
@@ -103,7 +108,10 @@ export default async function AdminDashboard() {
   ];
 
   const recentBookings = [...bookings]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
     .slice(0, 3);
 
   const quickActions: QuickAction[] = [
@@ -145,7 +153,9 @@ export default async function AdminDashboard() {
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-xl font-bold text-text">Recent bookings</h2>
-            <p className="text-sm text-text-light">Manage your upcoming reservations</p>
+            <p className="text-sm text-text-light">
+              Manage your upcoming reservations
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <ToolbarButton icon={Filter} label="Filter" />
@@ -173,7 +183,9 @@ export default async function AdminDashboard() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-text-light">Quick actions</h2>
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-text-light">
+          Quick actions
+        </h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {quickActions.map((action) => (
             <QuickActionCard key={action.title} {...action} />
@@ -205,13 +217,19 @@ function DesignSystemCard() {
   const palette = [
     { label: "Primary", hex: "#2F5233", className: "bg-primary" },
     { label: "Accent", hex: "#FF6B35", className: "bg-accent" },
-    { label: "Secondary", hex: "#E8F5E9", className: "bg-secondary border border-primary/20" },
+    {
+      label: "Secondary",
+      hex: "#E8F5E9",
+      className: "bg-secondary border border-primary/20",
+    },
   ];
 
   return (
     <div className="flex h-full flex-col justify-between rounded-2xl border border-border bg-white p-6 shadow-soft">
       <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-text-light">Design system</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-text-light">
+          Design system
+        </p>
         <h3 className="mt-1 text-lg font-semibold text-text">Brand palette</h3>
         <p className="mt-2 text-sm text-text-light">
           Reference hues used throughout the admin dashboard.
@@ -232,7 +250,9 @@ function DesignSystemCard() {
         ))}
       </div>
       <div className="mt-6 rounded-xl border border-dashed border-border bg-neutral/80 px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-light">Typography</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-text-light">
+          Typography
+        </p>
         <p className="text-sm font-semibold text-text">Inter</p>
         <p className="text-xs text-text-light">Primary sans-serif</p>
       </div>
@@ -246,7 +266,12 @@ function StatCard({ label, value, helper, icon: Icon, tone }: StatConfig) {
   return (
     <div className="group rounded-2xl border border-border bg-white p-6 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
       <div className="flex items-start justify-between">
-        <div className={cn("flex size-12 items-center justify-center rounded-xl", backgroundClass)}>
+        <div
+          className={cn(
+            "flex size-12 items-center justify-center rounded-xl",
+            backgroundClass
+          )}
+        >
           <Icon className={cn("size-6", textClass)} aria-hidden />
         </div>
       </div>
@@ -259,7 +284,15 @@ function StatCard({ label, value, helper, icon: Icon, tone }: StatConfig) {
   );
 }
 
-function ToolbarButton({ icon: Icon, label, active = false }: { icon: LucideIcon; label: string; active?: boolean }) {
+function ToolbarButton({
+  icon: Icon,
+  label,
+  active = false,
+}: {
+  icon: LucideIcon;
+  label: string;
+  active?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -278,7 +311,9 @@ function ToolbarButton({ icon: Icon, label, active = false }: { icon: LucideIcon
 
 function BookingCard({ booking }: { booking: BookingWithMeta }) {
   const status = statusTone[booking.status];
-  const { backgroundClass, textClass } = getToneClasses(status?.tone ?? "primary");
+  const { backgroundClass, textClass } = getToneClasses(
+    status?.tone ?? "primary"
+  );
   let headcountLabel = "Headcount TBC";
   if (booking.headcount) {
     headcountLabel = booking.headcount.toLocaleString() + " guests";
@@ -291,13 +326,21 @@ function BookingCard({ booking }: { booking: BookingWithMeta }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-text">{getBookingDisplayName(booking)}</h3>
+          <h3 className="text-lg font-semibold text-text">
+            {getBookingDisplayName(booking)}
+          </h3>
           <p className="mt-1 flex items-center gap-2 text-sm text-text-light">
             <Calendar className="size-4" aria-hidden />
             {formatDateRange(booking.arrival_date, booking.departure_date)}
           </p>
         </div>
-        <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", backgroundClass, textClass)}>
+        <span
+          className={cn(
+            "rounded-full px-3 py-1 text-xs font-semibold",
+            backgroundClass,
+            textClass
+          )}
+        >
           {status?.label ?? booking.status}
         </span>
       </div>
@@ -306,7 +349,10 @@ function BookingCard({ booking }: { booking: BookingWithMeta }) {
           <Users className="size-4" aria-hidden />
           {headcountLabel}
         </span>
-        <ChevronRight className="size-5 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
+        <ChevronRight
+          className="size-5 transition-transform duration-200 group-hover:translate-x-1"
+          aria-hidden
+        />
       </div>
     </Link>
   );
@@ -317,12 +363,20 @@ function EmptyState({ message }: { message: string }) {
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-neutral px-6 py-12 text-center text-text-light">
       <Wallet className="size-10 text-border" aria-hidden />
       <p className="text-sm font-semibold text-text">{message}</p>
-      <p className="text-sm">Bookings will appear here once new enquiries arrive.</p>
+      <p className="text-sm">
+        Bookings will appear here once new enquiries arrive.
+      </p>
     </div>
   );
 }
 
-function QuickActionCard({ icon: Icon, title, description, href, tone }: QuickAction) {
+function QuickActionCard({
+  icon: Icon,
+  title,
+  description,
+  href,
+  tone,
+}: QuickAction) {
   const { backgroundClass, textClass } = getToneClasses(tone);
 
   return (
@@ -330,12 +384,20 @@ function QuickActionCard({ icon: Icon, title, description, href, tone }: QuickAc
       href={href}
       className="group block rounded-2xl border border-border bg-white p-6 shadow-soft transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
     >
-      <div className={cn("flex size-12 items-center justify-center rounded-xl", backgroundClass)}>
+      <div
+        className={cn(
+          "flex size-12 items-center justify-center rounded-xl",
+          backgroundClass
+        )}
+      >
         <Icon className={cn("size-6", textClass)} aria-hidden />
       </div>
       <h3 className="mt-4 text-base font-semibold text-text">{title}</h3>
       <p className="mt-2 text-sm text-text-light">{description}</p>
-      <ChevronRight className="mt-4 size-5 text-text-light transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
+      <ChevronRight
+        className="mt-4 size-5 text-text-light transition-transform duration-200 group-hover:translate-x-1"
+        aria-hidden
+      />
     </Link>
   );
 }

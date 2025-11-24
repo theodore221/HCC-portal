@@ -113,6 +113,7 @@ export default function BookingDetailClient({
             <div
               className={`rounded-2xl border p-4 text-sm shadow-soft ${
                 booking.status === "Approved" ||
+                booking.status === "Confirmed" ||
                 booking.status === "DepositReceived" ||
                 booking.status === "InProgress" ||
                 booking.status === "Completed"
@@ -123,6 +124,7 @@ export default function BookingDetailClient({
               <p className="font-semibold">Approved</p>
               <p className="text-xs opacity-80">
                 {booking.status === "Approved" ||
+                booking.status === "Confirmed" ||
                 booking.status === "DepositReceived" ||
                 booking.status === "InProgress" ||
                 booking.status === "Completed"
@@ -132,15 +134,21 @@ export default function BookingDetailClient({
             </div>
             <div
               className={`rounded-2xl border p-4 text-sm shadow-soft ${
-                booking.deposit_received_at
+                booking.status === "Confirmed" ||
+                booking.status === "InProgress" ||
+                booking.status === "Completed"
                   ? "bg-secondary border-secondary text-secondary-foreground"
                   : "bg-white border-border/70 text-text"
               }`}
             >
-              <p className="font-semibold">Deposit received</p>
+              <p className="font-semibold">Confirmed</p>
               <p className="text-xs opacity-80">
-                {booking.deposit_received_at
-                  ? new Date(booking.deposit_received_at).toLocaleDateString()
+                {booking.status === "Confirmed" ||
+                booking.status === "InProgress" ||
+                booking.status === "Completed"
+                  ? booking.deposit_received_at
+                    ? new Date(booking.deposit_received_at).toLocaleDateString()
+                    : new Date(booking.updated_at).toLocaleDateString()
                   : "Pending"}
               </p>
             </div>

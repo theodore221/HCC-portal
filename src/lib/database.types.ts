@@ -80,8 +80,12 @@ export type Database = {
           severity: Database["public"]["Enums"]["severity"] | null;
           notes: string | null;
         };
-        Insert: Partial<Database["public"]["Tables"]["dietary_profiles"]["Row"]>;
-        Update: Partial<Database["public"]["Tables"]["dietary_profiles"]["Row"]>;
+        Insert: Partial<
+          Database["public"]["Tables"]["dietary_profiles"]["Row"]
+        >;
+        Update: Partial<
+          Database["public"]["Tables"]["dietary_profiles"]["Row"]
+        >;
         Relationships: [];
       };
       meal_job_items: {
@@ -138,8 +142,12 @@ export type Database = {
           bed_number: number;
           is_extra_bed: boolean;
         };
-        Insert: Partial<Database["public"]["Tables"]["room_assignments"]["Row"]>;
-        Update: Partial<Database["public"]["Tables"]["room_assignments"]["Row"]>;
+        Insert: Partial<
+          Database["public"]["Tables"]["room_assignments"]["Row"]
+        >;
+        Update: Partial<
+          Database["public"]["Tables"]["room_assignments"]["Row"]
+        >;
         Relationships: [];
       };
       rooms: {
@@ -166,8 +174,12 @@ export type Database = {
           end_time: string | null;
           status: Database["public"]["Enums"]["space_res_status"];
         };
-        Insert: Partial<Database["public"]["Tables"]["space_reservations"]["Row"]>;
-        Update: Partial<Database["public"]["Tables"]["space_reservations"]["Row"]>;
+        Insert: Partial<
+          Database["public"]["Tables"]["space_reservations"]["Row"]
+        >;
+        Update: Partial<
+          Database["public"]["Tables"]["space_reservations"]["Row"]
+        >;
         Relationships: [];
       };
       spaces: {
@@ -209,6 +221,7 @@ export type Database = {
         | "Pending"
         | "InTriage"
         | "Approved"
+        | "Confirmed"
         | "DepositPending"
         | "DepositReceived"
         | "InProgress"
