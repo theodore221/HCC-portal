@@ -6,13 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusChip } from "@/components/ui/status-chip";
-import { MealSlotCard } from "@/components/ui/meal-slot-card";
+
 import { AuditTimeline } from "@/components/ui/audit-timeline";
 import { RoomCard } from "@/components/ui/room-card";
 import { Button } from "@/components/ui/button";
 import { formatDateRange, cn } from "@/lib/utils";
 import type { EnrichedMealJob } from "@/lib/catering";
 import { SpacesTab } from "./spaces-tab";
+import { CateringTab } from "./catering-tab";
 import { updateBookingStatus, recordDeposit } from "./actions";
 import type {
   BookingWithMeta,
@@ -345,22 +346,8 @@ export default function BookingDetailClient({
         </section>
       </TabsContent>
 
-      <TabsContent
-        value="catering"
-        className="space-y-6 rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft"
-      >
-        <section className="space-y-4">
-          <SectionHeading>Meal plan</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            {mealJobs.length ? (
-              mealJobs.map((job) => <MealSlotCard key={job.id} job={job} />)
-            ) : (
-              <p className="text-sm text-text-light">
-                No catering services scheduled.
-              </p>
-            )}
-          </div>
-        </section>
+      <TabsContent value="catering" className="space-y-6">
+        <CateringTab mealJobs={mealJobs} />
       </TabsContent>
 
       <TabsContent
