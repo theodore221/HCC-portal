@@ -12,6 +12,8 @@ import { Check, Pencil, X } from "lucide-react";
 import { updateMealPrice } from "../actions";
 import { useToast } from "@/components/ui/use-toast";
 
+import { MEAL_ORDER } from "@/lib/catering";
+
 interface MealsTabProps {
   mealPrices: Tables<"meal_prices">[];
 }
@@ -27,6 +29,12 @@ const MEAL_TYPE_LABELS: Record<string, string> = {
 };
 
 export function MealsTab({ mealPrices }: MealsTabProps) {
+  const sortedMealPrices = [...mealPrices].sort((a, b) => {
+    const indexA = MEAL_ORDER.indexOf(a.meal_type);
+    const indexB = MEAL_ORDER.indexOf(b.meal_type);
+    return indexA - indexB;
+  });
+
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const columns: ColumnDef<Tables<"meal_prices">>[] = [
@@ -95,7 +103,7 @@ export function MealsTab({ mealPrices }: MealsTabProps) {
 
   return (
     <div className="space-y-4">
-      <DataTable columns={columns} data={mealPrices} zebra />
+      <DataTable columns={columns} data={sortedMealPrices} zebra />
     </div>
   );
 }

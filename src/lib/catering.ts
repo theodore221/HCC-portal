@@ -28,6 +28,16 @@ export type EnrichedMealJob = {
   timeRangeLabel: string;
 };
 
+export const MEAL_ORDER = [
+  "Breakfast",
+  "Morning Tea",
+  "Lunch",
+  "Afternoon Tea",
+  "Dinner",
+  "Dessert",
+  "Supper",
+];
+
 const timeSlotMetadata: Record<Enums<"meal_type">, { start: string; end: string }> = {
   Breakfast: { start: "07:30", end: "08:30" },
   "Morning Tea": { start: "10:30", end: "11:15" },

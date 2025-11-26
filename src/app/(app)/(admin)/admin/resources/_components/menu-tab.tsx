@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Pencil, Trash2, X, Plus } from "lucide-react";
 import { updateMenuItem, createMenuItem, deleteMenuItem } from "../actions";
 import { useToast } from "@/components/ui/use-toast";
+import { MEAL_ORDER } from "@/lib/catering";
 
 interface MenuTabProps {
   menuItems: (Tables<"menu_items"> & { caterers: { name: string } | null })[];
@@ -338,11 +339,17 @@ function CreateMealTypeCell({
         <SelectValue placeholder="Select type" />
       </SelectTrigger>
       <SelectContent>
-        {mealPrices.map((mp) => (
-          <SelectItem key={mp.id} value={mp.meal_type}>
-            {mp.meal_type}
-          </SelectItem>
-        ))}
+        {[...mealPrices]
+          .sort((a, b) => {
+            const indexA = MEAL_ORDER.indexOf(a.meal_type);
+            const indexB = MEAL_ORDER.indexOf(b.meal_type);
+            return indexA - indexB;
+          })
+          .map((mp) => (
+            <SelectItem key={mp.id} value={mp.meal_type}>
+              {mp.meal_type}
+            </SelectItem>
+          ))}
       </SelectContent>
     </Select>
   );
@@ -508,11 +515,17 @@ function EditableMealTypeCell({
           <SelectValue placeholder="Select type" />
         </SelectTrigger>
         <SelectContent>
-          {mealPrices.map((mp) => (
-            <SelectItem key={mp.id} value={mp.meal_type}>
-              {mp.meal_type}
-            </SelectItem>
-          ))}
+          {[...mealPrices]
+            .sort((a, b) => {
+              const indexA = MEAL_ORDER.indexOf(a.meal_type);
+              const indexB = MEAL_ORDER.indexOf(b.meal_type);
+              return indexA - indexB;
+            })
+            .map((mp) => (
+              <SelectItem key={mp.id} value={mp.meal_type}>
+                {mp.meal_type}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
       <Button
