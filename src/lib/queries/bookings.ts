@@ -10,7 +10,9 @@ export type BookingWithMeta = Tables<"bookings"> & {
 export type MealJobDetail = Omit<Tables<"meal_jobs">, "counts_by_diet"> & {
   counts_by_diet: Record<string, number>;
   menu_labels: string[];
+  menu_ids: string[];
   assigned_caterer_name: string | null;
+  percolated_coffee_quantity: number | null;
 };
 
 export type RoomWithAssignments = Tables<"rooms"> & {

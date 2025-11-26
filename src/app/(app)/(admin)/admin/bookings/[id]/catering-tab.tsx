@@ -1,29 +1,46 @@
-import type { EnrichedMealJob } from "@/lib/catering";
+"use client";
+
+import { useMemo } from "react";
 import { DayMealCard } from "./day-meal-card";
+import type { EnrichedMealJob } from "@/lib/catering";
 
-interface CateringTabProps {
-  mealJobs: EnrichedMealJob[];
-}
+export function CateringTab({
+  meals,
+  caterers,
+  menuItems,
+}: {
+  meals: EnrichedMealJob[];
+  caterers: { id: string; name: string }[];
+  menuItems: { id: string; label: string; catererId: string | null; mealType: string | null }[];
+}) {
+  const mealsByDate = useMemo(() => {
+    const grouped: Record<
+      string,
+      {
+        date: string;
+        formattedDate: string;
+        meals: EnrichedMealJob[];
+      }
+    > = {};
 
-export function CateringTab({ mealJobs }: CateringTabProps) {
-  // Group meals by date
-  const mealsByDate = mealJobs.reduce((acc, meal) => {
-    if (!acc[meal.date]) {
-      acc[meal.date] = {
-        formattedDate: meal.formattedDate,
-        meals: [],
-      };
+    for (const meal of meals) {
+      const dateKey = meal.date;
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = {
+          date: dateKey,
+          formattedDate: meal.formattedDate,
+          meals: [],
+        };
+      }
+      grouped[dateKey].meals.push(meal);
     }
-    acc[meal.date].meals.push(meal);
-    return acc;
-  }, {} as Record<string, { formattedDate: string; meals: EnrichedMealJob[] }>);
 
-  // Sort dates chronologically
-  const sortedDates = Object.keys(mealsByDate).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime()
-  );
+    return grouped;
+  }, [meals]);
 
-  if (mealJobs.length === 0) {
+  const sortedDates = Object.keys(mealsByDate).sort();
+
+  if (meals.length === 0) {
     return (
       <div className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
         <p className="text-sm text-text-light">
@@ -41,6 +58,8 @@ export function CateringTab({ mealJobs }: CateringTabProps) {
           date={date}
           formattedDate={mealsByDate[date].formattedDate}
           meals={mealsByDate[date].meals}
+          caterers={caterers}
+          menuItems={menuItems}
         />
       ))}
     </div>

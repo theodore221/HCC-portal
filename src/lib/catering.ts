@@ -13,10 +13,12 @@ export type EnrichedMealJob = {
   timeSlot: Enums<"meal_type">;
   dietaryCounts: Record<string, number>;
   percolatedCoffee: boolean;
+  percolatedCoffeeQuantity: number | null;
   assignedCatererId: string | null;
   assignedCaterer: string | null;
   status: Enums<"meal_job_status">;
   menu: string[];
+  menuIds: string[];
   groupName: string;
   startDate: Date;
   endDate: Date;
@@ -77,10 +79,12 @@ export function enrichMealJobs(
       timeSlot: job.meal,
       dietaryCounts: job.counts_by_diet,
       percolatedCoffee: job.percolated_coffee,
+      percolatedCoffeeQuantity: job.percolated_coffee_quantity,
       assignedCatererId: job.assigned_caterer_id,
       assignedCaterer: job.assigned_caterer_name,
       status: job.status,
       menu: job.menu_labels,
+      menuIds: job.menu_ids,
       groupName: booking ? getBookingDisplayName(booking) : "Unassigned group",
       startDate,
       endDate,

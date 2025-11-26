@@ -41,6 +41,7 @@ export default function BookingDetailClient({
   reservations,
   conflicts,
   conflictingBookings,
+  cateringOptions,
 }: {
   booking: BookingWithMeta;
   displayName: string;
@@ -56,6 +57,10 @@ export default function BookingDetailClient({
     contact_name: string | null;
     customer_name: string | null;
   }[];
+  cateringOptions: {
+    caterers: { id: string; name: string }[];
+    menuItems: { id: string; label: string; catererId: string | null; mealType: string | null }[];
+  };
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -347,7 +352,11 @@ export default function BookingDetailClient({
       </TabsContent>
 
       <TabsContent value="catering" className="space-y-6">
-        <CateringTab mealJobs={mealJobs} />
+        <CateringTab 
+          meals={mealJobs} 
+          caterers={cateringOptions.caterers}
+          menuItems={cateringOptions.menuItems}
+        />
       </TabsContent>
 
       <TabsContent

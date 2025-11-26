@@ -227,11 +227,11 @@ export async function getBookingByReference(
   };
 }
 
-async function getMenuLabelsForJobs(
+async function getMenuDetailsForJobs(
   supabase: Awaited<ReturnType<typeof sbServer>>,
   jobIds: string[]
 ) {
-  if (!jobIds.length) return new Map<string, string[]>();
+  if (!jobIds.length) return new Map<string, { id: string; label: string }[]>();
 
   const { data: items, error } = await supabase
     .from("meal_job_items")
@@ -239,8 +239,10 @@ async function getMenuLabelsForJobs(
     .in("meal_job_id", jobIds);
   if (error) throw new Error(`Failed to load meal job items: ${error.message}`);
 
+  const validItems = items as { meal_job_id: string; menu_item_id: string }[] | null;
+
   const menuItemIds = Array.from(
-    new Set((items ?? []).map((item) => item.menu_item_id))
+    new Set((validItems ?? []).map((item) => item.menu_item_id))
   );
   if (!menuItemIds.length) {
     return new Map();
@@ -253,23 +255,23 @@ async function getMenuLabelsForJobs(
   if (menuError)
     throw new Error(`Failed to load menu items: ${menuError.message}`);
 
+  const validMenuItems = menuItems as { id: string; label: string }[] | null;
+
   const menuLookup = new Map(
-    (menuItems ?? []).map((item) => [item.id, item.label])
+    (validMenuItems ?? []).map((item) => [item.id, item.label])
   );
-  const map = new Map<string, string[]>();
-  for (const item of items ?? []) {
+  const map = new Map<string, { id: string; label: string }[]>();
+  for (const item of validItems ?? []) {
     const label = item.menu_item_id
       ? menuLookup.get(item.menu_item_id)
       : undefined;
-    if (!item.meal_job_id || !label) continue;
+    if (!item.meal_job_id || !label || !item.menu_item_id) continue;
+    
     const list = map.get(item.meal_job_id) ?? [];
-    if (!list.includes(label)) list.push(label);
+    if (!list.some(i => i.id === item.menu_item_id)) {
+      list.push({ id: item.menu_item_id, label });
+    }
     map.set(item.meal_job_id, list);
-  }
-
-  for (const [jobId, labels] of map.entries()) {
-    labels.sort((a, b) => a.localeCompare(b));
-    map.set(jobId, labels);
   }
 
   return map;
@@ -287,22 +289,29 @@ async function getCatererNames(
     .in("id", catererIds);
   if (error) throw new Error(`Failed to load caterers: ${error.message}`);
 
-  return new Map((data ?? []).map((caterer) => [caterer.id, caterer.name]));
+  const validCaterers = data as { id: string; name: string }[] | null;
+
+  return new Map((validCaterers ?? []).map((caterer) => [caterer.id, caterer.name]));
 }
 
 function mapMealJobs(
   jobs: Tables<"meal_jobs">[] | null,
-  menuLabels: Map<string, string[]>,
+  menuDetails: Map<string, { id: string; label: string }[]>,
   catererLookup: Map<string, string>
 ): MealJobDetail[] {
-  return (jobs ?? []).map((job) => ({
-    ...job,
-    counts_by_diet: parseCounts(job.counts_by_diet),
-    menu_labels: [...(menuLabels.get(job.id) ?? [])],
-    assigned_caterer_name: job.assigned_caterer_id
-      ? catererLookup.get(job.assigned_caterer_id) ?? null
-      : null,
-  }));
+  return (jobs ?? []).map((job) => {
+    const details = menuDetails.get(job.id) ?? [];
+    return {
+      ...job,
+      counts_by_diet: parseCounts(job.counts_by_diet),
+      menu_labels: details.map(d => d.label),
+      menu_ids: details.map(d => d.id),
+      assigned_caterer_name: job.assigned_caterer_id
+        ? catererLookup.get(job.assigned_caterer_id) ?? null
+        : null,
+      percolated_coffee_quantity: (job as any).percolated_coffee_quantity ?? null, // Cast because type might not be updated in generated types yet
+    };
+  });
 }
 
 export async function getMealJobsForBooking(
@@ -319,7 +328,7 @@ export async function getMealJobsForBooking(
   if (error) throw new Error(`Failed to load meal jobs: ${error.message}`);
 
   const jobIds = (jobs ?? []).map((job) => job.id);
-  const menuLabels = await getMenuLabelsForJobs(supabase, jobIds);
+  const menuDetails = await getMenuDetailsForJobs(supabase, jobIds);
   const catererIds = Array.from(
     new Set(
       (jobs ?? [])
@@ -329,7 +338,7 @@ export async function getMealJobsForBooking(
   );
   const caterers = await getCatererNames(supabase, catererIds);
 
-  return mapMealJobs(jobs, menuLabels, caterers);
+  return mapMealJobs(jobs, menuDetails, caterers);
 }
 
 export async function getAssignedMealJobs(
@@ -349,7 +358,7 @@ export async function getAssignedMealJobs(
   if (error) throw new Error(`Failed to load meal jobs: ${error.message}`);
 
   const jobIds = (jobs ?? []).map((job) => job.id);
-  const menuLabels = await getMenuLabelsForJobs(supabase, jobIds);
+  const menuDetails = await getMenuDetailsForJobs(supabase, jobIds);
   const catererIds = Array.from(
     new Set(
       (jobs ?? [])
@@ -359,7 +368,7 @@ export async function getAssignedMealJobs(
   );
   const caterers = await getCatererNames(supabase, catererIds);
 
-  return mapMealJobs(jobs, menuLabels, caterers);
+  return mapMealJobs(jobs, menuDetails, caterers);
 }
 
 export async function getRoomsForBooking(

@@ -8,6 +8,7 @@ import {
   getMealJobsForBooking,
   getRoomsForBooking,
 } from "@/lib/queries/bookings.server";
+import { getCateringOptions } from "@/lib/queries/catering.server";
 import BookingDetailClient from "./client";
 
 import type { Space, SpaceReservation } from "@/lib/queries/bookings";
@@ -25,6 +26,7 @@ export default async function BookingDetail({
 
   const mealJobsRaw = await getMealJobsForBooking(booking.id);
   const rooms = await getRoomsForBooking(booking.id);
+  const cateringOptions = await getCateringOptions();
   const mealJobs = enrichMealJobs(mealJobsRaw, [booking]);
   const displayName = getBookingDisplayName(booking);
 
@@ -60,11 +62,6 @@ export default async function BookingDetail({
     (potentialConflictingReservations as (SpaceReservation & {
       booking: { status: string } | null;
     })[]) ?? [];
-
-  console.log(`[Conflict Debug] My Reservations: ${myReservations.length}`);
-  console.log(
-    `[Conflict Debug] Other Reservations: ${othersReservations.length}`
-  );
 
   for (const myRes of myReservations) {
     for (const otherRes of othersReservations) {
@@ -139,6 +136,7 @@ export default async function BookingDetail({
       reservations={myReservations}
       conflicts={conflicts}
       conflictingBookings={conflictingBookingsData ?? []}
+      cateringOptions={cateringOptions}
     />
   );
 }

@@ -186,6 +186,38 @@ export function MenuTab({ menuItems, caterers, mealPrices }: MenuTabProps) {
       ]
     : menuItems;
 
+  const [newItem, setNewItem] = useState({
+    label: "",
+    meal_type: null as any,
+    default_caterer_id: null as string | null,
+    allergens: "",
+  });
+
+  const handleCreate = async () => {
+    if (!newItem.label) return;
+    try {
+      await createMenuItem({
+        label: newItem.label,
+        meal_type: newItem.meal_type,
+        default_caterer_id: newItem.default_caterer_id,
+        allergens: newItem.allergens
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      });
+      setNewItem({
+        label: "",
+        meal_type: null,
+        default_caterer_id: null,
+        allergens: "",
+      });
+      setIsCreating(false);
+      toast({ title: "Menu item created" });
+    } catch (error) {
+      toast({ title: "Error creating menu item", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -201,13 +233,47 @@ export function MenuTab({ menuItems, caterers, mealPrices }: MenuTabProps) {
               ...col,
               cell: ({ row }) => {
                 if (row.original.id === "__creating__") {
-                  if (col.accessorKey === "label") return <CreateLabelCell />;
+                  if (col.accessorKey === "label")
+                    return (
+                      <CreateLabelCell
+                        value={newItem.label}
+                        onChange={(v) =>
+                          setNewItem((prev) => ({ ...prev, label: v }))
+                        }
+                      />
+                    );
                   if (col.accessorKey === "meal_type")
-                    return <CreateMealTypeCell mealPrices={mealPrices} />;
+                    return (
+                      <CreateMealTypeCell
+                        value={newItem.meal_type}
+                        onChange={(v) =>
+                          setNewItem((prev) => ({ ...prev, meal_type: v }))
+                        }
+                        mealPrices={mealPrices}
+                      />
+                    );
                   if (col.id === "caterer")
-                    return <CreateCatererCell caterers={caterers} />;
+                    return (
+                      <CreateCatererCell
+                        value={newItem.default_caterer_id}
+                        onChange={(v) =>
+                          setNewItem((prev) => ({
+                            ...prev,
+                            default_caterer_id: v,
+                          }))
+                        }
+                        caterers={caterers}
+                      />
+                    );
                   if (col.accessorKey === "allergens")
-                    return <CreateAllergensCell />;
+                    return (
+                      <CreateAllergensCell
+                        value={newItem.allergens}
+                        onChange={(v) =>
+                          setNewItem((prev) => ({ ...prev, allergens: v }))
+                        }
+                      />
+                    );
                 }
                 return col.cell ? col.cell({ row } as any) : null;
               },
@@ -218,7 +284,13 @@ export function MenuTab({ menuItems, caterers, mealPrices }: MenuTabProps) {
               ...col,
               cell: ({ row }) => {
                 if (row.original.id === "__creating__") {
-                  return <CreateActions onDone={() => setIsCreating(false)} />;
+                  return (
+                    <CreateActions
+                      onSave={handleCreate}
+                      onCancel={() => setIsCreating(false)}
+                      isValid={!!newItem.label}
+                    />
+                  );
                 }
                 return col.cell ? col.cell({ row } as any) : null;
               },
@@ -234,18 +306,17 @@ export function MenuTab({ menuItems, caterers, mealPrices }: MenuTabProps) {
 }
 
 // Create mode cells
-let createState = {
-  label: "",
-  meal_type: null as any,
-  default_caterer_id: null as string | null,
-  allergens: "",
-};
-
-function CreateLabelCell() {
+function CreateLabelCell({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
   return (
     <Input
-      value={createState.label}
-      onChange={(e) => (createState.label = e.target.value)}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
       placeholder="Item Name"
       autoFocus
     />
@@ -253,15 +324,16 @@ function CreateLabelCell() {
 }
 
 function CreateMealTypeCell({
+  value,
+  onChange,
   mealPrices,
 }: {
+  value: any;
+  onChange: (val: any) => void;
   mealPrices: Tables<"meal_prices">[];
 }) {
   return (
-    <Select
-      value={createState.meal_type || ""}
-      onValueChange={(val: any) => (createState.meal_type = val)}
-    >
+    <Select value={value || ""} onValueChange={onChange}>
       <SelectTrigger>
         <SelectValue placeholder="Select type" />
       </SelectTrigger>
@@ -276,13 +348,19 @@ function CreateMealTypeCell({
   );
 }
 
-function CreateCatererCell({ caterers }: { caterers: Tables<"caterers">[] }) {
+function CreateCatererCell({
+  value,
+  onChange,
+  caterers,
+}: {
+  value: string | null;
+  onChange: (val: string | null) => void;
+  caterers: Tables<"caterers">[];
+}) {
   return (
     <Select
-      value={createState.default_caterer_id || "none"}
-      onValueChange={(val) =>
-        (createState.default_caterer_id = val === "none" ? null : val)
-      }
+      value={value || "none"}
+      onValueChange={(val) => onChange(val === "none" ? null : val)}
     >
       <SelectTrigger>
         <SelectValue placeholder="Select caterer" />
@@ -299,46 +377,38 @@ function CreateCatererCell({ caterers }: { caterers: Tables<"caterers">[] }) {
   );
 }
 
-function CreateAllergensCell() {
+function CreateAllergensCell({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
   return (
     <Input
-      value={createState.allergens}
-      onChange={(e) => (createState.allergens = e.target.value)}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
       placeholder="Comma separated"
     />
   );
 }
 
-function CreateActions({ onDone }: { onDone: () => void }) {
+function CreateActions({
+  onSave,
+  onCancel,
+  isValid,
+}: {
+  onSave: () => void;
+  onCancel: () => void;
+  isValid: boolean;
+}) {
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
-    if (!createState.label) return;
+    if (!isValid) return;
     setIsLoading(true);
-    try {
-      await createMenuItem({
-        label: createState.label,
-        meal_type: createState.meal_type,
-        default_caterer_id: createState.default_caterer_id,
-        allergens: createState.allergens
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-      });
-      createState = {
-        label: "",
-        meal_type: null,
-        default_caterer_id: null,
-        allergens: "",
-      };
-      onDone();
-      toast({ title: "Menu item created" });
-    } catch (error) {
-      toast({ title: "Error creating menu item", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
+    await onSave();
+    setIsLoading(false);
   };
 
   return (
@@ -347,11 +417,11 @@ function CreateActions({ onDone }: { onDone: () => void }) {
         size="icon"
         variant="ghost"
         onClick={handleSave}
-        disabled={isLoading}
+        disabled={isLoading || !isValid}
       >
         <Check className="h-4 w-4 text-green-600" />
       </Button>
-      <Button size="icon" variant="ghost" onClick={onDone}>
+      <Button size="icon" variant="ghost" onClick={onCancel}>
         <X className="h-4 w-4 text-red-600" />
       </Button>
     </div>

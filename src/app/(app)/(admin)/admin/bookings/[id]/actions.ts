@@ -51,3 +51,62 @@ export async function updateSpaceReservation(
 
   revalidatePath("/admin/bookings/[id]", "page");
 }
+
+export async function assignCaterer(mealJobId: string, catererId: string | null) {
+  const supabase: any = await sbServer();
+  const { error } = await supabase
+    .from("meal_jobs")
+    .update({ 
+      assigned_caterer_id: catererId,
+      status: catererId ? "Assigned" : "Draft"
+    })
+    .eq("id", mealJobId);
+
+  if (error) throw new Error(`Failed to assign caterer: ${error.message}`);
+  revalidatePath("/admin/bookings/[id]", "page");
+}
+
+export async function updateMealJobItems(mealJobId: string, menuItemIds: string[]) {
+  const supabase: any = await sbServer();
+  
+  // First delete existing items
+  const { error: deleteError } = await supabase
+    .from("meal_job_items")
+    .delete()
+    .eq("meal_job_id", mealJobId);
+
+  if (deleteError) throw new Error(`Failed to clear menu items: ${deleteError.message}`);
+
+  if (menuItemIds.length > 0) {
+    const { error: insertError } = await supabase
+      .from("meal_job_items")
+      .insert(
+        menuItemIds.map(itemId => ({
+          meal_job_id: mealJobId,
+          menu_item_id: itemId
+        }))
+      );
+
+    if (insertError) throw new Error(`Failed to update menu items: ${insertError.message}`);
+  }
+
+  revalidatePath("/admin/bookings/[id]", "page");
+}
+
+export async function updateCoffeeRequest(
+  mealJobId: string, 
+  requested: boolean, 
+  quantity: number | null
+) {
+  const supabase: any = await sbServer();
+  const { error } = await supabase
+    .from("meal_jobs")
+    .update({ 
+      percolated_coffee: requested,
+      percolated_coffee_quantity: quantity
+    })
+    .eq("id", mealJobId);
+
+  if (error) throw new Error(`Failed to update coffee request: ${error.message}`);
+  revalidatePath("/admin/bookings/[id]", "page");
+}
