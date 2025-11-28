@@ -110,3 +110,25 @@ export async function updateCoffeeRequest(
   if (error) throw new Error(`Failed to update coffee request: ${error.message}`);
   revalidatePath("/admin/bookings/[id]", "page");
 }
+
+export async function assignCatererToDay(
+  date: string,
+  bookingId: string,
+  catererId: string | null
+) {
+  const supabase: any = await sbServer();
+  
+  // Update only unassigned meals for this specific date
+  const { error } = await supabase
+    .from("meal_jobs")
+    .update({ 
+      assigned_caterer_id: catererId,
+      status: catererId ? "Assigned" : "Draft"
+    })
+    .eq("booking_id", bookingId)
+    .eq("service_date", date);
+
+  if (error) throw new Error(`Failed to assign caterer to day: ${error.message}`);
+  revalidatePath("/admin/bookings/[id]", "page");
+}
+
