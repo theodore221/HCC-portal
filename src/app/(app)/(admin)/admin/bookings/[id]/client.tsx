@@ -1,7 +1,8 @@
 "use client";
 
 import { useTransition, type ReactNode } from "react";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { formatDateRange, cn } from "@/lib/utils";
 import type { EnrichedMealJob } from "@/lib/catering";
 import { SpacesTab } from "./spaces-tab";
 import { CateringTab } from "./catering-tab";
+import { AccommodationTab } from "./accommodation-tab";
 import { updateBookingStatus, recordDeposit } from "./actions";
 import type {
   BookingWithMeta,
@@ -42,6 +44,7 @@ export default function BookingDetailClient({
   conflicts,
   conflictingBookings,
   cateringOptions,
+  roomingGroups,
 }: {
   booking: BookingWithMeta;
   displayName: string;
@@ -59,8 +62,14 @@ export default function BookingDetailClient({
   }[];
   cateringOptions: {
     caterers: { id: string; name: string }[];
-    menuItems: { id: string; label: string; catererId: string | null; mealType: string | null }[];
+    menuItems: {
+      id: string;
+      label: string;
+      catererId: string | null;
+      mealType: string | null;
+    }[];
   };
+  roomingGroups: any[];
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -103,6 +112,17 @@ export default function BookingDetailClient({
               </Badge>
             )}
             <StatusChip status={booking.status} />
+            <Button variant="outline" size="sm" asChild>
+              <Link
+                href={`/portal/${booking.reference ?? booking.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gap-2"
+              >
+                Customer Portal
+                <ExternalLink className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -266,135 +286,92 @@ export default function BookingDetailClient({
             </div>
           </section>
 
-          {/* Booking Details */}
+          {/* Booking Specifics */}
           <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-            <SectionHeading>Booking Details</SectionHeading>
+            <SectionHeading>Booking Specifics</SectionHeading>
             <div className="space-y-4">
               <DetailRow label="Type" value={booking.booking_type} />
-              <DetailRow label="Event Type" value={booking.event_type || "—"} />
               <DetailRow
                 label="Headcount"
-                value={booking.headcount.toString()}
-              />
-              <DetailRow label="Nights" value={booking.nights.toString()} />
-              <DetailRow
-                label="Overnight"
-                value={booking.is_overnight ? "Yes" : "No"}
+                value={`${booking.headcount} guests`}
               />
               <DetailRow
-                label="Catering"
-                value={booking.catering_required ? "Required" : "Not required"}
-              />
-            </div>
-          </section>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Financials */}
-          <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-            <SectionHeading>Financials</SectionHeading>
-            <div className="space-y-4">
-              <DetailRow
-                label="Deposit Status"
-                value={booking.deposit_status}
-              />
-              <DetailRow
-                label="Deposit Received"
+                label="Catering Required"
                 value={
-                  booking.deposit_received_at
-                    ? new Date(booking.deposit_received_at).toLocaleDateString()
-                    : "—"
+                  booking.catering_required ? "Yes (See Catering tab)" : "No"
                 }
               />
             </div>
           </section>
-
-          {/* Notes */}
-          <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-            <SectionHeading>Notes</SectionHeading>
-            <div className="rounded-xl bg-neutral p-4 text-sm text-text">
-              {booking.notes ? (
-                <p className="whitespace-pre-wrap">{booking.notes}</p>
-              ) : (
-                <p className="text-text-light italic">No notes added.</p>
-              )}
-            </div>
-          </section>
         </div>
+
+        {/* Financial Status */}
+        <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
+          <SectionHeading>Financial Status</SectionHeading>
+          <div className="grid gap-6 md:grid-cols-3">
+            <DetailRow
+              label="Deposit Status"
+              value={
+                <Badge
+                  variant={
+                    booking.deposit_status === "Paid" ? "default" : "secondary"
+                  }
+                >
+                  {booking.deposit_status}
+                </Badge>
+              }
+            />
+            <DetailRow
+              label="Deposit Amount"
+              value={
+                booking.deposit_amount
+                  ? `$${booking.deposit_amount.toLocaleString()}`
+                  : "—"
+              }
+            />
+            {/* <DetailRow
+              label="Payment Method"
+              value={booking.payment_method || "—"}
+            /> */}
+          </div>
+        </section>
       </TabsContent>
 
-      <TabsContent value="spaces">
+      <TabsContent value="spaces" className="space-y-6">
         <SpacesTab
           booking={booking}
-          reservations={reservations}
           spaces={allSpaces}
+          reservations={reservations}
           conflicts={conflicts}
           conflictingBookings={conflictingBookings}
         />
       </TabsContent>
 
-      <TabsContent
-        value="accommodation"
-        className="space-y-6 rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft"
-      >
-        <section className="space-y-4">
-          <SectionHeading>Room inventory</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-3">
-            {rooms.length ? (
-              rooms.map((room) => <RoomCard key={room.id} room={room} />)
-            ) : (
-              <p className="text-sm text-text-light">
-                No room assignments yet.
-              </p>
-            )}
-          </div>
-        </section>
+      <TabsContent value="accommodation" className="space-y-6">
+        <AccommodationTab
+          booking={booking}
+          rooms={rooms}
+          roomingGroups={roomingGroups}
+        />
       </TabsContent>
 
       <TabsContent value="catering" className="space-y-6">
-        <CateringTab 
-          meals={mealJobs} 
+        <CateringTab
+          meals={mealJobs}
           caterers={cateringOptions.caterers}
           menuItems={cateringOptions.menuItems}
         />
       </TabsContent>
 
-      <TabsContent
-        value="timeline"
-        className="space-y-6 rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft"
-      >
-        <section className="space-y-4">
-          <SectionHeading>Audit timeline</SectionHeading>
-          <AuditTimeline
-            events={[
-              {
-                id: "1",
-                actor: "Amelia (Admin)",
-                timestamp: new Date().toISOString(),
-                description: "Updated headcount from 45 to 48",
-              },
-              {
-                id: "2",
-                actor: "Finance",
-                timestamp: new Date().toISOString(),
-                description: "Marked deposit received",
-              },
-            ]}
-          />
-        </section>
+      <TabsContent value="timeline" className="space-y-6">
+        {/* TODO: Fetch and pass actual audit events */}
+        <AuditTimeline events={[]} />
       </TabsContent>
 
-      <TabsContent
-        value="docs"
-        className="space-y-6 rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft"
-      >
-        <section className="space-y-4">
-          <SectionHeading>Documents</SectionHeading>
-          <div className="rounded-2xl border border-dashed border-border/70 bg-neutral p-4 text-sm text-text">
-            Upload agreements, run sheets or insurance certificates for this
-            booking.
-          </div>
-        </section>
+      <TabsContent value="docs" className="space-y-6">
+        <div className="rounded-2xl border border-border/70 bg-white/90 p-12 text-center shadow-soft">
+          <p className="text-text-light">Document management coming soon...</p>
+        </div>
       </TabsContent>
     </Tabs>
   );
@@ -410,11 +387,9 @@ function SectionHeading({ children }: { children: ReactNode }) {
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-border/50 py-2 last:border-0">
-      <span className="text-sm font-medium text-text-light">{label}</span>
-      <span className="text-sm font-semibold text-text text-right">
-        {value}
-      </span>
+    <div className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0 last:pb-0">
+      <span className="text-sm text-text-light">{label}</span>
+      <span className="text-sm font-medium text-text">{value}</span>
     </div>
   );
 }

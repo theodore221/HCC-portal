@@ -98,7 +98,9 @@ export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
       .order("arrival_date", { ascending: true }),
     supabase
       .from("space_reservations")
-      .select("booking_id, space_id, service_date, start_time, end_time, status"),
+      .select(
+        "booking_id, space_id, service_date, start_time, end_time, status"
+      ),
     supabase.from("spaces").select("id, name"),
   ]);
 
@@ -166,11 +168,20 @@ export async function getBookingByReference(
   reference: string
 ): Promise<BookingWithMeta | null> {
   const supabase = await sbServer();
-  const { data: booking, error } = await supabase
-    .from("bookings")
-    .select("*")
-    .eq("reference", reference)
-    .maybeSingle();
+  const isUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      reference
+    );
+
+  let query = supabase.from("bookings").select("*");
+
+  if (isUuid) {
+    query = query.or(`reference.eq.${reference},id.eq.${reference}`);
+  } else {
+    query = query.eq("reference", reference);
+  }
+
+  const { data: booking, error } = await query.maybeSingle();
 
   if (error) throw new Error(`Failed to load booking: ${error.message}`);
   if (!booking) return null;
@@ -239,7 +250,9 @@ async function getMenuDetailsForJobs(
     .in("meal_job_id", jobIds);
   if (error) throw new Error(`Failed to load meal job items: ${error.message}`);
 
-  const validItems = items as { meal_job_id: string; menu_item_id: string }[] | null;
+  const validItems = items as
+    | { meal_job_id: string; menu_item_id: string }[]
+    | null;
 
   const menuItemIds = Array.from(
     new Set((validItems ?? []).map((item) => item.menu_item_id))
@@ -266,9 +279,9 @@ async function getMenuDetailsForJobs(
       ? menuLookup.get(item.menu_item_id)
       : undefined;
     if (!item.meal_job_id || !label || !item.menu_item_id) continue;
-    
+
     const list = map.get(item.meal_job_id) ?? [];
-    if (!list.some(i => i.id === item.menu_item_id)) {
+    if (!list.some((i) => i.id === item.menu_item_id)) {
       list.push({ id: item.menu_item_id, label });
     }
     map.set(item.meal_job_id, list);
@@ -291,7 +304,9 @@ async function getCatererNames(
 
   const validCaterers = data as { id: string; name: string }[] | null;
 
-  return new Map((validCaterers ?? []).map((caterer) => [caterer.id, caterer.name]));
+  return new Map(
+    (validCaterers ?? []).map((caterer) => [caterer.id, caterer.name])
+  );
 }
 
 function mapMealJobs(
@@ -304,12 +319,13 @@ function mapMealJobs(
     return {
       ...job,
       counts_by_diet: parseCounts(job.counts_by_diet),
-      menu_labels: details.map(d => d.label),
-      menu_ids: details.map(d => d.id),
+      menu_labels: details.map((d) => d.label),
+      menu_ids: details.map((d) => d.id),
       assigned_caterer_name: job.assigned_caterer_id
         ? catererLookup.get(job.assigned_caterer_id) ?? null
         : null,
-      percolated_coffee_quantity: (job as any).percolated_coffee_quantity ?? null, // Cast because type might not be updated in generated types yet
+      percolated_coffee_quantity:
+        (job as any).percolated_coffee_quantity ?? null, // Cast because type might not be updated in generated types yet
     };
   });
 }

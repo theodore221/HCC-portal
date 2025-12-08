@@ -155,6 +155,8 @@ export type Database = {
           occupant_name: string;
           bed_number: number;
           is_extra_bed: boolean;
+          service_date: string | null;
+          special_requests: string | null;
         };
         Insert: Partial<
           Database["public"]["Tables"]["room_assignments"]["Row"]
@@ -162,6 +164,21 @@ export type Database = {
         Update: Partial<
           Database["public"]["Tables"]["room_assignments"]["Row"]
         >;
+        Relationships: [];
+      };
+      rooming_groups: {
+        Row: {
+          id: string;
+          booking_id: string;
+          group_name: string;
+          members: string[] | null;
+          preferred_room_type: string | null;
+          special_requests: string | null;
+          status: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["rooming_groups"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["rooming_groups"]["Row"]>;
         Relationships: [];
       };
       rooms: {

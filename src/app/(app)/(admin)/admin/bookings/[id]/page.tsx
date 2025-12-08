@@ -37,6 +37,7 @@ export default async function BookingDetail({
     { data: allSpaces },
     { data: bookingReservations },
     { data: potentialConflictingReservations },
+    { data: roomingGroups },
   ] = await Promise.all([
     supabase
       .from("spaces")
@@ -53,6 +54,7 @@ export default async function BookingDetail({
       .gte("service_date", booking.arrival_date)
       .lte("service_date", booking.departure_date)
       .neq("booking_id", booking.id), // Exclude current booking
+    supabase.from("rooming_groups").select("*").eq("booking_id", booking.id),
   ]);
 
   // 2. Compute Conflicts in App Layer
@@ -137,6 +139,7 @@ export default async function BookingDetail({
       conflicts={conflicts}
       conflictingBookings={conflictingBookingsData ?? []}
       cateringOptions={cateringOptions}
+      roomingGroups={roomingGroups ?? []}
     />
   );
 }

@@ -17,7 +17,9 @@ import {
   UnauthorizedProfileError,
 } from "./profile-domain";
 
-type AuthenticatedSupabaseClient = ReturnType<typeof createSupabaseClient> extends Promise<infer Client>
+type AuthenticatedSupabaseClient = ReturnType<
+  typeof createSupabaseClient
+> extends Promise<infer Client>
   ? Client
   : never;
 
@@ -110,10 +112,13 @@ async function ensureProfileWithClient(
       .maybeSingle();
 
     if (bookingError) {
-      throw new ProfileServiceError("Unable to validate the booking reference provided.", {
-        status: 500,
-        cause: bookingError,
-      });
+      throw new ProfileServiceError(
+        "Unable to validate the booking reference provided.",
+        {
+          status: 500,
+          cause: bookingError,
+        }
+      );
     }
 
     booking = bookingLookup;
@@ -130,25 +135,32 @@ async function ensureProfileWithClient(
       .maybeSingle();
 
     if (catererError) {
-      throw new ProfileServiceError("Unable to validate the caterer link provided.", {
-        status: 500,
-        cause: catererError,
-      });
+      throw new ProfileServiceError(
+        "Unable to validate the caterer link provided.",
+        {
+          status: 500,
+          cause: catererError,
+        }
+      );
     }
 
     matchedCatererId = catererLookup?.id ?? null;
   } else {
-    const { data: fallbackCaterer, error: fallbackError } = await serviceSupabase
-      .from("caterers")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data: fallbackCaterer, error: fallbackError } =
+      await serviceSupabase
+        .from("caterers")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
     if (fallbackError) {
-      throw new ProfileServiceError("Unable to determine if you are linked to a caterer.", {
-        status: 500,
-        cause: fallbackError,
-      });
+      throw new ProfileServiceError(
+        "Unable to determine if you are linked to a caterer.",
+        {
+          status: 500,
+          cause: fallbackError,
+        }
+      );
     }
 
     fallbackCatererId = fallbackCaterer?.id ?? null;
@@ -172,8 +184,8 @@ async function ensureProfileWithClient(
         typeof user.user_metadata?.full_name === "string"
           ? user.user_metadata.full_name
           : user.email
-            ? user.email.split("@")[0]
-            : null,
+          ? user.email.split("@")[0]
+          : null,
       role: derived.role,
       booking_reference: derived.bookingReference,
       guest_token: derived.guestToken,
@@ -221,10 +233,13 @@ export async function markPasswordInitialized(): Promise<NormalizedProfile> {
 
   if (updateError) {
     if ((updateError as { code?: string }).code === "PGRST116") {
-      throw new ProfileServiceError("No profile exists for the authenticated user.", {
-        status: 404,
-        cause: updateError,
-      });
+      throw new ProfileServiceError(
+        "No profile exists for the authenticated user.",
+        {
+          status: 404,
+          cause: updateError,
+        }
+      );
     }
 
     throw new ProfileServiceError("Unable to update your profile.", {
@@ -234,17 +249,13 @@ export async function markPasswordInitialized(): Promise<NormalizedProfile> {
   }
 
   if (!updatedProfile) {
-    throw new ProfileServiceError("No profile exists for the authenticated user.", {
-      status: 404,
-    });
+    throw new ProfileServiceError(
+      "No profile exists for the authenticated user.",
+      {
+        status: 404,
+      }
+    );
   }
 
   return normalizeProfile(updatedProfile);
 }
-
-// Exported for unit testing.
-export const __test = {
-  extractProfileSeed,
-  ensureProfileWithClient,
-};
-
