@@ -27,6 +27,8 @@ export default async function CustomerPortal({
     { data: roomingGroups },
     { data: roomTypes },
     { data: guests },
+    { data: bookingReservations },
+    { data: spaces },
   ] = await Promise.all([
     getMealJobsForBooking(booking.id),
     getRoomsForBooking(booking.id),
@@ -38,10 +40,17 @@ export default async function CustomerPortal({
       .select("*")
       .eq("booking_id", booking.id)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("space_reservations")
+      .select("*")
+      .eq("booking_id", booking.id),
+    supabase.from("spaces").select("id, name, capacity").eq("active", true),
   ]);
 
   const safeRoomingGroups = (roomingGroups as any[]) || [];
   const safeGuests = (guests as any[]) || [];
+  const reservations = (bookingReservations as any[]) || [];
+  const allSpaces = (spaces as any[]) || [];
 
   // Filter out guests that are already assigned to a group
   const assignedGuestIds =
@@ -65,6 +74,8 @@ export default async function CustomerPortal({
       unassignedGuests={unassignedGuests}
       allGuests={allGuests}
       roomTypes={roomTypes ?? []}
+      reservations={reservations}
+      allSpaces={allSpaces}
     />
   );
 }

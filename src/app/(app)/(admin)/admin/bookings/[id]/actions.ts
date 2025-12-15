@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { sbServer } from "@/lib/supabase-server";
 import type { BookingStatus } from "@/lib/queries/bookings";
 
+import { ensureCustomerProfile } from "@/lib/auth/admin-actions";
+
 export async function updateBookingStatus(
   bookingId: string,
   status: BookingStatus,
@@ -14,6 +16,32 @@ export async function updateBookingStatus(
   const updateData: any = { status };
   if (cancelReason) {
     updateData.cancel_reason = cancelReason;
+  }
+
+  // If approving, ensure customer profile exists and link it
+  if (status === "Approved") {
+    // Fetch booking details to get email and name
+    const { data: booking, error: fetchError } = await supabase
+      .from("bookings")
+      .select("customer_email, customer_name")
+      .eq("id", bookingId)
+      .single();
+
+    if (fetchError || !booking) {
+      throw new Error("Failed to fetch booking details for approval");
+    }
+
+    try {
+      const customerUserId = await ensureCustomerProfile(
+        booking.customer_email,
+        booking.customer_name || "Customer"
+      );
+      updateData.customer_user_id = customerUserId;
+    } catch (error) {
+      console.error("Failed to ensure customer profile:", error);
+      // We might want to throw here, or just proceed without linking (but linking is the goal)
+      throw new Error("Failed to create/link customer profile. See logs.");
+    }
   }
 
   const { error } = await supabase

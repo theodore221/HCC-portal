@@ -12,7 +12,7 @@ export function getHomePathForRole(
     case "caterer":
       return "/caterer";
     case "customer":
-      return bookingReference ? `/portal/${bookingReference}` : "/portal";
+      return "/portal";
     default:
       return "/";
   }
@@ -34,9 +34,7 @@ export function getNavigationForRole(
     case "caterer":
       return [{ href: "/caterer", label: "Caterer" }];
     case "customer":
-      return bookingReference
-        ? [{ href: `/portal/${bookingReference}`, label: "My booking" }]
-        : [];
+      return [{ href: "/portal", label: "My Bookings" }];
     default:
       return [];
   }

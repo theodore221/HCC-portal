@@ -5,14 +5,24 @@ import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { getHomePathForRole } from "./src/lib/auth/paths";
 import type { Database } from "./src/lib/database.types";
 
-const PROTECTED_PREFIXES = ["/admin", "/staff", "/caterer", "/portal", "/profile", "/settings"];
+const PROTECTED_PREFIXES = [
+  "/admin",
+  "/staff",
+  "/caterer",
+  "/portal",
+  "/profile",
+  "/settings",
+];
 
 function redirectWithCookies(res: NextResponse, url: string | URL) {
   const redirectResponse = NextResponse.redirect(url);
 
   const middlewareSetCookie = res.headers.get("x-middleware-set-cookie");
   if (middlewareSetCookie) {
-    redirectResponse.headers.set("x-middleware-set-cookie", middlewareSetCookie);
+    redirectResponse.headers.set(
+      "x-middleware-set-cookie",
+      middlewareSetCookie
+    );
   }
 
   for (const { name, value, ...options } of res.cookies.getAll()) {
@@ -54,7 +64,10 @@ export async function middleware(req: NextRequest) {
     .maybeSingle();
 
   const role = profile?.role ?? null;
-  const destinationHome = getHomePathForRole(role, profile?.booking_reference ?? null);
+  const destinationHome = getHomePathForRole(
+    role,
+    profile?.booking_reference ?? null
+  );
   const requiresPasswordSetup = !profile?.password_initialized_at;
 
   if (requiresPasswordSetup && !isPasswordSetupRoute) {
@@ -89,29 +102,19 @@ export async function middleware(req: NextRequest) {
     const match = pathname.match(/^\/portal\/?([^/]+)?/);
     const requestedRef = match?.[1] ?? null;
     const guestToken = req.nextUrl.searchParams.get("guest");
-    const hasGuestAccess = Boolean(guestToken && profile?.guest_token && guestToken === profile.guest_token);
+    const hasGuestAccess = Boolean(
+      guestToken && profile?.guest_token && guestToken === profile.guest_token
+    );
 
+    // If not a customer and no guest access, redirect home
     if (profile?.role !== "customer" && !hasGuestAccess) {
       return redirectWithCookies(res, new URL(destinationHome, req.url));
     }
 
-    if (profile?.role === "customer") {
-      const profileRef = profile.booking_reference;
-      if (!profileRef) {
-        if (requestedRef) {
-          return redirectWithCookies(res, new URL("/portal", req.url));
-        }
-
-        return res;
-      }
-
-      if (requestedRef && requestedRef !== profileRef && !hasGuestAccess) {
-        return redirectWithCookies(
-          res,
-          new URL(`/portal/${profileRef}`, req.url)
-        );
-      }
-    }
+    // If customer, they can access /portal (home) or /portal/[ref] (detail)
+    // We no longer enforce a single booking reference in the profile.
+    // Access control to specific bookings will be handled by RLS/Page logic.
+    return res;
   }
 
   return res;
