@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 
 import { WeekScheduleCard } from "@/components/week-schedule-card";
 import { enrichMealJobs } from "@/lib/catering";
-import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings.server";
+import {
+  getAssignedMealJobs,
+  getBookingsForAdmin,
+} from "@/lib/queries/bookings.server";
 
 export const metadata: Metadata = {
   title: "Schedule overview",
@@ -11,7 +14,9 @@ export const metadata: Metadata = {
 
 export default async function AdminSchedule() {
   const [bookings, mealJobsRaw] = await Promise.all([
-    getBookingsForAdmin(),
+    getBookingsForAdmin().then((data) =>
+      data.filter((b) => b.status !== "Cancelled")
+    ),
     getAssignedMealJobs(),
   ]);
   const mealJobs = enrichMealJobs(mealJobsRaw, bookings);

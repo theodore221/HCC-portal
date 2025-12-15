@@ -61,9 +61,11 @@ export default async function BookingDetail({
   const conflicts: Views<"v_space_conflicts">[] = [];
   const myReservations = (bookingReservations as SpaceReservation[]) ?? [];
   const othersReservations =
-    (potentialConflictingReservations as (SpaceReservation & {
-      booking: { status: string } | null;
-    })[]) ?? [];
+    (
+      potentialConflictingReservations as (SpaceReservation & {
+        booking: { status: string } | null;
+      })[]
+    )?.filter((res) => res.booking?.status !== "Cancelled") ?? [];
 
   for (const myRes of myReservations) {
     for (const otherRes of othersReservations) {

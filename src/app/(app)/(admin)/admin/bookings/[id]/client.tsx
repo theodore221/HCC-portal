@@ -1,12 +1,36 @@
 "use client";
 
-import { useTransition, type ReactNode } from "react";
+import { useTransition, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusChip } from "@/components/ui/status-chip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
 import { AuditTimeline } from "@/components/ui/audit-timeline";
 import { RoomCard } from "@/components/ui/room-card";
@@ -16,7 +40,7 @@ import type { EnrichedMealJob } from "@/lib/catering";
 import { SpacesTab } from "./spaces-tab";
 import { CateringTab } from "./catering-tab";
 import { AccommodationTab } from "./accommodation-tab";
-import { updateBookingStatus, recordDeposit } from "./actions";
+import { updateBookingStatus, recordDeposit, deleteBooking } from "./actions";
 import type {
   BookingWithMeta,
   RoomWithAssignments,
@@ -72,6 +96,10 @@ export default function BookingDetailClient({
   roomingGroups: any[];
 }) {
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+  const [cancelReason, setCancelReason] = useState<string>("");
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const handleApprove = () => {
     startTransition(async () => {
@@ -82,6 +110,47 @@ export default function BookingDetailClient({
   const handleRecordDeposit = () => {
     startTransition(async () => {
       await recordDeposit(booking.id);
+    });
+  };
+
+  const handleCancel = () => {
+    if (!cancelReason) return;
+
+    startTransition(async () => {
+      try {
+        await updateBookingStatus(booking.id, "Cancelled", cancelReason);
+        setIsCancelOpen(false);
+        toast({
+          title: "Booking Cancelled",
+          description: "The booking has been successfully cancelled.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to cancel booking. Please try again.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      try {
+        await deleteBooking(booking.id);
+        setIsDeleteOpen(false);
+        toast({
+          title: "Booking Deleted",
+          description:
+            "The booking and all related records have been permanently deleted.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete booking. Please try again.",
+          variant: "destructive",
+        });
+      }
     });
   };
 
@@ -164,6 +233,7 @@ export default function BookingDetailClient({
                   isPending ||
                   booking.status === "Approved" ||
                   booking.status === "Confirmed" ||
+                  booking.status === "Cancelled" ||
                   totalIssues > 0
                 }
                 className={cn(
@@ -181,6 +251,107 @@ export default function BookingDetailClient({
                   "Approve Booking"
                 )}
               </Button>
+
+              <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                    disabled={booking.status === "Cancelled"}
+                  >
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Cancel Booking
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Cancel Booking</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to cancel this booking? This action
+                      will change the status to Cancelled.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="reason">Cancellation Reason</Label>
+                      <Select
+                        value={cancelReason}
+                        onValueChange={setCancelReason}
+                      >
+                        <SelectTrigger id="reason">
+                          <SelectValue placeholder="Select a reason" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white">
+                          <SelectItem value="Too expensive">
+                            Too expensive
+                          </SelectItem>
+                          <SelectItem value="Postponed">Postponed</SelectItem>
+                          <SelectItem value="Mistake">Mistake</SelectItem>
+                          <SelectItem value="Space not available">
+                            Space not available
+                          </SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter className="sm:justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsCancelOpen(false)}
+                    >
+                      Keep Booking
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleCancel}
+                      disabled={!cancelReason || isPending}
+                    >
+                      {isPending ? "Cancelling..." : "Confirm Cancellation"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-neutral-400 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle className="text-red-600 flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5" />
+                      Delete Booking
+                    </DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to permanently delete this booking?
+                      This action cannot be undone and will remove all related
+                      records (meals, reservations, etc.).
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsDeleteOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDelete}
+                      disabled={isPending}
+                    >
+                      {isPending ? "Deleting..." : "Delete Permanently"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardContent>

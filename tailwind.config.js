@@ -19,6 +19,7 @@ module.exports = {
         success: "#10B981",
         warning: "#F59E0B",
         danger: "#EF4444",
+        destructive: "#EF4444",
       },
       spacing: {
         "unit-1": "4px",

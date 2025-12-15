@@ -48,6 +48,7 @@ export type Database = {
           chapel_required: boolean;
           notes: string | null;
           status: Database["public"]["Enums"]["booking_status"];
+          cancel_reason: string | null;
           deposit_amount: number | null;
           deposit_status: Database["public"]["Enums"]["payment_status"];
           deposit_received_at: string | null;
