@@ -5,6 +5,7 @@ export type BookingStatus = Enums<"booking_status">;
 export type BookingWithMeta = Tables<"bookings"> & {
   spaces: string[];
   conflicts: string[];
+  accommodation_requests?: Record<string, number> | null;
 };
 
 export type MealJobDetail = Omit<Tables<"meal_jobs">, "counts_by_diet"> & {
@@ -17,6 +18,10 @@ export type MealJobDetail = Omit<Tables<"meal_jobs">, "counts_by_diet"> & {
 
 export type RoomWithAssignments = Tables<"rooms"> & {
   assignments: Tables<"room_assignments">[];
+  // Manually add new fields until types are regenerated
+  level?: string | null;
+  room_number?: string | null;
+  wing?: string | null;
 };
 
 export type DietaryProfile = Tables<"dietary_profiles">;

@@ -47,7 +47,7 @@ import type {
   Space,
   SpaceReservation,
 } from "@/lib/queries/bookings";
-import type { Views } from "@/lib/database.types";
+import type { Views, Tables } from "@/lib/database.types";
 
 const tabConfig = [
   { value: "overview", label: "Overview" },
@@ -63,6 +63,7 @@ export default function BookingDetailClient({
   displayName,
   mealJobs,
   rooms,
+  allRooms,
   allSpaces,
   reservations,
   conflicts,
@@ -74,6 +75,12 @@ export default function BookingDetailClient({
   displayName: string;
   mealJobs: EnrichedMealJob[];
   rooms: RoomWithAssignments[];
+  allRooms: (Tables<"rooms"> & {
+    room_types: Tables<"room_types"> | null;
+    level?: string | null;
+    room_number?: string | null;
+    wing?: string | null;
+  })[];
   allSpaces: Space[];
   reservations: SpaceReservation[];
   conflicts: Views<"v_space_conflicts">[];
@@ -522,6 +529,7 @@ export default function BookingDetailClient({
         <AccommodationTab
           booking={booking}
           rooms={rooms}
+          allRooms={allRooms}
           roomingGroups={roomingGroups}
         />
       </TabsContent>

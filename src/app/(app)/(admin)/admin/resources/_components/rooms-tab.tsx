@@ -121,9 +121,38 @@ function RoomTypesTable({ roomTypes }: { roomTypes: Tables<"room_types">[] }) {
           );
         }
         return (
-          <span className="text-sm font-semibold text-text">
-            ${Number(row.original.price).toFixed(2)}
-          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-sm font-semibold text-text">
+              ${Number(row.original.price).toFixed(2)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              /{" "}
+              {(row.original as any).pricing_unit === "PerBed" ? "bed" : "room"}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: "pricing_unit",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Unit" />
+      ),
+      cell: ({ row }) => {
+        if (editingId === row.original.id) {
+          return (
+            <EditablePricingUnitCell
+              type={row.original}
+              onDone={() => setEditingId(null)}
+            />
+          );
+        }
+        return (
+          <Badge variant="secondary">
+            {(row.original as any).pricing_unit === "PerBed"
+              ? "Per Bed"
+              : "Per Room"}
+          </Badge>
         );
       },
     },
@@ -170,33 +199,35 @@ function PhysicalRoomsTable({
     Tables<"rooms"> & { room_types: Tables<"room_types"> | null }
   >[] = [
     {
-      accessorKey: "name",
+      accessorKey: "room_number",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Name" />
+        <DataTableColumnHeader column={column} title="Room No." />
       ),
       cell: ({ row }) => {
         if (editingId === row.original.id) {
           return (
-            <EditableRoomNameCell
+            <EditableRoomNumberCell
               room={row.original}
               onDone={() => setEditingId(null)}
             />
           );
         }
         return (
-          <span className="font-medium text-text">{row.original.name}</span>
+          <span className="font-medium text-text">
+            {(row.original as any).room_number || row.original.name}
+          </span>
         );
       },
     },
     {
-      accessorKey: "building",
+      accessorKey: "level",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Building" />
+        <DataTableColumnHeader column={column} title="Level" />
       ),
       cell: ({ row }) => {
         if (editingId === row.original.id) {
           return (
-            <EditableBuildingCell
+            <EditableLevelCell
               room={row.original}
               onDone={() => setEditingId(null)}
             />
@@ -204,7 +235,28 @@ function PhysicalRoomsTable({
         }
         return (
           <span className="text-sm text-text">
-            {row.original.building || "—"}
+            {(row.original as any).level || "—"}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "wing",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Wing" />
+      ),
+      cell: ({ row }) => {
+        if (editingId === row.original.id) {
+          return (
+            <EditableWingCell
+              room={row.original}
+              onDone={() => setEditingId(null)}
+            />
+          );
+        }
+        return (
+          <span className="text-sm text-text">
+            {(row.original as any).wing || "—"}
           </span>
         );
       },
@@ -225,9 +277,71 @@ function PhysicalRoomsTable({
           );
         }
         return (
-          <Badge variant="outline" className="border-border/70 bg-white">
-            {row.original.room_types?.name || "Unassigned"}
-          </Badge>
+          <div className="flex flex-col">
+            <Badge
+              variant="outline"
+              className="border-border/70 bg-white w-fit"
+            >
+              {row.original.room_types?.name || "Unassigned"}
+            </Badge>
+            <span className="text-xs text-muted-foreground mt-1">
+              Cap: {row.original.room_types?.capacity || 0}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      id: "ensuite",
+      header: () => (
+        <span className="text-xs font-semibold uppercase text-text-light">
+          Ensuite
+        </span>
+      ),
+      cell: ({ row }) => {
+        if (editingId === row.original.id) {
+          return (
+            <EditableEnsuiteCell
+              room={row.original}
+              onDone={() => setEditingId(null)}
+            />
+          );
+        }
+        const avail = (row.original as any).ensuite_available;
+        const fee = (row.original as any).ensuite_fee;
+        return avail ? (
+          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            Yes (${fee})
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">No</span>
+        );
+      },
+    },
+    {
+      id: "private_study",
+      header: () => (
+        <span className="text-xs font-semibold uppercase text-text-light">
+          Study
+        </span>
+      ),
+      cell: ({ row }) => {
+        if (editingId === row.original.id) {
+          return (
+            <EditablePrivateStudyCell
+              room={row.original}
+              onDone={() => setEditingId(null)}
+            />
+          );
+        }
+        const avail = (row.original as any).private_study_available;
+        const fee = (row.original as any).private_study_fee;
+        return avail ? (
+          <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+            Yes (${fee})
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">No</span>
         );
       },
     },
@@ -429,6 +543,56 @@ function EditablePriceCell({
   );
 }
 
+function EditablePricingUnitCell({
+  type,
+  onDone,
+}: {
+  type: Tables<"room_types">;
+  onDone: () => void;
+}) {
+  const [value, setValue] = useState((type as any).pricing_unit || "PerRoom");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await updateRoomType(type.id, { pricing_unit: value } as any);
+      onDone();
+      toast({ title: "Room type updated" });
+    } catch (error) {
+      toast({ title: "Error updating room type", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Select value={value} onValueChange={setValue} disabled={isLoading}>
+        <SelectTrigger className="w-28">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="PerRoom">Per Room</SelectItem>
+          <SelectItem value="PerBed">Per Bed</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={handleSave}
+        disabled={isLoading}
+      >
+        <Check className="h-4 w-4 text-green-600" />
+      </Button>
+      <Button size="icon" variant="ghost" onClick={onDone}>
+        <X className="h-4 w-4 text-red-600" />
+      </Button>
+    </div>
+  );
+}
+
 // Room edit cells
 function EditableRoomNameCell({
   room,
@@ -596,6 +760,272 @@ function EditableExtraBedCell({
         extra_bed_allowed: allowed,
         extra_bed_fee: parseFloat(fee) || 0,
       });
+      onDone();
+      toast({ title: "Room updated" });
+    } catch (error) {
+      toast({ title: "Error updating room", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        checked={allowed}
+        onChange={(e) => setAllowed(e.target.checked)}
+        className="h-4 w-4"
+      />
+      {allowed && (
+        <Input
+          type="number"
+          step="0.01"
+          value={fee}
+          onChange={(e) => setFee(e.target.value)}
+          className="w-20"
+          placeholder="Fee"
+        />
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={handleSave}
+        disabled={isLoading}
+      >
+        <Check className="h-4 w-4 text-green-600" />
+      </Button>
+      <Button size="icon" variant="ghost" onClick={onDone}>
+        <X className="h-4 w-4 text-red-600" />
+      </Button>
+    </div>
+  );
+}
+function EditableRoomNumberCell({
+  room,
+  onDone,
+}: {
+  room: Tables<"rooms">;
+  onDone: () => void;
+}) {
+  const [value, setValue] = useState((room as any).room_number || room.name);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await updateRoom(room.id, { room_number: value, name: value } as any);
+      onDone();
+      toast({ title: "Room updated" });
+    } catch (error) {
+      toast({ title: "Error updating room", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        disabled={isLoading}
+        className="w-20"
+      />
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={handleSave}
+        disabled={isLoading}
+      >
+        <Check className="h-4 w-4 text-green-600" />
+      </Button>
+      <Button size="icon" variant="ghost" onClick={onDone}>
+        <X className="h-4 w-4 text-red-600" />
+      </Button>
+    </div>
+  );
+}
+
+function EditableLevelCell({
+  room,
+  onDone,
+}: {
+  room: Tables<"rooms">;
+  onDone: () => void;
+}) {
+  const [value, setValue] = useState((room as any).level || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await updateRoom(room.id, { level: value } as any);
+      onDone();
+      toast({ title: "Room updated" });
+    } catch (error) {
+      toast({ title: "Error updating room", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        disabled={isLoading}
+      />
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={handleSave}
+        disabled={isLoading}
+      >
+        <Check className="h-4 w-4 text-green-600" />
+      </Button>
+      <Button size="icon" variant="ghost" onClick={onDone}>
+        <X className="h-4 w-4 text-red-600" />
+      </Button>
+    </div>
+  );
+}
+
+function EditableWingCell({
+  room,
+  onDone,
+}: {
+  room: Tables<"rooms">;
+  onDone: () => void;
+}) {
+  const [value, setValue] = useState((room as any).wing || "");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await updateRoom(room.id, { wing: value } as any);
+      onDone();
+      toast({ title: "Room updated" });
+    } catch (error) {
+      toast({ title: "Error updating room", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        disabled={isLoading}
+      />
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={handleSave}
+        disabled={isLoading}
+      >
+        <Check className="h-4 w-4 text-green-600" />
+      </Button>
+      <Button size="icon" variant="ghost" onClick={onDone}>
+        <X className="h-4 w-4 text-red-600" />
+      </Button>
+    </div>
+  );
+}
+
+function EditableEnsuiteCell({
+  room,
+  onDone,
+}: {
+  room: Tables<"rooms">;
+  onDone: () => void;
+}) {
+  const [allowed, setAllowed] = useState(
+    (room as any).ensuite_available || false
+  );
+  const [fee, setFee] = useState((room as any).ensuite_fee?.toString() || "0");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await updateRoom(room.id, {
+        ensuite_available: allowed,
+        ensuite_fee: parseFloat(fee) || 0,
+      } as any);
+      onDone();
+      toast({ title: "Room updated" });
+    } catch (error) {
+      toast({ title: "Error updating room", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        checked={allowed}
+        onChange={(e) => setAllowed(e.target.checked)}
+        className="h-4 w-4"
+      />
+      {allowed && (
+        <Input
+          type="number"
+          step="0.01"
+          value={fee}
+          onChange={(e) => setFee(e.target.value)}
+          className="w-20"
+          placeholder="Fee"
+        />
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={handleSave}
+        disabled={isLoading}
+      >
+        <Check className="h-4 w-4 text-green-600" />
+      </Button>
+      <Button size="icon" variant="ghost" onClick={onDone}>
+        <X className="h-4 w-4 text-red-600" />
+      </Button>
+    </div>
+  );
+}
+
+function EditablePrivateStudyCell({
+  room,
+  onDone,
+}: {
+  room: Tables<"rooms">;
+  onDone: () => void;
+}) {
+  const [allowed, setAllowed] = useState(
+    (room as any).private_study_available || false
+  );
+  const [fee, setFee] = useState(
+    (room as any).private_study_fee?.toString() || "0"
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await updateRoom(room.id, {
+        private_study_available: allowed,
+        private_study_fee: parseFloat(fee) || 0,
+      } as any);
       onDone();
       toast({ title: "Room updated" });
     } catch (error) {

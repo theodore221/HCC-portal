@@ -35,6 +35,7 @@ export default async function BookingDetail({
   // 1. Fetch all necessary data
   const [
     { data: allSpaces },
+    { data: allRooms },
     { data: bookingReservations },
     { data: potentialConflictingReservations },
     { data: roomingGroups },
@@ -44,6 +45,11 @@ export default async function BookingDetail({
       .select("id, name, capacity")
       .eq("active", true)
       .order("name"),
+    supabase
+      .from("rooms")
+      .select("*, room_types(*)")
+      .eq("active", true)
+      .order("room_number"),
     supabase
       .from("space_reservations")
       .select("*")
@@ -136,6 +142,7 @@ export default async function BookingDetail({
       displayName={displayName}
       mealJobs={mealJobs}
       rooms={rooms}
+      allRooms={(allRooms as any) ?? []}
       allSpaces={(allSpaces as unknown as Space[]) ?? []}
       reservations={myReservations}
       conflicts={conflicts}
