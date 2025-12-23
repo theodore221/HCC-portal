@@ -1,34 +1,14 @@
 import type { Metadata } from "next";
 
-import { WeekScheduleCard } from "@/components/week-schedule-card";
-import { enrichMealJobs } from "@/lib/catering";
-import {
-  getAssignedMealJobs,
-  getBookingsForAdmin,
-} from "@/lib/queries/bookings.server";
+import { getScheduleData } from "@/lib/queries/schedule.server";
+import ScheduleClient from "./client";
 
 export const metadata: Metadata = {
-  title: "Schedule overview",
-  description: "See spaces and catering commitments across every booking.",
+  title: "Schedule",
+  description: "At-a-glance view of all incoming groups and bookings.",
 };
 
-export default async function AdminSchedule() {
-  const [bookings, mealJobsRaw] = await Promise.all([
-    getBookingsForAdmin().then((data) =>
-      data.filter((b) => b.status !== "Cancelled")
-    ),
-    getAssignedMealJobs(),
-  ]);
-  const mealJobs = enrichMealJobs(mealJobsRaw, bookings);
-
-  return (
-    <div className="space-y-6">
-      <WeekScheduleCard
-        title="Operational schedule"
-        subtitle="Spaces and meal services mapped to each group"
-        bookings={bookings}
-        mealJobs={mealJobs}
-      />
-    </div>
-  );
+export default async function AdminSchedulePage() {
+  const scheduleData = await getScheduleData();
+  return <ScheduleClient data={scheduleData} />;
 }

@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { RoomWithAssignments, BookingWithMeta } from '@/lib/queries/bookings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -112,6 +111,12 @@ interface RoomAllocationGridProps {
     arrival_date: string;
     departure_date: string;
   }[];
+  onAllocatedCountsChange?: (counts: {
+    doubleBB: number;
+    singleBB: number;
+    studySuite: number;
+    doubleEnsuite: number;
+  }) => void;
 }
 
 // Helper to get assignment data for a room
@@ -133,6 +138,7 @@ export function RoomAllocationGrid({
   allRooms,
   roomConflicts,
   roomConflictingBookings,
+  onAllocatedCountsChange,
 }: RoomAllocationGridProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -284,39 +290,57 @@ export function RoomAllocationGrid({
     });
   };
 
-  // Calculate progress
-  const calculateProgress = () => {
-    const requests =
-      (booking.accommodation_requests as Record<string, number>) || {};
+  // Calculate allocated accommodation counts
+  const calculateAllocatedCounts = () => {
     const allocatedRooms = allRooms.filter((r) =>
       optimisticAllocations.has(r.id)
     );
 
-    // Count allocated by type
-    const allocatedByType: Record<string, number> = {};
+    let doubleBB = 0;
+    let singleBB = 0;
+    let studySuite = 0;
+    let doubleEnsuite = 0;
+
     for (const room of allocatedRooms) {
-      const typeName = room.room_types?.name || 'Unknown';
-      allocatedByType[typeName] = (allocatedByType[typeName] || 0) + 1;
+      const assignment = getAssignmentForRoom(room.id, assignedRooms);
+      const typeName = room.room_types?.name || '';
+      const hasExtraBed = assignment?.extra_bed_selected && room.extra_bed_allowed;
+      const hasEnsuite = assignment?.ensuite_selected && room.ensuite_available;
+      const hasPrivateStudy = assignment?.private_study_selected && room.private_study_available;
+
+      // Study Suite: Double bed + Ensuite + Private Study
+      if (hasEnsuite && hasPrivateStudy && (typeName.includes('Double') || typeName.includes('Queen') || typeName.includes('King'))) {
+        studySuite += 1;
+      }
+      // Double Ensuite: Rooms with ensuite (but not study suite to avoid double counting)
+      else if (hasEnsuite && !hasPrivateStudy) {
+        doubleEnsuite += 1;
+      }
+      // Double BB: Double/Queen/King bed rooms without special features
+      else if (typeName.includes('Double') || typeName.includes('Queen') || typeName.includes('King')) {
+        doubleBB += 1;
+      }
+      // Single BB: Single bed rooms + Twin Single rooms
+      // Twin Single counts as 2 beds (or 3 if extra bed is selected)
+      else if (typeName === 'Single') {
+        singleBB += 1;
+      } else if (typeName === 'Twin Single') {
+        // Twin Single has capacity of 2, plus 1 if extra bed is selected
+        singleBB += hasExtraBed ? 3 : 2;
+      }
     }
 
-    return {
-      singleBB: {
-        requested: requests.singleBB || 0,
-        allocated: allocatedByType['Single'] || 0,
-      },
-      doubleBB: {
-        requested: requests.doubleBB || 0,
-        allocated:
-          allocatedByType['Double Bed'] || allocatedByType['Queen Bed'] || 0,
-      },
-      twinSingle: {
-        requested: requests.twinSingle || 0,
-        allocated: allocatedByType['Twin Single'] || 0,
-      },
-    };
+    return { doubleBB, singleBB, studySuite, doubleEnsuite };
   };
 
-  const progress = calculateProgress();
+  // Notify parent of allocated counts changes
+  useEffect(() => {
+    if (onAllocatedCountsChange) {
+      const counts = calculateAllocatedCounts();
+      onAllocatedCountsChange(counts);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [optimisticAllocations, assignedRooms, onAllocatedCountsChange]);
 
   // Get ordered rooms for a floor
   const getOrderedRooms = (floor: 'ground' | 'upper') => {
@@ -345,60 +369,6 @@ export function RoomAllocationGrid({
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        {/* Progress Section */}
-        <Card className="shadow-soft">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wide text-text-light">
-              Accommodation Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              {Object.entries(progress).map(
-                ([key, { requested, allocated }]) => {
-                  if (requested === 0) return null;
-                  const percentage = Math.min(
-                    100,
-                    Math.round((allocated / requested) * 100)
-                  );
-                  const isComplete = allocated >= requested;
-
-                  const labels: Record<string, string> = {
-                    singleBB: 'Single Beds',
-                    doubleBB: 'Double/Queen Beds',
-                    twinSingle: 'Twin Single',
-                  };
-
-                  return (
-                    <div key={key} className="space-y-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="font-medium text-olive-700">
-                          {labels[key]}
-                        </span>
-                        <span
-                          className={cn(
-                            'font-semibold',
-                            isComplete ? 'text-olive-600' : 'text-olive-900'
-                          )}
-                        >
-                          {allocated} / {requested}
-                        </span>
-                      </div>
-                      <Progress
-                        value={percentage}
-                        className={cn(
-                          'h-2',
-                          isComplete && '[&>div]:bg-olive-500'
-                        )}
-                      />
-                    </div>
-                  );
-                }
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Room Grid */}
         <Card className="shadow-soft">
           <CardHeader className="pb-2">

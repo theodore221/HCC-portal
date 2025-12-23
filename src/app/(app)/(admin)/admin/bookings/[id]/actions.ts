@@ -366,3 +366,29 @@ export async function updateRoomAllocationDetails(
   revalidatePath(`/admin/bookings/${bookingId}`);
   return updated;
 }
+
+export async function updateAccommodationRequests(
+  bookingId: string,
+  accommodationRequests: {
+    doubleBB: number;
+    singleBB: number;
+    studySuite: number;
+    doubleEnsuite: number;
+    byo_linen: boolean;
+  }
+) {
+  const supabase: any = await sbServer();
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      accommodation_requests: accommodationRequests,
+    })
+    .eq("id", bookingId);
+
+  if (error) {
+    throw new Error(`Failed to update accommodation requests: ${error.message}`);
+  }
+
+  revalidatePath(`/admin/bookings/${bookingId}`);
+}

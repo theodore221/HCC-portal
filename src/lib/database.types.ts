@@ -40,8 +40,12 @@ export type Database = {
           event_type: string | null;
           is_overnight: boolean;
           headcount: number;
+          minors: boolean;
+          whole_centre: boolean;
           arrival_date: string;
           departure_date: string;
+          arrival_time: string | null;
+          departure_time: string | null;
           nights: number;
           date_range: unknown;
           catering_required: boolean;
@@ -53,6 +57,7 @@ export type Database = {
           deposit_status: Database["public"]["Enums"]["payment_status"];
           deposit_received_at: string | null;
           deposit_reference: string | null;
+          accommodation_requests: Json;
         };
         Insert: Partial<Database["public"]["Tables"]["bookings"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["bookings"]["Row"]>;
