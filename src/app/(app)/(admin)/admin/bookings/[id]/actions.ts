@@ -345,7 +345,7 @@ export async function updateRoomAllocationDetails(
   }
 
   // Update the assignment with guest names and extras
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("room_assignments")
     .update({
       guest_names: data.guestNames,
@@ -353,11 +353,16 @@ export async function updateRoomAllocationDetails(
       ensuite_selected: data.ensuite,
       private_study_selected: data.privateStudy,
     })
-    .eq("id", assignment.id);
+    .eq("id", assignment.id)
+    .select(
+      "guest_names, extra_bed_selected, ensuite_selected, private_study_selected"
+    )
+    .single();
 
   if (error) {
     throw new Error(`Failed to update room allocation: ${error.message}`);
   }
 
   revalidatePath(`/admin/bookings/${bookingId}`);
+  return updated;
 }

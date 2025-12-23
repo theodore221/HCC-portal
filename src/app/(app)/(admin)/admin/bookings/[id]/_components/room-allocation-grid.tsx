@@ -533,7 +533,7 @@ function RoomFloorGrid({
   const maxRows = Math.max(rooms.leftColumn.length, rooms.rightColumn.length);
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {/* Left Column */}
       <div className="space-y-2">
         {rooms.leftColumn.map((room) => (
@@ -610,34 +610,54 @@ function RoomCard({
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isUnallocateConfirmOpen, setIsUnallocateConfirmOpen] = useState(false);
 
   // Local state for editing (only used when allocated)
   const capacity = room.room_types?.capacity || 1;
-  const [guestNames, setGuestNames] = useState<string[]>(() => {
-    const saved = assignment?.guest_names || [];
-    // Ensure we have at least 'capacity' slots
-    return [...saved, ...Array(Math.max(0, capacity - saved.length)).fill('')];
-  });
+  const maxCapacity = room.extra_bed_allowed ? capacity + 1 : capacity;
+  const normalizeGuestNames = (names?: string[] | null) => {
+    const normalized = (names ?? []).slice(0, maxCapacity);
+    return [
+      ...normalized,
+      ...Array(Math.max(0, maxCapacity - normalized.length)).fill(''),
+    ];
+  };
+  const [guestNames, setGuestNames] = useState<string[]>(() =>
+    normalizeGuestNames(assignment?.guest_names)
+  );
   const [extras, setExtras] = useState({
-    extraBed: assignment?.extra_bed_selected || false,
-    ensuite: assignment?.ensuite_selected || false,
-    privateStudy: assignment?.private_study_selected || false,
+    extraBed: Boolean(assignment?.extra_bed_selected),
+    ensuite: Boolean(assignment?.ensuite_selected),
+    privateStudy: Boolean(assignment?.private_study_selected),
   });
   const [isDirty, setIsDirty] = useState(false);
 
   // Calculate total capacity (base + extra bed if selected)
-  const totalCapacity = extras.extraBed && room.extra_bed_allowed ? capacity + 1 : capacity;
+  const totalCapacity =
+    extras.extraBed && room.extra_bed_allowed ? capacity + 1 : capacity;
+  const isExtraBedSelected = extras.extraBed && room.extra_bed_allowed;
+  const isEnsuiteSelected = extras.ensuite && room.ensuite_available;
+  const isPrivateStudySelected =
+    extras.privateStudy && room.private_study_available;
+  const featureIconClass = (
+    selected: boolean,
+    activeClass: string,
+    sizeClass: string
+  ) =>
+    cn(
+      'flex items-center justify-center rounded-md border transition-colors',
+      sizeClass,
+      selected
+        ? activeClass
+        : 'border-neutral-200 bg-neutral-100 text-neutral-400'
+    );
 
   // Adjust guest names array when extra bed changes
   const handleExtraBedChange = (checked: boolean) => {
     setExtras((prev) => ({ ...prev, extraBed: checked }));
     setIsDirty(true);
     if (checked) {
-      // Add slot for extra guest
-      setGuestNames((prev) => [...prev, '']);
-    } else {
-      // Remove extra slot
-      setGuestNames((prev) => prev.slice(0, capacity));
+      setGuestNames((prev) => normalizeGuestNames(prev));
     }
   };
 
@@ -650,15 +670,36 @@ function RoomCard({
     setIsDirty(true);
   };
 
+  const handleRequestUnallocate = () => {
+    if (disabled) return;
+    setIsUnallocateConfirmOpen(true);
+  };
+
+  const handleConfirmUnallocate = () => {
+    setIsUnallocateConfirmOpen(false);
+    setGuestNames(normalizeGuestNames([]));
+    setExtras({ extraBed: false, ensuite: false, privateStudy: false });
+    setIsDirty(false);
+    onClick();
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateRoomAllocationDetails(bookingId, room.id, {
+      const updated = await updateRoomAllocationDetails(bookingId, room.id, {
         guestNames: guestNames.slice(0, totalCapacity),
         extraBed: extras.extraBed,
         ensuite: extras.ensuite,
         privateStudy: extras.privateStudy,
       });
+      if (updated) {
+        setGuestNames(normalizeGuestNames(updated.guest_names));
+        setExtras({
+          extraBed: Boolean(updated.extra_bed_selected),
+          ensuite: Boolean(updated.ensuite_selected),
+          privateStudy: Boolean(updated.private_study_selected),
+        });
+      }
       setIsDirty(false);
       setIsExpanded(false); // Close the expanded view after saving
       toast({
@@ -706,18 +747,57 @@ function RoomCard({
     return (
       <div
         className={cn(
-          'rounded-xl border-2 border-green-600 bg-white p-3 transition-all duration-200 shadow-sm'
+          'min-w-[170px] rounded-xl border-2 border-green-600 bg-white p-3 transition-all duration-200 shadow-sm'
         )}
       >
         {/* Header with close button */}
         <div className="flex items-start justify-between mb-3">
-          <div>
-            <span className="text-lg font-bold text-green-900">
-              {room.room_number || room.name}
-            </span>
-            <p className="text-[10px] text-muted-foreground leading-tight">
-              {room.room_types?.name || 'Room'}
-            </p>
+          <div className="flex items-center gap-3">
+            <div>
+              <span className="text-lg font-bold text-green-900">
+                {room.room_number || room.name}
+              </span>
+              <p className="text-xs text-muted-foreground leading-tight">
+                {room.room_types?.name || 'Room'}
+              </p>
+            </div>
+            {hasExtras && (
+              <div className="flex items-center gap-1">
+                {room.extra_bed_allowed && (
+                  <div
+                    className={featureIconClass(
+                      isExtraBedSelected,
+                      'border-amber-200 bg-amber-50 text-amber-500',
+                      'size-7'
+                    )}
+                  >
+                    <Bed className="size-4" />
+                  </div>
+                )}
+                {room.ensuite_available && (
+                  <div
+                    className={featureIconClass(
+                      isEnsuiteSelected,
+                      'border-blue-200 bg-blue-50 text-blue-500',
+                      'size-7'
+                    )}
+                  >
+                    <ShowerHead className="size-4" />
+                  </div>
+                )}
+                {room.private_study_available && (
+                  <div
+                    className={featureIconClass(
+                      isPrivateStudySelected,
+                      'border-green-200 bg-green-50 text-green-600',
+                      'size-7'
+                    )}
+                  >
+                    <BookOpen className="size-4" />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <button
             onClick={() => setIsExpanded(false)}
@@ -728,40 +808,52 @@ function RoomCard({
         </div>
 
         {/* Guest Name Inputs */}
-        <div className={cn(
-          'gap-1.5',
-          totalCapacity >= 2 ? 'grid grid-cols-2' : 'grid grid-cols-1'
-        )}>
-          {Array.from({ length: totalCapacity }).map((_, i) => (
-            <Input
-              key={i}
-              value={guestNames[i] || ''}
-              onChange={(e) => handleGuestNameChange(i, e.target.value)}
-              placeholder={`Guest ${i + 1}`}
-              className="h-7 text-xs px-2"
-            />
-          ))}
+        <div
+          className={cn(
+            'gap-1.5',
+            maxCapacity >= 2 ? 'grid grid-cols-2' : 'grid grid-cols-1'
+          )}
+        >
+          {Array.from({ length: maxCapacity }).map((_, i) => {
+            const isActiveSlot = i < totalCapacity;
+            return (
+              <Input
+                key={i}
+                value={guestNames[i] || ''}
+                onChange={(e) => handleGuestNameChange(i, e.target.value)}
+                placeholder={`Guest ${i + 1}`}
+                className={cn(
+                  'h-8 text-sm px-2.5',
+                  !isActiveSlot && 'invisible pointer-events-none'
+                )}
+                disabled={!isActiveSlot}
+                tabIndex={isActiveSlot ? 0 : -1}
+                aria-hidden={!isActiveSlot}
+              />
+            );
+          })}
         </div>
 
         {/* Extras Selection with Switches */}
         {hasExtras && (
           <div className="mt-3 space-y-2">
             {room.extra_bed_allowed && (
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <Switch
                   checked={extras.extraBed}
                   onCheckedChange={handleExtraBedChange}
                   className="scale-75"
                 />
                 <div className="flex items-center gap-1.5 flex-1">
-                  <span className="text-xs text-neutral-700">Extra Bed</span>
-                  <span className="text-[10px] text-muted-foreground">+${room.extra_bed_fee || 50}</span>
+                  <span className="text-sm text-neutral-700">Extra Bed</span>
+                  <span className="text-xs text-muted-foreground">
+                    +${room.extra_bed_fee || 50}
+                  </span>
                 </div>
-                <Bed className="size-3.5 text-amber-500" />
               </div>
             )}
             {room.ensuite_available && (
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <Switch
                   checked={extras.ensuite}
                   onCheckedChange={(checked) => {
@@ -771,14 +863,15 @@ function RoomCard({
                   className="scale-75"
                 />
                 <div className="flex items-center gap-1.5 flex-1">
-                  <span className="text-xs text-neutral-700">Ensuite</span>
-                  <span className="text-[10px] text-muted-foreground">+${room.ensuite_fee || 50}</span>
+                  <span className="text-sm text-neutral-700">Ensuite</span>
+                  <span className="text-xs text-muted-foreground">
+                    +${room.ensuite_fee || 50}
+                  </span>
                 </div>
-                <ShowerHead className="size-3.5 text-blue-500" />
               </div>
             )}
             {room.private_study_available && (
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
                 <Switch
                   checked={extras.privateStudy}
                   onCheckedChange={(checked) => {
@@ -788,10 +881,13 @@ function RoomCard({
                   className="scale-75"
                 />
                 <div className="flex items-center gap-1.5 flex-1">
-                  <span className="text-xs text-neutral-700">Private Study</span>
-                  <span className="text-[10px] text-muted-foreground">+${room.private_study_fee || 100}</span>
+                  <span className="text-sm text-neutral-700">
+                    Private Study
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    +${room.private_study_fee || 100}
+                  </span>
                 </div>
-                <BookOpen className="size-3.5 text-green-600" />
               </div>
             )}
           </div>
@@ -823,50 +919,148 @@ function RoomCard({
     return (
       <div
         className={cn(
-          'relative rounded-xl p-3 transition-all duration-200',
+          'relative min-w-[170px] rounded-xl p-3 transition-all duration-200',
           'min-h-[68px] flex flex-col justify-between',
           statusStyles[status]
         )}
       >
-        {/* Room Number - clickable to deallocate */}
-        <div
-          className="cursor-pointer hover:opacity-80"
-          onClick={!disabled ? onClick : undefined}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
-              onClick();
-            }
-          }}
-        >
-          <span className="text-xl font-bold text-green-900">
-            {room.room_number || room.name}
-          </span>
-        </div>
+        <div className="flex items-center gap-6 pr-12">
+          {/* Room Number - clickable to deallocate */}
+          <div
+            className="cursor-pointer hover:opacity-80"
+            onClick={!disabled ? handleRequestUnallocate : undefined}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+                handleRequestUnallocate();
+              }
+            }}
+          >
+            <span className="text-xl font-bold text-green-900">
+              {room.room_number || room.name}
+            </span>
+            <div className="mt-1 flex items-center gap-1.5">
+              {room.ensuite_available && (
+                <div
+                  className={featureIconClass(
+                    isEnsuiteSelected,
+                    'border-blue-200 bg-blue-50 text-blue-500',
+                    'size-6'
+                  )}
+                >
+                  <ShowerHead className="size-3.5" />
+                </div>
+              )}
+              {room.extra_bed_allowed && (
+                <div
+                  className={featureIconClass(
+                    isExtraBedSelected,
+                    'border-amber-200 bg-amber-50 text-amber-500',
+                    'size-6'
+                  )}
+                >
+                  <Bed className="size-3.5" />
+                </div>
+              )}
+              {room.private_study_available && (
+                <div
+                  className={featureIconClass(
+                    isPrivateStudySelected,
+                    'border-green-200 bg-green-50 text-green-600',
+                    'size-6'
+                  )}
+                >
+                  <BookOpen className="size-3.5" />
+                </div>
+              )}
+            </div>
+          </div>
 
-        {/* Feature Icons */}
-        <div className="flex items-center gap-1.5 mt-1">
-          {room.ensuite_available && (
-            <ShowerHead className="size-3.5 text-blue-500" />
-          )}
-          {room.extra_bed_allowed && <Bed className="size-3.5 text-amber-500" />}
-          {room.private_study_available && (
-            <BookOpen className="size-3.5 text-green-600" />
-          )}
+          {/* Guest Names */}
+          <div className="flex flex-col items-start justify-center gap-0.5">
+            {guestNames.slice(0, totalCapacity).map((name, i) => {
+              const trimmed = (name || '').trim();
+              const isBlank = trimmed.length === 0;
+              const displayName = isBlank ? `Guest ${i + 1}` : trimmed;
+              return (
+                <span
+                  key={`guest-${room.id}-${i}`}
+                  className={cn(
+                    'w-28 truncate text-sm leading-tight',
+                    isBlank
+                      ? 'text-neutral-300 font-medium'
+                      : 'text-olive-900 font-semibold'
+                  )}
+                  title={displayName}
+                  aria-label={
+                    isBlank
+                      ? `Guest ${i + 1} empty`
+                      : `Guest ${i + 1}: ${trimmed}`
+                  }
+                >
+                  {displayName}
+                </span>
+              );
+            })}
+          </div>
         </div>
 
         {/* Right side: Status icon and Edit button */}
         <div className="absolute top-2 right-2 flex flex-col items-center gap-1">
-          <StatusIcon />
+          <button
+            onClick={!disabled ? handleRequestUnallocate : undefined}
+            disabled={disabled}
+            className={cn(
+              'rounded-full p-0.5 transition-colors',
+              disabled ? 'cursor-not-allowed opacity-60' : 'hover:bg-green-100'
+            )}
+            title="Unallocate room"
+            aria-label="Unallocate room"
+            type="button"
+          >
+            <CheckCircle2 className="size-4 text-green-600" />
+          </button>
           <button
             onClick={() => setIsExpanded(true)}
             className="p-1 rounded-md hover:bg-green-100 transition-colors"
             title="Edit guest details"
+            type="button"
           >
             <UserPen className="size-4 text-green-600" />
           </button>
         </div>
+        <Dialog
+          open={isUnallocateConfirmOpen}
+          onOpenChange={setIsUnallocateConfirmOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                Unallocate Room {room.room_number || room.name}?
+              </DialogTitle>
+              <DialogDescription>
+                This will clear any guest names and extras selected for this
+                room.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsUnallocateConfirmOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmUnallocate}
+                disabled={disabled}
+              >
+                Unallocate
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -875,7 +1069,7 @@ function RoomCard({
   const card = (
     <div
       className={cn(
-        'relative rounded-xl border p-3 transition-all duration-200',
+        'relative min-w-[170px] rounded-xl border p-3 transition-all duration-200',
         'min-h-[68px] flex flex-col justify-between',
         statusStyles[status],
         disabled && status !== 'conflicting' && 'opacity-50 pointer-events-none'
@@ -904,13 +1098,39 @@ function RoomCard({
       </span>
 
       {/* Feature Icons */}
-      <div className="flex items-center gap-1.5 mt-1">
+      <div className="mt-1 flex items-center gap-1.5">
         {room.ensuite_available && (
-          <ShowerHead className="size-3.5 text-blue-500" />
+          <div
+            className={featureIconClass(
+              isEnsuiteSelected,
+              'border-blue-200 bg-blue-50 text-blue-500',
+              'size-6'
+            )}
+          >
+            <ShowerHead className="size-3.5" />
+          </div>
         )}
-        {room.extra_bed_allowed && <Bed className="size-3.5 text-amber-500" />}
+        {room.extra_bed_allowed && (
+          <div
+            className={featureIconClass(
+              isExtraBedSelected,
+              'border-amber-200 bg-amber-50 text-amber-500',
+              'size-6'
+            )}
+          >
+            <Bed className="size-3.5" />
+          </div>
+        )}
         {room.private_study_available && (
-          <BookOpen className="size-3.5 text-green-600" />
+          <div
+            className={featureIconClass(
+              isPrivateStudySelected,
+              'border-green-200 bg-green-50 text-green-600',
+              'size-6'
+            )}
+          >
+            <BookOpen className="size-3.5" />
+          </div>
         )}
       </div>
 
