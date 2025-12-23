@@ -16,8 +16,16 @@ export type MealJobDetail = Omit<Tables<"meal_jobs">, "counts_by_diet"> & {
   percolated_coffee_quantity: number | null;
 };
 
+// Extended room_assignment with new fields (until types regenerated)
+export type RoomAssignmentWithDetails = Tables<"room_assignments"> & {
+  guest_names?: string[] | null;
+  extra_bed_selected?: boolean | null;
+  ensuite_selected?: boolean | null;
+  private_study_selected?: boolean | null;
+};
+
 export type RoomWithAssignments = Tables<"rooms"> & {
-  assignments: Tables<"room_assignments">[];
+  assignments: RoomAssignmentWithDetails[];
   // Manually add new fields until types are regenerated
   level?: string | null;
   room_number?: string | null;

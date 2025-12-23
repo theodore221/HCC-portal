@@ -224,3 +224,140 @@ export async function assignCatererToDay(
     throw new Error(`Failed to assign caterer to day: ${error.message}`);
   revalidatePath("/admin/bookings/[id]", "page");
 }
+
+// ==================== Room Allocation Actions ====================
+
+export async function allocateRoom(bookingId: string, roomId: string) {
+  const supabase: any = await sbServer();
+
+  // Get booking dates for conflict checking
+  const { data: booking, error: bookingError } = await supabase
+    .from("bookings")
+    .select("arrival_date, departure_date")
+    .eq("id", bookingId)
+    .single();
+
+  if (bookingError || !booking) {
+    throw new Error("Booking not found");
+  }
+
+  // Check if room is already allocated to another booking with overlapping dates
+  const { data: existingAssignments } = await supabase
+    .from("room_assignments")
+    .select(
+      "booking_id, booking:bookings(arrival_date, departure_date, status)"
+    )
+    .eq("room_id", roomId)
+    .neq("booking_id", bookingId);
+
+  const hasConflict = (existingAssignments ?? []).some((assignment: any) => {
+    const other = assignment.booking;
+    if (!other || other.status === "Cancelled") return false;
+    // Check date overlap
+    return (
+      other.arrival_date < booking.departure_date &&
+      other.departure_date > booking.arrival_date
+    );
+  });
+
+  if (hasConflict) {
+    throw new Error(
+      "Room is already allocated to another booking for overlapping dates"
+    );
+  }
+
+  // Check if already allocated to this booking
+  const { data: existing } = await supabase
+    .from("room_assignments")
+    .select("id")
+    .eq("booking_id", bookingId)
+    .eq("room_id", roomId)
+    .maybeSingle();
+
+  if (existing) {
+    // Already allocated, nothing to do
+    return;
+  }
+
+  // Create room assignment (room-level only, customer assigns guests later)
+  const { error } = await supabase.from("room_assignments").insert({
+    booking_id: bookingId,
+    room_id: roomId,
+    occupant_name: "TBD",
+    bed_number: 1,
+    is_extra_bed: false,
+  });
+
+  if (error) {
+    throw new Error(`Failed to allocate room: ${error.message}`);
+  }
+
+  revalidatePath(`/admin/bookings/${bookingId}`);
+}
+
+export async function deallocateRoom(bookingId: string, roomId: string) {
+  const supabase: any = await sbServer();
+
+  const { error } = await supabase
+    .from("room_assignments")
+    .delete()
+    .eq("booking_id", bookingId)
+    .eq("room_id", roomId);
+
+  if (error) {
+    throw new Error(`Failed to deallocate room: ${error.message}`);
+  }
+
+  revalidatePath(`/admin/bookings/${bookingId}`);
+}
+
+// Note: activateRoom was removed - we now allow allocating inactive rooms
+// directly for a specific booking without permanently activating them.
+// This keeps emergency rooms (34, Chapter) locked for other bookings
+// while allowing admins to unlock them for specific bookings when needed.
+
+export async function updateRoomAllocationDetails(
+  bookingId: string,
+  roomId: string,
+  data: {
+    guestNames: string[];
+    extraBed: boolean;
+    ensuite: boolean;
+    privateStudy: boolean;
+  }
+) {
+  const supabase: any = await sbServer();
+
+  // Find the room assignment
+  const { data: assignment, error: findError } = await supabase
+    .from("room_assignments")
+    .select("id")
+    .eq("booking_id", bookingId)
+    .eq("room_id", roomId)
+    .maybeSingle();
+
+  if (findError) {
+    throw new Error(`Failed to find room assignment: ${findError.message}`);
+  }
+
+  if (!assignment) {
+    throw new Error("Room assignment not found");
+  }
+
+  // Update the assignment with guest names and extras
+  const { error } = await supabase
+    .from("room_assignments")
+    .update({
+      guest_names: data.guestNames,
+      extra_bed_selected: data.extraBed,
+      ensuite_selected: data.ensuite,
+      private_study_selected: data.privateStudy,
+    })
+    .eq("id", assignment.id);
+
+  if (error) {
+    throw new Error(`Failed to update room allocation: ${error.message}`);
+  }
+
+  revalidatePath(`/admin/bookings/${bookingId}`);
+}

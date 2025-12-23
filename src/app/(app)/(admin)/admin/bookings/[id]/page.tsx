@@ -39,17 +39,15 @@ export default async function BookingDetail({
     { data: bookingReservations },
     { data: potentialConflictingReservations },
     { data: roomingGroups },
+    { data: roomAssignmentsForOthers },
   ] = await Promise.all([
     supabase
       .from("spaces")
       .select("id, name, capacity")
       .eq("active", true)
       .order("name"),
-    supabase
-      .from("rooms")
-      .select("*, room_types(*)")
-      .eq("active", true)
-      .order("room_number"),
+    // Fetch ALL rooms (including inactive) for display
+    supabase.from("rooms").select("*, room_types(*)").order("room_number"),
     supabase
       .from("space_reservations")
       .select("*")
@@ -61,6 +59,13 @@ export default async function BookingDetail({
       .lte("service_date", booking.departure_date)
       .neq("booking_id", booking.id), // Exclude current booking
     supabase.from("rooming_groups").select("*").eq("booking_id", booking.id),
+    // Fetch room assignments for OTHER bookings to detect conflicts
+    supabase
+      .from("room_assignments")
+      .select(
+        "room_id, booking_id, booking:bookings(id, status, arrival_date, departure_date, reference, customer_name, contact_name)"
+      )
+      .neq("booking_id", booking.id),
   ]);
 
   // 2. Compute Conflicts in App Layer
@@ -119,7 +124,7 @@ export default async function BookingDetail({
     }
   }
 
-  // 3. Fetch details for conflicting bookings
+  // 3. Fetch details for conflicting bookings (spaces)
   const conflictingBookingIds = Array.from(
     new Set(conflicts.map((c) => c.conflicts_with).filter(Boolean) as string[])
   );
@@ -136,6 +141,45 @@ export default async function BookingDetail({
     }
   }
 
+  // 4. Compute Room Conflicts
+  interface RoomConflict {
+    room_id: string;
+    conflicts_with: string;
+    conflicting_booking: {
+      id: string;
+      reference: string | null;
+      status: string;
+      customer_name: string | null;
+      contact_name: string | null;
+      arrival_date: string;
+      departure_date: string;
+    };
+  }
+
+  const roomConflicts: RoomConflict[] = [];
+  const roomConflictingBookingsMap = new Map<string, any>();
+
+  for (const assignment of roomAssignmentsForOthers ?? []) {
+    const otherBooking = assignment.booking as any;
+    if (!otherBooking || otherBooking.status === "Cancelled") continue;
+
+    // Check date overlap
+    const hasOverlap =
+      otherBooking.arrival_date < booking.departure_date &&
+      otherBooking.departure_date > booking.arrival_date;
+
+    if (hasOverlap) {
+      roomConflicts.push({
+        room_id: assignment.room_id,
+        conflicts_with: otherBooking.id,
+        conflicting_booking: otherBooking,
+      });
+      roomConflictingBookingsMap.set(otherBooking.id, otherBooking);
+    }
+  }
+
+  const roomConflictingBookings = Array.from(roomConflictingBookingsMap.values());
+
   return (
     <BookingDetailClient
       booking={booking}
@@ -147,6 +191,8 @@ export default async function BookingDetail({
       reservations={myReservations}
       conflicts={conflicts}
       conflictingBookings={conflictingBookingsData ?? []}
+      roomConflicts={roomConflicts}
+      roomConflictingBookings={roomConflictingBookings}
       cateringOptions={cateringOptions}
       roomingGroups={roomingGroups ?? []}
     />

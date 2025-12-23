@@ -49,6 +49,21 @@ import type {
 } from "@/lib/queries/bookings";
 import type { Views, Tables } from "@/lib/database.types";
 
+// Room conflict type for accommodation tab
+export interface RoomConflict {
+  room_id: string;
+  conflicts_with: string;
+  conflicting_booking: {
+    id: string;
+    reference: string | null;
+    status: string;
+    customer_name: string | null;
+    contact_name: string | null;
+    arrival_date: string;
+    departure_date: string;
+  };
+}
+
 const tabConfig = [
   { value: "overview", label: "Overview" },
   { value: "spaces", label: "Spaces" },
@@ -68,6 +83,8 @@ export default function BookingDetailClient({
   reservations,
   conflicts,
   conflictingBookings,
+  roomConflicts,
+  roomConflictingBookings,
   cateringOptions,
   roomingGroups,
 }: {
@@ -90,6 +107,16 @@ export default function BookingDetailClient({
     status: string;
     contact_name: string | null;
     customer_name: string | null;
+  }[];
+  roomConflicts: RoomConflict[];
+  roomConflictingBookings: {
+    id: string;
+    reference: string | null;
+    status: string;
+    customer_name: string | null;
+    contact_name: string | null;
+    arrival_date: string;
+    departure_date: string;
   }[];
   cateringOptions: {
     caterers: { id: string; name: string }[];
@@ -531,6 +558,8 @@ export default function BookingDetailClient({
           rooms={rooms}
           allRooms={allRooms}
           roomingGroups={roomingGroups}
+          roomConflicts={roomConflicts}
+          roomConflictingBookings={roomConflictingBookings}
         />
       </TabsContent>
 
