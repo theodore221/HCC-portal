@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import Link from 'next/link';
 import { RoomWithAssignments, BookingWithMeta } from '@/lib/queries/bookings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -611,6 +612,10 @@ function RoomCard({
   const [isSaving, setIsSaving] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUnallocateConfirmOpen, setIsUnallocateConfirmOpen] = useState(false);
+  const conflictDisplayName =
+    conflictDetails?.customer_name ||
+    conflictDetails?.contact_name ||
+    'Unknown group';
 
   // Local state for editing (only used when allocated)
   const capacity = room.room_types?.capacity || 1;
@@ -1091,11 +1096,27 @@ function RoomCard({
       <span
         className={cn(
           'text-xl font-bold',
-          status === 'inactive' ? 'text-neutral-500' : 'text-green-900'
+          status === 'inactive'
+            ? 'text-neutral-500'
+            : status === 'conflicting'
+            ? 'text-red-700'
+            : 'text-green-900'
         )}
       >
         {room.room_number || room.name}
       </span>
+
+      {status === 'conflicting' && conflictDetails && (
+        <div className="mt-1 text-[11px] text-red-700">
+          Booked by{' '}
+          <Link
+            href={`/admin/bookings/${conflictDetails.id}`}
+            className="font-semibold underline decoration-red-300 underline-offset-2"
+          >
+            {conflictDisplayName}
+          </Link>
+        </div>
+      )}
 
       {/* Feature Icons */}
       <div className="mt-1 flex items-center gap-1.5">
@@ -1164,14 +1185,8 @@ function RoomCard({
           )}
           {status === 'conflicting' && conflictDetails && (
             <div className="mt-2 rounded bg-red-50 p-2 text-xs">
-              <p className="font-medium text-red-700">Conflict with:</p>
-              <p className="text-red-600">
-                {conflictDetails.reference || conflictDetails.id.slice(0, 8)}
-                {' - '}
-                {conflictDetails.customer_name ||
-                  conflictDetails.contact_name ||
-                  'Unknown'}
-              </p>
+              <p className="font-medium text-red-700">Booked by:</p>
+              <p className="text-red-600">{conflictDisplayName}</p>
             </div>
           )}
           {status === 'inactive' && (
