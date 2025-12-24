@@ -94,9 +94,13 @@ export function AppHeader({ navItems, profile, sessionEmail, shellWidthClass }: 
 
 function BrandMark({ showTagline = true }: { showTagline?: boolean }) {
   return (
-    <Link href="/" className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold uppercase tracking-[0.12em] text-white shadow-soft transition-transform duration-200 hover:scale-[1.02]">
-        HCC
+    <Link href="/" className="flex items-center gap-2">
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl transition-transform duration-200 hover:scale-[1.02]">
+        <img
+          src="/logo_notext.svg"
+          alt="HCC Logo"
+          className="h-full w-full object-contain"
+        />
       </div>
       <div className="min-w-0">
         <span className="block text-sm font-semibold text-text">Holy Cross Centre</span>

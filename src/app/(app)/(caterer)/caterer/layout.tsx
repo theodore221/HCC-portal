@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { UtensilsCrossed } from "lucide-react";
+
 
 import { DashboardShell } from "@/components/layout/dashboard-shell";
-import { Button } from "@/components/ui/button";
+
 import { getHomePathForRole } from "@/lib/auth/paths";
 import { getCurrentProfile } from "@/lib/auth/server";
 
@@ -33,18 +33,7 @@ export default async function CatererLayout({
       title="Caterer workspace"
       description="Manage menus, prep, and delivery timelines."
       navItems={navItems}
-      quickActions={
-        <Button
-          asChild
-          variant="outline"
-          className="rounded-xl border-border bg-white px-4 py-2 text-sm font-semibold text-text hover:bg-neutral"
-        >
-          <Link href="/caterer/jobs">
-            <UtensilsCrossed className="size-4" />
-            View job board
-          </Link>
-        </Button>
-      }
+
       user={{
         name: profile?.full_name ?? profile?.email ?? undefined,
         email: profile?.email ?? session?.user.email ?? undefined,

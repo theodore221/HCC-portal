@@ -12,14 +12,14 @@ import {
   Menu,
   PanelLeftClose,
   PanelRightOpen,
-  Search,
+
   Settings,
   Users,
   Utensils,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
@@ -135,9 +135,7 @@ export function DashboardShell({
               </div>
 
               <div className="flex items-center gap-3">
-                <div className="hidden md:block">
-                  <SearchField />
-                </div>
+
                 <Button
                   variant="ghost"
                   size="icon-sm"
@@ -229,11 +227,11 @@ function SidebarContent({
           href="/"
           className={cn(
             "flex items-center gap-3",
-            collapsed ? "gap-0" : "gap-3"
+            collapsed ? "gap-0" : "gap-2"
           )}
         >
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold uppercase tracking-[0.12em] text-white">
-            HCC
+          <div className="flex size-14 items-center justify-center rounded-xl">
+            <img src="/logo_notext.svg" alt="HCC Logo" className="size-full object-contain" />
           </div>
           {!collapsed ? (
             <div className="min-w-0">
@@ -308,8 +306,8 @@ function SidebarContent({
             collapsed={collapsed}
           />
         ) : (
-          <div className="flex size-10 items-center justify-center rounded-full bg-primary/90 text-sm font-semibold text-white">
-            HCC
+          <div className="flex size-10 items-center justify-center rounded-full overflow-hidden">
+            <img src="/logo_notext.svg" alt="HCC" className="h-full w-full object-cover" />
           </div>
         )}
       </div>
@@ -317,17 +315,4 @@ function SidebarContent({
   );
 }
 
-function SearchField() {
-  return (
-    <div className="relative">
-      <Input
-        placeholder="Search bookings..."
-        className="h-10 w-64 rounded-xl border border-border bg-neutral pl-10 text-sm text-text placeholder:text-text-light focus:border-primary focus:ring-2 focus:ring-primary/20"
-      />
-      <Search
-        className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-light"
-        aria-hidden
-      />
-    </div>
-  );
-}
+

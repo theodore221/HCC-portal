@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "HCC Portal",
   description: "Holy Cross Centre booking and operations portal",
+  icons: {
+    icon: "/logo_notext.svg",
+  },
 };
 
 export default function RootLayout({
