@@ -42,13 +42,17 @@ export async function middleware(req: NextRequest) {
 
   const { pathname, search } = req.nextUrl;
   const isLoginRoute = pathname === "/login";
-  const isPasswordSetupRoute = pathname === "/password-setup";
+  const isRootRoute = pathname === "/";
   const isProtectedRoute = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
   if (!session?.user) {
-    if (isLoginRoute || (!isProtectedRoute && !isPasswordSetupRoute)) {
+    if (isRootRoute) {
+      return redirectWithCookies(res, new URL("/login", req.url));
+    }
+
+    if (isLoginRoute || !isProtectedRoute) {
       return res;
     }
 
@@ -59,7 +63,7 @@ export async function middleware(req: NextRequest) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, booking_reference, guest_token, password_initialized_at")
+    .select("role, booking_reference, guest_token")
     .eq("id", session.user.id)
     .maybeSingle();
 
@@ -68,17 +72,8 @@ export async function middleware(req: NextRequest) {
     role,
     profile?.booking_reference ?? null
   );
-  const requiresPasswordSetup = !profile?.password_initialized_at;
 
-  if (requiresPasswordSetup && !isPasswordSetupRoute) {
-    return redirectWithCookies(res, new URL("/password-setup", req.url));
-  }
-
-  if (!requiresPasswordSetup && isPasswordSetupRoute) {
-    return redirectWithCookies(res, new URL(destinationHome, req.url));
-  }
-
-  if (isLoginRoute) {
+  if (isLoginRoute || isRootRoute) {
     return redirectWithCookies(res, new URL(destinationHome, req.url));
   }
 
@@ -123,7 +118,7 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/login",
-    "/password-setup",
+    "/",
     "/admin/:path*",
     "/staff/:path*",
     "/caterer/:path*",

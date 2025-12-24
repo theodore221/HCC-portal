@@ -53,18 +53,8 @@ export default function LoginPage() {
       const profile = payload.data;
       const profileRole = profile.role ?? null;
       const bookingReference = profile.booking_reference ?? null;
-      const passwordInitializedAt = profile.password_initialized_at ?? null;
 
       setSignedIn(true);
-
-      if (!passwordInitializedAt) {
-        setPassword('');
-        setLoading(null);
-        setError(null);
-        router.replace('/password-setup');
-        router.refresh();
-        return;
-      }
 
       let destination =
         redirectTo ?? getHomePathForRole(profileRole, bookingReference);
@@ -78,6 +68,7 @@ export default function LoginPage() {
       setError(null);
       router.replace(destination);
       router.refresh();
+      return;
     } catch (fetchError) {
       console.error('Failed to load profile', fetchError);
       setError("We couldn't load your profile. Please try again.");
