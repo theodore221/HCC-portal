@@ -51,7 +51,7 @@ export function MultiSelect({
     }
   };
 
-  const handleRemove = (value: string, e: React.MouseEvent) => {
+  const handleRemove = (value: string, e: React.SyntheticEvent) => {
     e.stopPropagation();
     onChange(selected.filter((item) => item !== value));
   };
@@ -75,7 +75,7 @@ export function MultiSelect({
                   className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      handleRemove(value, e as any);
+                      handleRemove(value, e);
                     }
                   }}
                   onMouseDown={(e) => {

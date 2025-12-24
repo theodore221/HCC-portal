@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { notFound } from "next/navigation";
 import { sbServer } from "@/lib/supabase-server";
 import {

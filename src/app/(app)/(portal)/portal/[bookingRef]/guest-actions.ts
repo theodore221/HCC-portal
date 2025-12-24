@@ -6,8 +6,7 @@ import { sbServer } from "@/lib/supabase-server";
 export async function createGuest(bookingId: string, name: string) {
   const supabase = await sbServer();
 
-  const { data, error } = await supabase
-    .from("guests") as any
+  const { data, error } = await (supabase.from("guests") as any)
     .insert({
       booking_id: bookingId,
       full_name: name,
@@ -30,8 +29,7 @@ export async function updateGuest(
 ) {
   const supabase = await sbServer();
 
-  const { error } = await supabase
-    .from("guests") as any
+  const { error } = await (supabase.from("guests") as any)
     .update(updates)
     .eq("id", guestId);
 

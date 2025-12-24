@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface DroppableProps {
   id: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   children: React.ReactNode;
   className?: string;
   disabled?: boolean;

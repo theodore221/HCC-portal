@@ -17,6 +17,7 @@ export async function getCateringOptions(): Promise<CateringOptions> {
     supabase
       .from("caterers")
       .select("id, name")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .eq("active", true as any)
       .order("name"),
     supabase

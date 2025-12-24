@@ -1,0 +1,271 @@
+
+> hcc-portal@0.1.0 build
+> next build --turbopack
+
+   ▲ Next.js 15.5.6 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Finished writing to disk in 101ms
+ ✓ Compiled successfully in 5.9s
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./src/app/(app)/(admin)/admin/bookings/client.tsx
+9:3  Warning: 'CheckCircle2' is defined but never used.  @typescript-eslint/no-unused-vars
+59:7  Warning: 'statusBadgeStyles' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+311:9  Warning: 'toolbarBadges' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/bookings/[id]/actions.ts
+15:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+16:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+59:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+109:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+128:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+130:35  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+144:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+161:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+192:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+211:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+231:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+253:69  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+299:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+329:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+380:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+402:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+427:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+460:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+462:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+485:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+506:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+530:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+546:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/(admin)/admin/bookings/[id]/client.tsx
+135:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+168:16  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+188:16  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/bookings/[id]/day-meal-card.tsx
+78:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+94:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+107:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/bookings/[id]/guest-list.tsx
+10:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+11:16  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+16:3  Warning: 'roomingGroups' is defined but never used.  @typescript-eslint/no-unused-vars
+17:3  Warning: 'assignments' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/bookings/[id]/page.tsx
+34:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+133:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+161:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+164:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+198:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/(admin)/admin/bookings/[id]/room-grid.tsx
+6:10  Warning: 'Draggable' is defined but never used.  @typescript-eslint/no-unused-vars
+7:10  Warning: 'User' is defined but never used.  @typescript-eslint/no-unused-vars
+12:16  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+34:3  Warning: 'date' is defined but never used.  @typescript-eslint/no-unused-vars
+35:3  Warning: 'assignments' is defined but never used.  @typescript-eslint/no-unused-vars
+39:16  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/(admin)/admin/bookings/[id]/spaces-tab.tsx
+4:10  Warning: 'CheckCircle2' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/bookings/[id]/triage-tab.tsx
+3:10  Warning: 'useState' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/bookings/[id]/_components/room-allocation-table.tsx
+11:37  Warning: 'Plus' is defined but never used.  @typescript-eslint/no-unused-vars
+11:43  Warning: 'User' is defined but never used.  @typescript-eslint/no-unused-vars
+12:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+14:3  Warning: 'Tooltip' is defined but never used.  @typescript-eslint/no-unused-vars
+15:3  Warning: 'TooltipContent' is defined but never used.  @typescript-eslint/no-unused-vars
+16:3  Warning: 'TooltipProvider' is defined but never used.  @typescript-eslint/no-unused-vars
+17:3  Warning: 'TooltipTrigger' is defined but never used.  @typescript-eslint/no-unused-vars
+43:9  Error: 'currentDate' is never reassigned. Use 'const' instead.  prefer-const
+59:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+168:3  Warning: 'date' is defined but never used.  @typescript-eslint/no-unused-vars
+169:3  Warning: 'bookingId' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/layout.tsx
+1:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/resources/actions.ts
+5:10  Warning: 'Tables' is defined but never used.  @typescript-eslint/no-unused-vars
+143:9  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/(admin)/admin/resources/page.tsx
+8:10  Warning: 'Button' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/resources/_components/caterers-tab.tsx
+155:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+173:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+237:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+279:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+325:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+371:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/resources/_components/meals-tab.tsx
+128:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/resources/_components/menu-tab.tsx
+39:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+185:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+192:24  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+217:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+279:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+296:55  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+332:10  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+333:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+456:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+501:59  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+504:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+567:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+626:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/resources/_components/rooms-tab.tsx
+130:33  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+152:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+196:11  Warning: 'toast' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+217:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+238:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+259:31  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+310:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+311:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+337:40  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+338:38  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+420:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+466:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+514:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+553:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+560:64  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+563:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+597:10  Warning: 'EditableRoomNameCell' is defined but never used.  @typescript-eslint/no-unused-vars
+614:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+643:10  Warning: 'EditableBuildingCell' is defined but never used.  @typescript-eslint/no-unused-vars
+660:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+708:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+765:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+811:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+818:72  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+821:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+858:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+865:53  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+868:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+904:47  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+911:52  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+914:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+951:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+953:43  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+963:12  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+966:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+1014:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1017:14  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1028:12  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+1031:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(admin)/admin/resources/_components/spaces-tab.tsx
+125:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+173:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(caterer)/caterer/layout.tsx
+1:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(portal)/portal/page.tsx
+4:24  Warning: 'MapPinIcon' is defined but never used.  @typescript-eslint/no-unused-vars
+16:10  Warning: 'Button' is defined but never used.  @typescript-eslint/no-unused-vars
+59:22  Error: `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`.  react/no-unescaped-entities
+
+./src/app/(app)/(portal)/portal/[bookingRef]/actions.ts
+10:69  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+55:63  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+208:80  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+240:21  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+247:80  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+264:65  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+283:72  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+306:96  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+318:39  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+321:107  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/(portal)/portal/[bookingRef]/guest-actions.ts
+11:11  Error: Parsing error: ',' expected.
+
+./src/app/(app)/(portal)/portal/[bookingRef]/overview-tab.tsx
+4:10  Warning: 'Card' is defined but never used.  @typescript-eslint/no-unused-vars
+4:16  Warning: 'CardContent' is defined but never used.  @typescript-eslint/no-unused-vars
+4:29  Warning: 'CardHeader' is defined but never used.  @typescript-eslint/no-unused-vars
+4:41  Warning: 'CardTitle' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(portal)/portal/[bookingRef]/page.tsx
+44:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+45:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/(portal)/portal/[bookingRef]/room-allocation-grid.tsx
+290:6  Warning: React Hook useEffect has a missing dependency: 'assignment'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/(app)/(portal)/portal/[bookingRef]/rooming-group-builder.tsx
+14:3  Warning: 'arrayMove' is defined but never used.  @typescript-eslint/no-unused-vars
+15:3  Warning: 'SortableContext' is defined but never used.  @typescript-eslint/no-unused-vars
+17:3  Warning: 'verticalListSortingStrategy' is defined but never used.  @typescript-eslint/no-unused-vars
+18:3  Warning: 'useSortable' is defined but never used.  @typescript-eslint/no-unused-vars
+20:10  Warning: 'CSS' is defined but never used.  @typescript-eslint/no-unused-vars
+26:3  Warning: 'BedDouble' is defined but never used.  @typescript-eslint/no-unused-vars
+46:10  Warning: 'Badge' is defined but never used.  @typescript-eslint/no-unused-vars
+53:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+233:9  Warning: 'handlePopulateGuests' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(portal)/portal/[bookingRef]/spaces-tab.tsx
+19:3  Warning: 'booking' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/(app)/(staff)/staff/bookings/[id]/client.tsx
+100:18  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/(staff)/staff/bookings/[id]/page.tsx
+33:19  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+132:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+160:54  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+163:48  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+189:30  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/(app)/(staff)/staff/layout.tsx
+1:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/catering/dietary-table.tsx
+31:10  Warning: 'cn' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/layout/app-header.tsx
+99:9  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/layout/dashboard-shell.tsx
+234:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+310:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/resources/csv-importer.tsx
+68:20  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+109:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/draggable.tsx
+9:25  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/components/ui/multi-select.tsx
+3:10  Warning: 'Button' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/ui/use-toast.ts
+2:10  Warning: 'useState' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/lib/auth/paths.ts
+5:3  Warning: 'bookingReference' is defined but never used.  @typescript-eslint/no-unused-vars
+23:3  Warning: 'bookingReference' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/server/services/profiles.ts
+12:3  Warning: 'MissingBookingLinkError' is defined but never used.  @typescript-eslint/no-unused-vars
+13:3  Warning: 'MissingCatererLinkError' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
