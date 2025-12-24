@@ -223,7 +223,7 @@ export async function getScheduleData(): Promise<ScheduleRow[]> {
       percolatedCoffee: checkPercolatedCoffee(bookingMealJobs),
       bedType: getBedType(booking.accommodation_requests),
       roomList: null, // Future feature
-      notes: null, // Leave blank for now as per requirements
+      notes: booking.notes,
       reference: booking.reference,
       status: booking.status,
     };

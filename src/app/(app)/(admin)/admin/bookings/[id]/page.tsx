@@ -9,9 +9,10 @@ import {
   getRoomsForBooking,
 } from "@/lib/queries/bookings.server";
 import { getCateringOptions } from "@/lib/queries/catering.server";
+import { getDietaryMealAttendance } from "./actions";
 import BookingDetailClient from "./client";
 
-import type { Space, SpaceReservation } from "@/lib/queries/bookings";
+import type { Space, SpaceReservation, DietaryProfile } from "@/lib/queries/bookings";
 import type { Views } from "@/lib/database.types";
 
 export default async function BookingDetail({
@@ -180,6 +181,14 @@ export default async function BookingDetail({
 
   const roomConflictingBookings = Array.from(roomConflictingBookingsMap.values());
 
+  // 5. Fetch dietary profiles and attendance
+  const { data: dietaryProfiles } = await supabase
+    .from("dietary_profiles")
+    .select("*")
+    .eq("booking_id", booking.id);
+
+  const mealAttendance = await getDietaryMealAttendance(booking.id);
+
   return (
     <BookingDetailClient
       booking={booking}
@@ -195,6 +204,8 @@ export default async function BookingDetail({
       roomConflictingBookings={roomConflictingBookings}
       cateringOptions={cateringOptions}
       roomingGroups={roomingGroups ?? []}
+      dietaryProfiles={(dietaryProfiles as DietaryProfile[]) ?? []}
+      mealAttendance={mealAttendance}
     />
   );
 }

@@ -11,6 +11,7 @@ export type EnrichedMealJob = {
   date: string;
   meal: Enums<"meal_type">;
   timeSlot: Enums<"meal_type">;
+  countsTotal: number;
   dietaryCounts: Record<string, number>;
   percolatedCoffee: boolean;
   percolatedCoffeeQuantity: number | null;
@@ -26,6 +27,7 @@ export type EnrichedMealJob = {
   endISOString: string;
   formattedDate: string;
   timeRangeLabel: string;
+  requestedServiceTime: string | null;
 };
 
 export const MEAL_ORDER = [
@@ -87,6 +89,7 @@ export function enrichMealJobs(
       date: job.service_date,
       meal: job.meal,
       timeSlot: job.meal,
+      countsTotal: job.counts_total,
       dietaryCounts: job.counts_by_diet,
       percolatedCoffee: job.percolated_coffee,
       percolatedCoffeeQuantity: job.percolated_coffee_quantity,
@@ -102,6 +105,7 @@ export function enrichMealJobs(
       endISOString: endDate.toISOString(),
       formattedDate: formatDateLabel(job.service_date),
       timeRangeLabel: `${job.meal} • ${formatTimeRange(startDate, endDate)}`,
+      requestedServiceTime: job.requested_service_time ?? null,
     } satisfies EnrichedMealJob;
   });
 

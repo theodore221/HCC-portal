@@ -8,23 +8,30 @@ import type {
   DietaryProfile,
   SpaceReservation,
   Space,
+  RoomWithAssignments,
 } from "@/lib/queries/bookings";
 import type { EnrichedMealJob } from "@/lib/catering";
-import type { Tables } from "@/lib/database.types";
 
 import { CustomerOverviewTab } from "./overview-tab";
 import { CustomerSpacesTab } from "./spaces-tab";
 import { CustomerCateringTab } from "./catering-tab";
 import { CustomerAccommodationTab } from "./accommodation-tab";
 
+// Meal attendance type: { dietaryProfileId: { mealJobId: boolean } }
+export type MealAttendanceMap = Record<string, Record<string, boolean>>;
+
 interface CustomerPortalClientProps {
   booking: BookingWithMeta;
   cateringJobs: EnrichedMealJob[];
+  menuItems: {
+    id: string;
+    label: string;
+    catererId: string | null;
+    mealType: string | null;
+  }[];
   dietaryProfiles: DietaryProfile[];
-  roomingGroups: Tables<"rooming_groups">[];
-  unassignedGuests: { id: string; name: string }[];
-  allGuests: { id: string; name: string }[];
-  roomTypes: { id: string; name: string }[];
+  mealAttendance: MealAttendanceMap;
+  rooms: RoomWithAssignments[];
   reservations: SpaceReservation[];
   allSpaces: Space[];
 }
@@ -32,11 +39,10 @@ interface CustomerPortalClientProps {
 export default function CustomerPortalClient({
   booking,
   cateringJobs,
+  menuItems,
   dietaryProfiles,
-  roomingGroups,
-  unassignedGuests,
-  allGuests,
-  roomTypes,
+  mealAttendance,
+  rooms,
   reservations,
   allSpaces,
 }: CustomerPortalClientProps) {
@@ -76,18 +82,18 @@ export default function CustomerPortalClient({
 
         <TabsContent value="accommodation">
           <CustomerAccommodationTab
-            bookingId={booking.id}
-            roomingGroups={roomingGroups}
-            unassignedGuests={unassignedGuests}
-            allGuests={allGuests}
-            roomTypes={roomTypes}
+            booking={booking}
+            rooms={rooms}
           />
         </TabsContent>
 
         <TabsContent value="catering">
           <CustomerCateringTab
             cateringJobs={cateringJobs}
+            menuItems={menuItems}
             dietaryProfiles={dietaryProfiles}
+            mealAttendance={mealAttendance}
+            bookingId={booking.id}
           />
         </TabsContent>
       </Tabs>

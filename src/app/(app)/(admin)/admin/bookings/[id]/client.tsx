@@ -33,7 +33,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 
 import { AuditTimeline } from "@/components/ui/audit-timeline";
-import { RoomCard } from "@/components/ui/room-card";
 import { Button } from "@/components/ui/button";
 import { formatDateRange, cn } from "@/lib/utils";
 import type { EnrichedMealJob } from "@/lib/catering";
@@ -46,8 +45,12 @@ import type {
   RoomWithAssignments,
   Space,
   SpaceReservation,
+  DietaryProfile,
 } from "@/lib/queries/bookings";
 import type { Views, Tables } from "@/lib/database.types";
+
+// Meal attendance type: { dietaryProfileId: { mealJobId: boolean } }
+export type MealAttendanceMap = Record<string, Record<string, boolean>>;
 
 // Room conflict type for accommodation tab
 export interface RoomConflict {
@@ -87,6 +90,8 @@ export default function BookingDetailClient({
   roomConflictingBookings,
   cateringOptions,
   roomingGroups,
+  dietaryProfiles,
+  mealAttendance,
 }: {
   booking: BookingWithMeta;
   displayName: string;
@@ -128,6 +133,8 @@ export default function BookingDetailClient({
     }[];
   };
   roomingGroups: any[];
+  dietaryProfiles: DietaryProfile[];
+  mealAttendance: MealAttendanceMap;
 }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -568,6 +575,9 @@ export default function BookingDetailClient({
           meals={mealJobs}
           caterers={cateringOptions.caterers}
           menuItems={cateringOptions.menuItems}
+          dietaryProfiles={dietaryProfiles}
+          mealAttendance={mealAttendance}
+          bookingId={booking.id}
         />
       </TabsContent>
 

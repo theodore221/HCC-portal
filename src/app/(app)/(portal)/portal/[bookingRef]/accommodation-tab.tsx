@@ -1,54 +1,49 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { RoomingGroupBuilder } from "./rooming-group-builder";
-import type { Tables } from "@/lib/database.types";
+import { useState } from "react";
+import type { BookingWithMeta, RoomWithAssignments } from "@/lib/queries/bookings";
+import { AccommodationRequestsCard } from "./accommodation-requests-card";
+import { RoomAllocationGrid } from "./room-allocation-grid";
 
 interface CustomerAccommodationTabProps {
-  bookingId: string;
-  roomingGroups: Tables<"rooming_groups">[];
-  unassignedGuests: { id: string; name: string }[];
-  allGuests: { id: string; name: string }[];
-  roomTypes: { id: string; name: string }[];
+  booking: BookingWithMeta;
+  rooms: RoomWithAssignments[];
 }
 
 export function CustomerAccommodationTab({
-  bookingId,
-  roomingGroups,
-  unassignedGuests,
-  allGuests,
-  roomTypes,
+  booking,
+  rooms,
 }: CustomerAccommodationTabProps) {
+  const accommodationRequests =
+    (booking.accommodation_requests as Record<string, number | boolean>) || {};
+  const requests = {
+    doubleBB: (accommodationRequests.doubleBB as number) || 0,
+    singleBB: (accommodationRequests.singleBB as number) || 0,
+    studySuite: (accommodationRequests.studySuite as number) || 0,
+    doubleEnsuite: (accommodationRequests.doubleEnsuite as number) || 0,
+    byo_linen: (accommodationRequests.byo_linen as boolean) || false,
+  };
+
+  const [allocatedCounts, setAllocatedCounts] = useState({
+    doubleBB: 0,
+    singleBB: 0,
+    studySuite: 0,
+    doubleEnsuite: 0,
+  });
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Room Allocation</CardTitle>
-          <CardDescription>
-            Assign guests to rooms. Drag and drop guests from the list to the
-            rooms.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RoomingGroupBuilder
-            bookingId={bookingId}
-            initialGroups={roomingGroups.map((g) => ({
-              ...g,
-              members: g.members ?? [],
-              status: g.status ?? "draft",
-            }))}
-            unassignedGuests={unassignedGuests}
-            allGuests={allGuests}
-            roomTypes={roomTypes}
-          />
-        </CardContent>
-      </Card>
+      <AccommodationRequestsCard
+        bookingId={booking.id}
+        requests={requests}
+        allocated={allocatedCounts}
+      />
+
+      <RoomAllocationGrid
+        bookingId={booking.id}
+        rooms={rooms}
+        onAllocatedCountsChange={setAllocatedCounts}
+      />
     </div>
   );
 }

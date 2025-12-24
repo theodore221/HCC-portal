@@ -94,6 +94,39 @@ export type Database = {
         >;
         Relationships: [];
       };
+      dietary_meal_attendance: {
+        Row: {
+          id: string;
+          dietary_profile_id: string;
+          meal_job_id: string;
+          attending: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          dietary_profile_id: string;
+          meal_job_id: string;
+          attending?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["dietary_meal_attendance"]["Row"]
+        >;
+        Relationships: [
+          {
+            foreignKeyName: "dietary_meal_attendance_dietary_profile_id_fkey";
+            columns: ["dietary_profile_id"];
+            referencedRelation: "dietary_profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "dietary_meal_attendance_meal_job_id_fkey";
+            columns: ["meal_job_id"];
+            referencedRelation: "meal_jobs";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       meal_job_items: {
         Row: {
           meal_job_id: string;
@@ -113,9 +146,11 @@ export type Database = {
           counts_total: number;
           counts_by_diet: Json;
           percolated_coffee: boolean;
+          percolated_coffee_quantity: number | null;
           assignment_mode: Database["public"]["Enums"]["assignment_mode"];
           assigned_caterer_id: string | null;
           status: Database["public"]["Enums"]["meal_job_status"];
+          requested_service_time: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["meal_jobs"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["meal_jobs"]["Row"]>;

@@ -392,3 +392,177 @@ export async function updateAccommodationRequests(
 
   revalidatePath(`/admin/bookings/${bookingId}`);
 }
+
+// ==================== Catering Actions ====================
+
+export async function updateMealJobServes(
+  mealJobId: string,
+  countsTotal: number
+) {
+  const supabase: any = await sbServer();
+  const { error } = await supabase
+    .from("meal_jobs")
+    .update({ counts_total: countsTotal })
+    .eq("id", mealJobId);
+
+  if (error) {
+    throw new Error(`Failed to update meal serves: ${error.message}`);
+  }
+
+  revalidatePath("/admin/bookings/[id]", "page");
+}
+
+// ==================== Dietary Profile Actions ====================
+
+export async function createDietaryProfile(
+  bookingId: string,
+  data: {
+    personName: string;
+    dietType: string;
+    allergy?: string;
+    severity?: "Low" | "Moderate" | "High" | "Fatal";
+    notes?: string;
+  }
+) {
+  const supabase: any = await sbServer();
+
+  const { data: profile, error } = await supabase
+    .from("dietary_profiles")
+    .insert({
+      booking_id: bookingId,
+      person_name: data.personName,
+      diet_type: data.dietType,
+      allergy: data.allergy || null,
+      severity: data.severity || null,
+      notes: data.notes || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create dietary profile: ${error.message}`);
+  }
+
+  revalidatePath("/admin/bookings/[id]", "page");
+  return profile;
+}
+
+export async function updateDietaryProfile(
+  profileId: string,
+  data: {
+    personName?: string;
+    dietType?: string;
+    allergy?: string | null;
+    severity?: "Low" | "Moderate" | "High" | "Fatal" | null;
+    notes?: string | null;
+  }
+) {
+  const supabase: any = await sbServer();
+
+  const updateData: any = {};
+  if (data.personName !== undefined) updateData.person_name = data.personName;
+  if (data.dietType !== undefined) updateData.diet_type = data.dietType;
+  if (data.allergy !== undefined) updateData.allergy = data.allergy;
+  if (data.severity !== undefined) updateData.severity = data.severity;
+  if (data.notes !== undefined) updateData.notes = data.notes;
+
+  const { data: profile, error } = await supabase
+    .from("dietary_profiles")
+    .update(updateData)
+    .eq("id", profileId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update dietary profile: ${error.message}`);
+  }
+
+  revalidatePath("/admin/bookings/[id]", "page");
+  return profile;
+}
+
+export async function deleteDietaryProfile(profileId: string) {
+  const supabase: any = await sbServer();
+
+  const { error } = await supabase
+    .from("dietary_profiles")
+    .delete()
+    .eq("id", profileId);
+
+  if (error) {
+    throw new Error(`Failed to delete dietary profile: ${error.message}`);
+  }
+
+  revalidatePath("/admin/bookings/[id]", "page");
+}
+
+// ==================== Dietary Meal Attendance Actions ====================
+
+export async function updateDietaryMealAttendance(
+  dietaryProfileId: string,
+  mealJobId: string,
+  attending: boolean
+) {
+  const supabase: any = await sbServer();
+
+  // Upsert - insert if not exists, update if exists
+  const { error } = await supabase
+    .from("dietary_meal_attendance")
+    .upsert(
+      {
+        dietary_profile_id: dietaryProfileId,
+        meal_job_id: mealJobId,
+        attending,
+      },
+      {
+        onConflict: "dietary_profile_id,meal_job_id",
+      }
+    );
+
+  if (error) {
+    throw new Error(`Failed to update meal attendance: ${error.message}`);
+  }
+
+  revalidatePath("/admin/bookings/[id]", "page");
+}
+
+export async function getDietaryMealAttendance(bookingId: string) {
+  const supabase: any = await sbServer();
+
+  // Get all dietary profiles for this booking
+  const { data: profiles, error: profilesError } = await supabase
+    .from("dietary_profiles")
+    .select("id")
+    .eq("booking_id", bookingId);
+
+  if (profilesError) {
+    throw new Error(`Failed to get dietary profiles: ${profilesError.message}`);
+  }
+
+  if (!profiles || profiles.length === 0) {
+    return {};
+  }
+
+  const profileIds = profiles.map((p: any) => p.id);
+
+  // Get all attendance records for these profiles
+  const { data: attendance, error: attendanceError } = await supabase
+    .from("dietary_meal_attendance")
+    .select("dietary_profile_id, meal_job_id, attending")
+    .in("dietary_profile_id", profileIds);
+
+  if (attendanceError) {
+    throw new Error(`Failed to get meal attendance: ${attendanceError.message}`);
+  }
+
+  // Convert to nested Record structure
+  const result: Record<string, Record<string, boolean>> = {};
+  for (const record of attendance || []) {
+    if (!result[record.dietary_profile_id]) {
+      result[record.dietary_profile_id] = {};
+    }
+    result[record.dietary_profile_id][record.meal_job_id] = record.attending;
+  }
+
+  return result;
+}

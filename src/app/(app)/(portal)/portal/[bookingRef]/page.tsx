@@ -6,8 +6,10 @@ import {
   getRoomsForBooking,
   getDietaryProfilesForBooking,
 } from "@/lib/queries/bookings.server";
+import { getCateringOptions } from "@/lib/queries/catering.server";
 import { enrichMealJobs } from "@/lib/catering";
 import CustomerPortalClient from "./client";
+import { getDietaryMealAttendance } from "./actions";
 
 export default async function CustomerPortal({
   params,
@@ -24,22 +26,14 @@ export default async function CustomerPortal({
     mealJobsRaw,
     rooms,
     dietaryProfiles,
-    { data: roomingGroups },
-    { data: roomTypes },
-    { data: guests },
+    cateringOptions,
     { data: bookingReservations },
     { data: spaces },
   ] = await Promise.all([
     getMealJobsForBooking(booking.id),
     getRoomsForBooking(booking.id),
     getDietaryProfilesForBooking(booking.id),
-    supabase.from("rooming_groups").select("*").eq("booking_id", booking.id),
-    supabase.from("room_types").select("id, name"),
-    supabase
-      .from("guests")
-      .select("*")
-      .eq("booking_id", booking.id)
-      .order("created_at", { ascending: true }),
+    getCateringOptions(),
     supabase
       .from("space_reservations")
       .select("*")
@@ -47,33 +41,21 @@ export default async function CustomerPortal({
     supabase.from("spaces").select("id, name, capacity").eq("active", true),
   ]);
 
-  const safeRoomingGroups = (roomingGroups as any[]) || [];
-  const safeGuests = (guests as any[]) || [];
   const reservations = (bookingReservations as any[]) || [];
   const allSpaces = (spaces as any[]) || [];
 
-  // Filter out guests that are already assigned to a group
-  const assignedGuestIds =
-    safeRoomingGroups.flatMap((g) => g.members || []) || [];
-
-  // Map DB guests to the format expected by UI
-  // If a guest is assigned, we don't pass them as "unassigned"
-  const unassignedGuests = safeGuests
-    .filter((g) => !assignedGuestIds.includes(g.id))
-    .map((g) => ({ id: g.id, name: g.full_name }));
-
-  const allGuests = safeGuests.map((g) => ({ id: g.id, name: g.full_name }));
+  // Fetch meal attendance data
+  const mealAttendance = await getDietaryMealAttendance(booking.id);
   const cateringJobs = enrichMealJobs(mealJobsRaw, [booking]);
 
   return (
     <CustomerPortalClient
       booking={booking}
       cateringJobs={cateringJobs}
+      menuItems={cateringOptions.menuItems}
       dietaryProfiles={dietaryProfiles}
-      roomingGroups={safeRoomingGroups}
-      unassignedGuests={unassignedGuests}
-      allGuests={allGuests}
-      roomTypes={roomTypes ?? []}
+      mealAttendance={mealAttendance}
+      rooms={rooms}
       reservations={reservations}
       allSpaces={allSpaces}
     />

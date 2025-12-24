@@ -1,21 +1,105 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DayMealCard } from "./day-meal-card";
 import type { EnrichedMealJob } from "@/lib/catering";
+import type { DietaryProfile } from "@/lib/queries/bookings";
+import type { Enums } from "@/lib/database.types";
 import { CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DietaryTable } from "@/components/catering";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  createDietaryProfile,
+  updateDietaryProfile,
+  deleteDietaryProfile,
+  updateDietaryMealAttendance,
+} from "./actions";
 
 export function CateringTab({
   meals,
   caterers,
   menuItems,
+  dietaryProfiles = [],
+  mealAttendance = {},
+  bookingId,
 }: {
   meals: EnrichedMealJob[];
   caterers: { id: string; name: string }[];
   menuItems: { id: string; label: string; catererId: string | null; mealType: string | null }[];
+  dietaryProfiles?: DietaryProfile[];
+  mealAttendance?: Record<string, Record<string, boolean>>;
+  bookingId?: string;
 }) {
+  const router = useRouter();
+  const { toast } = useToast();
   const [showPendingOnly, setShowPendingOnly] = useState(false);
+
+  // Dietary profile handlers
+  const handleAddProfile = async (data: {
+    personName: string;
+    dietType: string;
+    allergy?: string;
+    severity?: Enums<"severity">;
+    notes?: string;
+  }) => {
+    if (!bookingId) return;
+    try {
+      await createDietaryProfile(bookingId, data);
+      router.refresh();
+      toast({ title: "Dietary requirement added" });
+    } catch (error) {
+      toast({ title: "Failed to add dietary requirement", variant: "destructive" });
+      throw error;
+    }
+  };
+
+  const handleEditProfile = async (
+    profileId: string,
+    data: {
+      personName?: string;
+      dietType?: string;
+      allergy?: string;
+      severity?: Enums<"severity"> | null;
+      notes?: string;
+    }
+  ) => {
+    try {
+      await updateDietaryProfile(profileId, data);
+      router.refresh();
+      toast({ title: "Dietary requirement updated" });
+    } catch (error) {
+      toast({ title: "Failed to update dietary requirement", variant: "destructive" });
+      throw error;
+    }
+  };
+
+  const handleDeleteProfile = async (profileId: string) => {
+    try {
+      await deleteDietaryProfile(profileId);
+      router.refresh();
+      toast({ title: "Dietary requirement removed" });
+    } catch (error) {
+      toast({ title: "Failed to remove dietary requirement", variant: "destructive" });
+      throw error;
+    }
+  };
+
+  const handleAttendanceChange = async (
+    profileId: string,
+    mealJobId: string,
+    attending: boolean
+  ) => {
+    try {
+      await updateDietaryMealAttendance(profileId, mealJobId, attending);
+      router.refresh();
+    } catch (error) {
+      toast({ title: "Failed to update meal attendance", variant: "destructive" });
+      throw error;
+    }
+  };
 
   const mealsByDate = useMemo(() => {
     const grouped: Record<
@@ -47,7 +131,7 @@ export function CateringTab({
   // Calculate overall completion
   const completionStats = useMemo(() => {
     let completedDays = 0;
-    let totalDays = sortedDates.length;
+    const totalDays = sortedDates.length;
 
     sortedDates.forEach((date) => {
       const dayMeals = mealsByDate[date].meals;
@@ -106,7 +190,7 @@ export function CateringTab({
     : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Progress Summary */}
       <div className="rounded-2xl border border-border/70 bg-white/90 p-5 shadow-soft">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -147,7 +231,7 @@ export function CateringTab({
       {displayDates.length === 0 ? (
         <div className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
           <p className="text-sm text-text-light text-center">
-            All days are fully managed! 🎉
+            All days are fully managed!
           </p>
         </div>
       ) : (
@@ -162,6 +246,27 @@ export function CateringTab({
           />
         ))
       )}
+
+      {/* Dietary Requirements Section */}
+      <Card className="shadow-soft">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-text-light">
+            Dietary Requirements
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DietaryTable
+            dietaryProfiles={dietaryProfiles}
+            mealJobs={meals}
+            mealAttendance={mealAttendance}
+            onAttendanceChange={handleAttendanceChange}
+            onAddProfile={bookingId ? handleAddProfile : undefined}
+            onEditProfile={handleEditProfile}
+            onDeleteProfile={handleDeleteProfile}
+            editable={true}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

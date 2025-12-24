@@ -410,7 +410,7 @@ export async function getRoomsForBooking(
 
   const { data: rooms, error: roomsError } = await supabase
     .from("rooms")
-    .select("*")
+    .select("*, room_types(*)")
     .in("id", roomIds);
   if (roomsError)
     throw new Error(`Failed to load rooms: ${roomsError.message}`);

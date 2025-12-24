@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,12 @@ export function MealServesDisplay({
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(count.toString());
   const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setValue(count.toString());
+    }
+  }, [count, isEditing]);
 
   const handleSave = async () => {
     const newCount = parseInt(value);

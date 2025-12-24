@@ -2,39 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { EnrichedMealJob } from "@/lib/catering";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import {
-  assignCaterer,
-  assignCatererToDay,
-  updateMealJobItems,
-  updateCoffeeRequest,
-  updateMealJobServes,
-} from "./actions";
 import { useToast } from "@/components/ui/use-toast";
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { EnrichedMealJob } from "@/lib/catering";
 import {
+  InlineMenuDisplay,
   MealServesDisplay,
   PercolatedCoffeeToggle,
-  InlineMenuDisplay,
 } from "@/components/catering";
+import {
+  customerUpdateMealJobItems,
+  customerUpdateCoffeeRequest,
+  customerUpdateMealJobServes,
+} from "./actions";
 
 interface DayMealCardProps {
-  date: string;
   formattedDate: string;
   meals: EnrichedMealJob[];
-  caterers: { id: string; name: string }[];
   menuItems: {
     id: string;
     label: string;
@@ -44,68 +30,25 @@ interface DayMealCardProps {
 }
 
 export function DayMealCard({
-  date,
   formattedDate,
   meals,
-  caterers,
   menuItems,
 }: DayMealCardProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
-  const [customizeMode, setCustomizeMode] = useState(false);
-  const [bulkCatererId, setBulkCatererId] = useState<string>("");
-  const [bulkLoading, setBulkLoading] = useState(false);
 
-  // Calculate completion status
   const completionStatus = getCompletionStatus(meals);
-
-  const handleBulkAssign = async () => {
-    if (!bulkCatererId || bulkCatererId === "unassigned") return;
-
-    try {
-      setBulkLoading(true);
-      const bookingId = meals[0]?.bookingId;
-      await assignCatererToDay(date, bookingId, bulkCatererId);
-      router.refresh();
-      const unassignedCount = meals.filter((m) => !m.assignedCatererId).length;
-      toast({
-        title: `Assigned caterer to ${unassignedCount} meal${
-          unassignedCount !== 1 ? "s" : ""
-        }`,
-      });
-      setBulkCatererId("");
-    } catch (error) {
-      toast({ title: "Failed to assign caterer", variant: "destructive" });
-    } finally {
-      setBulkLoading(false);
-    }
-  };
-
-  const handleCatererChange = async (mealJobId: string, catererId: string) => {
-    try {
-      setLoading(mealJobId);
-      await assignCaterer(
-        mealJobId,
-        catererId === "unassigned" ? null : catererId
-      );
-      router.refresh();
-      toast({ title: "Caterer updated" });
-    } catch (error) {
-      toast({ title: "Failed to update caterer", variant: "destructive" });
-    } finally {
-      setLoading(null);
-    }
-  };
 
   const handleMenuChange = async (mealJobId: string, items: string[]) => {
     try {
       setLoading(mealJobId);
-      await updateMealJobItems(mealJobId, items);
+      await customerUpdateMealJobItems(mealJobId, items);
       router.refresh();
       toast({ title: "Menu updated" });
     } catch (error) {
       toast({ title: "Failed to update menu", variant: "destructive" });
+      throw error;
     } finally {
       setLoading(null);
     }
@@ -117,7 +60,7 @@ export function DayMealCard({
     quantity: number | null
   ) => {
     try {
-      await updateCoffeeRequest(mealJobId, checked, quantity);
+      await customerUpdateCoffeeRequest(mealJobId, checked, quantity);
       router.refresh();
       toast({ title: "Coffee request updated" });
     } catch (error) {
@@ -128,12 +71,15 @@ export function DayMealCard({
 
   const handleServesUpdate = async (mealJobId: string, count: number) => {
     try {
-      await updateMealJobServes(mealJobId, count);
+      setLoading(mealJobId);
+      await customerUpdateMealJobServes(mealJobId, count);
       router.refresh();
       toast({ title: "Serves updated" });
     } catch (error) {
       toast({ title: "Failed to update serves", variant: "destructive" });
       throw error;
+    } finally {
+      setLoading(null);
     }
   };
 
@@ -146,8 +92,7 @@ export function DayMealCard({
           : "border-border/70 bg-white/90"
       )}
     >
-      {/* Date Header with Completion Status */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="mb-4 flex items-start justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold text-text">{formattedDate}</h3>
           {completionStatus.isComplete ? (
@@ -165,91 +110,10 @@ export function DayMealCard({
             </Badge>
           )}
         </div>
-
-        {/* Bulk Assignment Controls */}
-        {!customizeMode && (
-          <div className="flex flex-col items-end gap-3">
-            {/* Caterer Select and Assign Button */}
-            <div className="flex items-center gap-2">
-              <Select
-                value={bulkCatererId}
-                onValueChange={setBulkCatererId}
-                disabled={bulkLoading}
-              >
-                <SelectTrigger className="h-9 w-[200px] border-border/50 bg-white shadow-soft">
-                  <SelectValue placeholder="Select caterer..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {caterers.map((caterer) => (
-                    <SelectItem key={caterer.id} value={caterer.id}>
-                      {caterer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                onClick={handleBulkAssign}
-                disabled={
-                  !bulkCatererId ||
-                  bulkCatererId === "unassigned" ||
-                  bulkLoading
-                }
-                className="h-9"
-              >
-                {bulkLoading && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Assign All
-              </Button>
-            </div>
-
-            {/* Individual Assignment Toggle - styled like BYO Linen */}
-            <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-neutral-50 px-3 py-2">
-              <Switch
-                checked={customizeMode}
-                onCheckedChange={setCustomizeMode}
-                id={`customize-${date}`}
-                className="scale-90"
-              />
-              <Label
-                htmlFor={`customize-${date}`}
-                className="text-xs font-medium text-text cursor-pointer"
-              >
-                Assign Individual Meals
-              </Label>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Customize Mode Header */}
-      {customizeMode && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-olive-200 bg-olive-50/50 px-4 py-3">
-          <span className="text-sm font-medium text-olive-900">
-            Individual meal assignment enabled
-          </span>
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={customizeMode}
-              onCheckedChange={setCustomizeMode}
-              id={`customize-${date}-active`}
-              className="scale-90"
-            />
-            <Label
-              htmlFor={`customize-${date}-active`}
-              className="text-xs font-medium text-olive-900 cursor-pointer"
-            >
-              Exit
-            </Label>
-          </div>
-        </div>
-      )}
+      <div className="mb-6 border-b border-border/50" />
 
-      {/* Separator */}
-      <div className="border-b border-border/50 mb-6" />
-
-      {/* Meals List */}
       <div className="space-y-6">
         {meals.map((meal, index) => {
           const isCoffeeEligible =
@@ -263,6 +127,10 @@ export function DayMealCard({
             meal.menuIds.length > 0
               ? menuItems.find((i) => i.id === meal.menuIds[0])?.label ?? null
               : null;
+          const rawTimeLabel = meal.timeRangeLabel.replace(meal.meal, "").trim();
+          const timeStartIndex = rawTimeLabel.search(/\d/);
+          const timeLabel =
+            timeStartIndex >= 0 ? rawTimeLabel.slice(timeStartIndex) : rawTimeLabel;
 
           return (
             <div
@@ -272,7 +140,6 @@ export function DayMealCard({
                 index !== meals.length - 1 && "border-b border-border/50"
               )}
             >
-              {/* Meal Header Row */}
               <div className="mb-4 flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div>
@@ -281,30 +148,34 @@ export function DayMealCard({
                         {meal.meal}
                       </span>
                       <span className="text-xs text-text-light">
-                        {meal.timeRangeLabel.split("•")[1]?.trim()}
+                        {timeLabel}
                       </span>
                     </div>
-                    {!customizeMode && meal.assignedCatererId && (
+                    {meal.assignedCaterer ? (
                       <Badge
                         variant="outline"
                         className="mt-1 border-olive-200 bg-olive-50 text-olive-700"
                       >
-                        {caterers.find((c) => c.id === meal.assignedCatererId)?.name}
+                        {meal.assignedCaterer}
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className="mt-1 border-orange-200 bg-orange-50 text-orange-700"
+                      >
+                        Unassigned
                       </Badge>
                     )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                  {/* Serves Count */}
                   <MealServesDisplay
                     count={meal.countsTotal}
                     editable={true}
                     onUpdate={(count) => handleServesUpdate(meal.id, count)}
                     disabled={loading === meal.id}
                   />
-
-                  {/* Status Badge */}
                   <Badge
                     variant="outline"
                     className={cn(
@@ -320,36 +191,8 @@ export function DayMealCard({
               </div>
 
               <div className="space-y-4">
-                {/* Caterer and Menu Row */}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {/* Caterer Assignment (only shown in customize mode) */}
-                  {customizeMode && (
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-text-light">
-                        Assigned Caterer
-                      </label>
-                      <Select
-                        value={meal.assignedCatererId ?? "unassigned"}
-                        onValueChange={(val) => handleCatererChange(meal.id, val)}
-                        disabled={loading === meal.id}
-                      >
-                        <SelectTrigger className="h-9 border-border/50 bg-white">
-                          <SelectValue placeholder="Select caterer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="unassigned">Unassigned</SelectItem>
-                          {caterers.map((caterer) => (
-                            <SelectItem key={caterer.id} value={caterer.id}>
-                              {caterer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* Menu Items - using InlineMenuDisplay */}
-                  <div className={cn("space-y-1.5", !customizeMode && "sm:col-span-2")}>
+                <div className="grid gap-4">
+                  <div className="space-y-1.5">
                     <label className="text-xs font-medium text-text-light">
                       Menu Selection
                     </label>
@@ -368,7 +211,6 @@ export function DayMealCard({
                   </div>
                 </div>
 
-                {/* Coffee Option - using PercolatedCoffeeToggle */}
                 {isCoffeeEligible && (
                   <PercolatedCoffeeToggle
                     checked={meal.percolatedCoffee}
@@ -381,7 +223,6 @@ export function DayMealCard({
                 )}
               </div>
 
-              {/* Dietary Counts */}
               {Object.keys(meal.dietaryCounts).length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {Object.entries(meal.dietaryCounts).map(([diet, count]) => (
@@ -390,7 +231,9 @@ export function DayMealCard({
                       className="flex items-center gap-2 rounded-lg bg-olive-50 px-3 py-1.5 text-xs"
                     >
                       <span className="capitalize text-olive-800">{diet}:</span>
-                      <span className="font-semibold text-olive-900">{count}</span>
+                      <span className="font-semibold text-olive-900">
+                        {count}
+                      </span>
                     </div>
                   ))}
                 </div>

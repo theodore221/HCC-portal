@@ -176,9 +176,6 @@ function ScheduleCard({ item }: ScheduleCardProps) {
 
       {expanded && (
         <div className="space-y-2 border-t border-gray-100 bg-gray-50 p-4">
-          <YesNoIndicator label="Chapel Use" value={item.chapelUse} />
-          <YesNoIndicator label="Minors" value={item.minors} />
-          <YesNoIndicator label="Lawn" value={item.lawn} />
           <YesNoIndicator label="Dietaries" value={item.hasDietaries} />
           <YesNoIndicator
             label="Percolated Coffee"
@@ -215,22 +212,34 @@ function ScheduleCard({ item }: ScheduleCardProps) {
             </Badge>
           </div>
 
-          {item.bedType && (
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">Bed Type</span>
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-[10px] font-semibold",
-                  item.bedType === "BYO Linen"
-                    ? "border-amber-200 bg-amber-100 text-amber-800"
-                    : "border-olive-200 bg-olive-100 text-olive-800"
-                )}
-              >
-                {item.bedType}
-              </Badge>
-            </div>
-          )}
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-600">Bed Type</span>
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] font-semibold",
+                item.bedType === "BYO Linen"
+                  ? "border-amber-200 bg-amber-100 text-amber-800"
+                  : item.bedType === "Fully Provided"
+                    ? "border-olive-200 bg-olive-100 text-olive-800"
+                    : "border-gray-200 bg-gray-100 text-gray-600"
+              )}
+            >
+              {item.bedType ?? "TBC"}
+            </Badge>
+          </div>
+
+          <div className="text-xs">
+            <span className="text-gray-600">Notes</span>
+            <p
+              className={cn(
+                "mt-1 whitespace-pre-wrap",
+                item.notes ? "text-gray-700" : "text-gray-400"
+              )}
+            >
+              {item.notes || "No notes"}
+            </p>
+          </div>
         </div>
       )}
     </Card>

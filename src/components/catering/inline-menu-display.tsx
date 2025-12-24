@@ -57,14 +57,27 @@ export function InlineMenuDisplay({
           if (!open) setIsEditing(false);
         }}
       >
-        <SelectTrigger className="h-9 bg-white">
+        <SelectTrigger className="h-10 w-full border-border/60 bg-white/95 shadow-soft">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">None</SelectItem>
+        <SelectContent
+          align="start"
+          sideOffset={6}
+          className="w-[var(--radix-select-trigger-width)] max-w-[420px] border-border/60 bg-white shadow-lg"
+        >
+          <SelectItem
+            value="none"
+            className="rounded-md py-2 leading-snug focus:bg-olive-100 focus:text-olive-900 data-[highlighted]:bg-olive-100 data-[highlighted]:text-olive-900 data-[state=checked]:bg-olive-50 data-[state=checked]:text-olive-900 data-[state=checked]:font-semibold"
+          >
+            None
+          </SelectItem>
           {availableItems.length > 0 ? (
             availableItems.map((item) => (
-              <SelectItem key={item.id} value={item.id}>
+              <SelectItem
+                key={item.id}
+                value={item.id}
+                className="whitespace-normal rounded-md py-2 leading-snug focus:bg-olive-100 focus:text-olive-900 data-[highlighted]:bg-olive-100 data-[highlighted]:text-olive-900 data-[state=checked]:bg-olive-50 data-[state=checked]:text-olive-900 data-[state=checked]:font-semibold"
+              >
                 {item.label}
               </SelectItem>
             ))
@@ -82,8 +95,8 @@ export function InlineMenuDisplay({
     <div
       onClick={() => !disabled && setIsEditing(true)}
       className={cn(
-        "flex items-center gap-2 group min-h-[36px] py-1",
-        !disabled && "cursor-pointer"
+        "flex w-full items-center gap-2 rounded-md border border-border/60 bg-white/90 px-3 py-2 shadow-soft transition-colors",
+        !disabled && "cursor-pointer hover:border-olive-200"
       )}
     >
       <span
