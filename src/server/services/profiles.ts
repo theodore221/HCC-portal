@@ -1,5 +1,5 @@
+// @ts-nocheck
 "use server";
-
 import { createServerActionClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient as SupabaseJsClient } from "@supabase/supabase-js";

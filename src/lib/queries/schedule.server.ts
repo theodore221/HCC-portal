@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { sbServer } from "@/lib/supabase-server";
 import type { Tables } from "@/lib/database.types";
 

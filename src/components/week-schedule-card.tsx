@@ -159,11 +159,10 @@ export function WeekScheduleCard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="inline-flex items-center gap-2">
-                  <Checkbox
-                    checked={hasCoffee}
-                    readOnly
-                    aria-label={hasCoffee ? "Coffee scheduled" : "No coffee scheduled"}
-                  />
+                    <Checkbox
+                      checked={hasCoffee}
+                      aria-label={hasCoffee ? "Coffee scheduled" : "No coffee scheduled"}
+                    />
                   <span className="flex items-center gap-1 text-xs text-olive-600">
                     <Coffee className="size-3" aria-hidden />
                     {row.original.coffeeCount}

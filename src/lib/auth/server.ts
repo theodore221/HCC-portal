@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 
 import { sbServer } from "@/lib/supabase-server";

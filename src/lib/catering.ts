@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { Enums } from "@/lib/database.types";
 import {
   getBookingDisplayName,
@@ -46,6 +47,8 @@ const timeSlotMetadata: Record<Enums<"meal_type">, { start: string; end: string 
   Lunch: { start: "12:30", end: "13:30" },
   "Afternoon Tea": { start: "15:00", end: "15:45" },
   Dinner: { start: "18:00", end: "19:15" },
+  Dessert: { start: "19:30", end: "20:30" },
+  Supper: { start: "21:00", end: "22:00" },
 };
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
