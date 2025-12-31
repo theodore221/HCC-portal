@@ -8,7 +8,6 @@ import {
   Bed,
   CheckCircle2,
   Filter,
-  MoreHorizontal,
   Search,
   SlidersHorizontal,
   Sparkles,
@@ -24,14 +23,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ConflictBanner } from "@/components/ui/conflict-banner";
 import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
@@ -152,6 +149,7 @@ const columns: ColumnDef<BookingWithMeta>[] = [
         )}
       </div>
     ),
+    meta: "hidden md:table-cell",
   },
   {
     accessorKey: "headcount",
@@ -168,7 +166,7 @@ const columns: ColumnDef<BookingWithMeta>[] = [
       </div>
     ),
     enableColumnFilter: false,
-    meta: "text-center",
+    meta: "hidden sm:table-cell text-center",
   },
   {
     id: "spaces",
@@ -202,13 +200,13 @@ const columns: ColumnDef<BookingWithMeta>[] = [
       <Badge
         variant="outline"
         className={cn(
-          "border-border/70 text-xs font-semibold",
+          "border-border/70 text-xs font-semibold whitespace-nowrap",
           row.original.catering_required
             ? "bg-success/10 text-success"
             : "bg-neutral text-text-light"
         )}
       >
-        {row.original.catering_required ? "Required" : "Self managed"}
+        {row.original.catering_required ? "Yes" : "No"}
       </Badge>
     ),
     enableColumnFilter: false,
@@ -244,55 +242,28 @@ const columns: ColumnDef<BookingWithMeta>[] = [
   {
     id: "actions",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Actions" />
+      <DataTableColumnHeader column={column} title="" />
     ),
     cell: ({ row }) => {
       const booking = row.original;
 
       return (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end">
           <Link
             href={`/admin/bookings/${booking.id}`}
             className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "gap-1 rounded-xl bg-white text-text-light transition-colors duration-200 hover:bg-neutral hover:text-text"
+              buttonVariants({ variant: "ghost", size: "icon-sm" }),
+              "rounded-xl bg-white text-text-light transition-colors duration-200 hover:bg-neutral hover:text-text"
             )}
+            aria-label="Open booking details"
           >
-            Open
-            <ArrowUpRight className="size-3.5" aria-hidden />
+            <ArrowUpRight className="size-4" aria-hidden />
           </Link>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-xl text-text-light transition-colors duration-200 hover:bg-neutral hover:text-text"
-              >
-                <MoreHorizontal className="size-4" aria-hidden="true" />
-                <span className="sr-only">Open actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel className="text-text-light">
-                {booking.reference ?? booking.id}
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href={`/admin/bookings/${booking.id}`}>View booking</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>Move to triage</DropdownMenuItem>
-              <DropdownMenuItem>Mark approved</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-danger">
-                Cancel request
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       );
     },
     enableSorting: false,
-    meta: "text-right",
+    meta: "text-right w-[60px]",
   },
 ];
 
@@ -314,149 +285,144 @@ export default function AdminBookingsClient({
   ];
 
   return (
-    <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg text-text">Bookings list</CardTitle>
-          <CardDescription className="text-sm text-text-light">
-            Review new requests and progress them through triage
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={columns}
-            data={bookings}
-            emptyMessage={<TableEmptyState />}
-            zebra
-            renderToolbar={(table) => {
-              const searchValue =
-                (table
-                  .getColumn("customer_name")
-                  ?.getFilterValue() as string) ?? "";
-              const statusFilter =
-                (table.getColumn("status")?.getFilterValue() as
-                  | BookingStatus[]
-                  | undefined) ?? [];
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg text-text">Bookings list</CardTitle>
+        <CardDescription className="text-sm text-text-light">
+          Review new requests and progress them through triage
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DataTable
+          columns={columns}
+          data={bookings}
+          emptyMessage={<TableEmptyState />}
+          zebra
+          renderToolbar={(table) => {
+            const searchValue =
+              (table
+                .getColumn("customer_name")
+                ?.getFilterValue() as string) ?? "";
+            const statusFilter =
+              (table.getColumn("status")?.getFilterValue() as
+                | BookingStatus[]
+                | undefined) ?? [];
 
-              const toggleStatus = (
-                status: BookingStatus,
-                enabled: boolean
-              ) => {
-                const column = table.getColumn("status");
-                if (!column) return;
-                const current = new Set(
-                  (column.getFilterValue() as BookingStatus[] | undefined) ?? []
-                );
-                if (enabled) {
-                  current.add(status);
-                } else {
-                  current.delete(status);
-                }
-                const next = Array.from(current);
-                column.setFilterValue(next.length ? next : undefined);
-              };
-
-              return (
-                <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-neutral/60 p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {statusOptions.map(({ label, value }) => {
-                      const isActive = statusFilter.includes(value);
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => toggleStatus(value, !isActive)}
-                          className={cn(
-                            "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-200",
-                            isActive
-                              ? "border-primary bg-primary text-white shadow-sm"
-                              : "border-border/60 bg-white text-text-light hover:border-primary/40 hover:text-text"
-                          )}
-                        >
-                          <span>{label}</span>
-                          <span className="rounded-full bg-neutral px-2 py-0.5 text-[11px] font-semibold text-text">
-                            {statusCounts[value] ?? 0}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative w-full max-w-xs">
-                      <Search
-                        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-light/70"
-                        aria-hidden="true"
-                      />
-                      <Input
-                        value={searchValue}
-                        onChange={(event) =>
-                          table
-                            .getColumn("customer_name")
-                            ?.setFilterValue(event.target.value)
-                        }
-                        placeholder="Search by group or reference"
-                        className="rounded-full border-border/70 bg-white pl-9"
-                      />
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2 rounded-full border-border/70 text-text-light hover:bg-neutral"
-                        >
-                          <SlidersHorizontal
-                            className="size-4"
-                            aria-hidden="true"
-                          />
-                          Advanced filters
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-60">
-                        <DropdownMenuLabel>Status filters</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {statusOptions.map(({ label, value }) => (
-                          <DropdownMenuCheckboxItem
-                            key={value}
-                            checked={statusFilter.includes(value)}
-                            onCheckedChange={(checked) =>
-                              toggleStatus(value, Boolean(checked))
-                            }
-                            className="capitalize"
-                          >
-                            {label}
-                            <DropdownMenuShortcut>
-                              {statusCounts[value] ?? 0}
-                            </DropdownMenuShortcut>
-                          </DropdownMenuCheckboxItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-full border-border/70 text-text-light hover:bg-neutral"
-                    >
-                      <Filter className="size-4" aria-hidden />
-                      Export list
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="rounded-full bg-primary px-5 text-white hover:bg-primary/90"
-                    >
-                      New booking
-                    </Button>
-                  </div>
-                </div>
+            const toggleStatus = (
+              status: BookingStatus,
+              enabled: boolean
+            ) => {
+              const column = table.getColumn("status");
+              if (!column) return;
+              const current = new Set(
+                (column.getFilterValue() as BookingStatus[] | undefined) ?? []
               );
-            }}
-          />
-        </CardContent>
-      </Card>
-      <ConflictBanner
-        issues={bookings.flatMap((booking) => booking.conflicts).slice(0, 2)}
-      />
-    </div>
+              if (enabled) {
+                current.add(status);
+              } else {
+                current.delete(status);
+              }
+              const next = Array.from(current);
+              column.setFilterValue(next.length ? next : undefined);
+            };
+
+            return (
+              <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-neutral/60 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  {statusOptions.map(({ label, value }) => {
+                    const isActive = statusFilter.includes(value);
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => toggleStatus(value, !isActive)}
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-200",
+                          isActive
+                            ? "border-primary bg-primary text-white shadow-sm"
+                            : "border-border/60 bg-white text-text-light hover:border-primary/40 hover:text-text"
+                        )}
+                      >
+                        <span>{label}</span>
+                        <span className="rounded-full bg-neutral px-2 py-0.5 text-[11px] font-semibold text-text">
+                          {statusCounts[value] ?? 0}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative w-full max-w-xs">
+                    <Search
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-light/70"
+                      aria-hidden="true"
+                    />
+                    <Input
+                      value={searchValue}
+                      onChange={(event) =>
+                        table
+                          .getColumn("customer_name")
+                          ?.setFilterValue(event.target.value)
+                      }
+                      placeholder="Search by group or reference"
+                      className="rounded-full border-border/70 bg-white pl-9"
+                    />
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 rounded-full border-border/70 text-text-light hover:bg-neutral"
+                      >
+                        <SlidersHorizontal
+                          className="size-4"
+                          aria-hidden="true"
+                        />
+                        Advanced filters
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-60">
+                      <DropdownMenuLabel>Status filters</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {statusOptions.map(({ label, value }) => (
+                        <DropdownMenuCheckboxItem
+                          key={value}
+                          checked={statusFilter.includes(value)}
+                          onCheckedChange={(checked) =>
+                            toggleStatus(value, Boolean(checked))
+                          }
+                          className="capitalize"
+                        >
+                          {label}
+                          <DropdownMenuShortcut>
+                            {statusCounts[value] ?? 0}
+                          </DropdownMenuShortcut>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full border-border/70 text-text-light hover:bg-neutral"
+                  >
+                    <Filter className="size-4" aria-hidden />
+                    Export list
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-primary px-5 text-white hover:bg-primary/90"
+                  >
+                    New booking
+                  </Button>
+                </div>
+              </div>
+            );
+          }}
+        />
+      </CardContent>
+    </Card>
   );
 }
 

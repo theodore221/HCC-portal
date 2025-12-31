@@ -79,7 +79,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       {renderToolbar?.(table)}
-      <div className="overflow-hidden rounded-2xl border border-border/70">
+      <div className="overflow-x-auto overflow-hidden rounded-2xl border border-border/70">
         <Table>
           <TableHeader className="bg-neutral">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -113,7 +113,13 @@ export function DataTable<TData, TValue>({
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="align-middle text-sm text-text">
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        "align-middle text-sm text-text",
+                        cell.column.columnDef.meta as string | undefined,
+                      )}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
