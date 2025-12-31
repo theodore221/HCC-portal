@@ -20,6 +20,15 @@ module.exports = {
         warning: "#F59E0B",
         danger: "#EF4444",
         destructive: "#EF4444",
+        olive: {
+          50: "#F8F9F5",
+          100: "#E8EBE0",
+          200: "#D1D6C1",
+          600: "#6B7455",
+          700: "#545D44",
+          800: "#3D4333",
+          900: "#2F3729",
+        },
       },
       spacing: {
         "unit-1": "4px",

@@ -189,6 +189,15 @@ export default async function BookingDetail({
 
   const mealAttendance = await getDietaryMealAttendance(booking.id);
 
+  // Compute validation checks for approval
+  const { validateBookingForApproval } = await import("@/lib/validation/booking-approval");
+  const validationChecks = validateBookingForApproval(
+    booking,
+    rooms,
+    mealJobs,
+    conflicts.length
+  );
+
   return (
     <BookingDetailClient
       booking={booking}
@@ -206,6 +215,7 @@ export default async function BookingDetail({
       roomingGroups={roomingGroups ?? []}
       dietaryProfiles={(dietaryProfiles as DietaryProfile[]) ?? []}
       mealAttendance={mealAttendance}
+      validationChecks={validationChecks}
     />
   );
 }

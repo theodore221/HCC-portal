@@ -6,6 +6,8 @@ import { sbServer } from "@/lib/supabase-server";
 import type { BookingStatus } from "@/lib/queries/bookings";
 
 import { ensureCustomerProfile } from "@/lib/auth/admin-actions";
+import { sendBookingApprovedEmail } from "@/lib/email/send-booking-approved";
+import { enrichMealJobs } from "@/lib/catering";
 
 export async function updateBookingStatus(
   bookingId: string,
@@ -20,10 +22,10 @@ export async function updateBookingStatus(
 
   // If approving, ensure customer profile exists and link it
   if (status === "Approved") {
-    // Fetch booking details to get email and name
+    // Fetch full booking details for email
     const { data: booking, error: fetchError } = await supabase
       .from("bookings")
-      .select("customer_email, customer_name")
+      .select("*")
       .eq("id", bookingId)
       .single();
 
@@ -39,11 +41,77 @@ export async function updateBookingStatus(
       updateData.customer_user_id = customerUserId;
     } catch (error) {
       console.error("Failed to ensure customer profile:", error);
-      // We might want to throw here, or just proceed without linking (but linking is the goal)
       throw new Error("Failed to create/link customer profile. See logs.");
     }
+
+    // Update booking status first
+    const { error: updateError } = await supabase
+      .from("bookings")
+      .update(updateData)
+      .eq("id", bookingId);
+
+    if (updateError) {
+      throw new Error(`Failed to update booking status: ${updateError.message}`);
+    }
+
+    // Send approval email
+    try {
+      // Fetch related data for email
+      const { data: reservations } = await supabase
+        .from("space_reservations")
+        .select("space_id, spaces(name)")
+        .eq("booking_id", bookingId);
+
+      const spaces: string[] = reservations
+        ? Array.from(new Set(reservations.map((r: any) => r.spaces?.name).filter(Boolean))) as string[]
+        : [];
+
+      // Fetch meal jobs for catering summary
+      const { data: mealJobsData } = await supabase
+        .from("meal_jobs")
+        .select(`
+          *,
+          meal_job_items(menu_item_id, menu_items(id, label, caterer_id)),
+          caterers(id, name)
+        `)
+        .eq("booking_id", bookingId);
+
+      const mealJobs = mealJobsData || [];
+      const enrichedMeals = enrichMealJobs(mealJobs, [booking]);
+
+      // Calculate accommodation summary
+      const accommodationRequests = (booking.accommodation_requests as Record<string, number | boolean>) || {};
+      const accommodationSummary = booking.is_overnight ? {
+        doubleBB: (accommodationRequests.doubleBB as number) || 0,
+        singleBB: (accommodationRequests.singleBB as number) || 0,
+        studySuite: (accommodationRequests.studySuite as number) || 0,
+        doubleEnsuite: (accommodationRequests.doubleEnsuite as number) || 0,
+      } : undefined;
+
+      // Calculate catering summary
+      const cateringSummary = booking.catering_required ? {
+        totalMeals: enrichedMeals.length
+      } : undefined;
+
+      await sendBookingApprovedEmail({
+        booking,
+        spaces,
+        accommodationSummary,
+        cateringSummary,
+      });
+
+      console.log(`Booking approval email sent for booking ${bookingId}`);
+    } catch (emailError) {
+      // Log email error but don't fail the approval
+      console.error("Failed to send booking approval email:", emailError);
+      // Approval succeeded even if email failed
+    }
+
+    revalidatePath(`/admin/bookings/${bookingId}`);
+    return;
   }
 
+  // For non-approval status changes, just update
   const { error } = await supabase
     .from("bookings")
     .update(updateData)

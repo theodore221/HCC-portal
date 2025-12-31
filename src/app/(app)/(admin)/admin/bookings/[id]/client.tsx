@@ -29,6 +29,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -39,6 +45,7 @@ import type { EnrichedMealJob } from "@/lib/catering";
 import { SpacesTab } from "./spaces-tab";
 import { CateringTab } from "./catering-tab";
 import { AccommodationTab } from "./accommodation-tab";
+import { ApprovalChecklist } from "./_components/approval-checklist";
 import { updateBookingStatus, recordDeposit, deleteBooking } from "./actions";
 import type {
   BookingWithMeta,
@@ -48,6 +55,7 @@ import type {
   DietaryProfile,
 } from "@/lib/queries/bookings";
 import type { Views, Tables } from "@/lib/database.types";
+import type { BookingValidationChecks } from "@/lib/validation/booking-approval";
 
 // Meal attendance type: { dietaryProfileId: { mealJobId: boolean } }
 export type MealAttendanceMap = Record<string, Record<string, boolean>>;
@@ -92,6 +100,7 @@ export default function BookingDetailClient({
   roomingGroups,
   dietaryProfiles,
   mealAttendance,
+  validationChecks,
 }: {
   booking: BookingWithMeta;
   displayName: string;
@@ -135,6 +144,7 @@ export default function BookingDetailClient({
   roomingGroups: any[];
   dietaryProfiles: DietaryProfile[];
   mealAttendance: MealAttendanceMap;
+  validationChecks: BookingValidationChecks;
 }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -195,10 +205,15 @@ export default function BookingDetailClient({
     });
   };
 
-  const totalIssues = booking.conflicts.length;
+  // Comprehensive validation for approval
+  const canApprove =
+    validationChecks.spaceConflicts.passed &&
+    validationChecks.roomAllocation.passed &&
+    validationChecks.cateringAssignment.passed;
 
   return (
-    <Tabs defaultValue="overview" className="space-y-6">
+    <TooltipProvider>
+      <Tabs defaultValue="overview" className="space-y-6">
       <Card className="shadow-soft">
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
@@ -268,30 +283,43 @@ export default function BookingDetailClient({
                   "Record Deposit"
                 )}
               </Button>
-              <Button
-                onClick={handleApprove}
-                disabled={
-                  isPending ||
-                  booking.status === "Approved" ||
-                  booking.status === "Confirmed" ||
-                  booking.status === "Cancelled" ||
-                  totalIssues > 0
-                }
-                className={cn(
-                  totalIssues > 0
-                    ? "opacity-50 cursor-not-allowed"
-                    : "bg-primary hover:bg-primary/90"
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      onClick={handleApprove}
+                      disabled={
+                        isPending ||
+                        booking.status === "Approved" ||
+                        booking.status === "Confirmed" ||
+                        booking.status === "Cancelled" ||
+                        !canApprove
+                      }
+                      className={cn(
+                        !canApprove
+                          ? "opacity-50 cursor-not-allowed"
+                          : "bg-primary hover:bg-primary/90"
+                      )}
+                    >
+                      {booking.status === "Approved" ||
+                      booking.status === "Confirmed" ? (
+                        <span className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4" /> Approved
+                        </span>
+                      ) : (
+                        "Approve Booking"
+                      )}
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                {!canApprove && booking.status !== "Approved" && booking.status !== "Confirmed" && (
+                  <TooltipContent>
+                    <p className="text-xs">
+                      Cannot approve: Review checklist below for issues
+                    </p>
+                  </TooltipContent>
                 )}
-              >
-                {booking.status === "Approved" ||
-                booking.status === "Confirmed" ? (
-                  <span className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4" /> Approved
-                  </span>
-                ) : (
-                  "Approve Booking"
-                )}
-              </Button>
+              </Tooltip>
 
               <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
                 <DialogTrigger asChild>
@@ -484,6 +512,15 @@ export default function BookingDetailClient({
           </div>
         </section>
 
+        {/* Approval Checklist - Only show for Pending bookings */}
+        {booking.status === "Pending" && (
+          <ApprovalChecklist
+            checks={validationChecks}
+            isOvernight={booking.is_overnight}
+            cateringRequired={booking.catering_required}
+          />
+        )}
+
         <div className="grid gap-6 md:grid-cols-2">
           {/* Primary Contact */}
           <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
@@ -592,6 +629,7 @@ export default function BookingDetailClient({
         </div>
       </TabsContent>
     </Tabs>
+    </TooltipProvider>
   );
 }
 

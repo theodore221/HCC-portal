@@ -18,6 +18,8 @@ export type EnrichedMealJob = {
   percolatedCoffeeQuantity: number | null;
   assignedCatererId: string | null;
   assignedCaterer: string | null;
+  assignedCatererColor: string | null;
+  changesRequested: boolean;
   status: Enums<"meal_job_status">;
   menu: string[];
   menuIds: string[];
@@ -29,6 +31,16 @@ export type EnrichedMealJob = {
   formattedDate: string;
   timeRangeLabel: string;
   requestedServiceTime: string | null;
+};
+
+export type MealJobComment = {
+  id: string;
+  mealJobId: string;
+  authorId: string;
+  authorRole: "admin" | "caterer";
+  authorName: string;
+  content: string;
+  createdAt: Date;
 };
 
 export const MEAL_ORDER = [
@@ -98,6 +110,8 @@ export function enrichMealJobs(
       percolatedCoffeeQuantity: job.percolated_coffee_quantity,
       assignedCatererId: job.assigned_caterer_id,
       assignedCaterer: job.assigned_caterer_name,
+      assignedCatererColor: job.assigned_caterer_color ?? null,
+      changesRequested: job.changes_requested ?? false,
       status: job.status,
       menu: job.menu_labels,
       menuIds: job.menu_ids,

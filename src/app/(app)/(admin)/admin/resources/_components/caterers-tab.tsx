@@ -8,6 +8,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { Check, Pencil, Trash2, X, Plus } from "lucide-react";
 import { updateCaterer, createCaterer, deleteCaterer } from "../actions";
 import { useToast } from "@/components/ui/use-toast";
@@ -79,6 +80,29 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
       },
     },
     {
+      accessorKey: "color",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Color" />
+      ),
+      cell: ({ row }) => {
+        if (editingId === row.original.id) {
+          return (
+            <EditableColorCell
+              caterer={row.original}
+              onDone={() => setEditingId(null)}
+            />
+          );
+        }
+        return (
+          <div
+            className="h-6 w-6 rounded border border-olive-100"
+            style={{ backgroundColor: row.original.color ?? "#3788d8" }}
+            title={row.original.color ?? "#3788d8"}
+          />
+        );
+      },
+    },
+    {
       id: "actions",
       header: () => (
         <span className="text-xs font-semibold uppercase text-text-light">
@@ -126,9 +150,9 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
           name: "",
           email: null,
           phone: null,
+          color: "#3788d8",
           active: true,
-          created_at: "",
-          updated_at: "",
+          user_id: null,
         } as Tables<"caterers">,
         ...caterers,
       ]
@@ -161,7 +185,8 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
             isCreating &&
             (col.accessorKey === "name" ||
               col.accessorKey === "email" ||
-              col.accessorKey === "phone")
+              col.accessorKey === "phone" ||
+              col.accessorKey === "color")
           ) {
             return {
               ...col,
@@ -170,6 +195,7 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
                   if (col.accessorKey === "name") return <CreateNameCell />;
                   if (col.accessorKey === "email") return <CreateEmailCell />;
                   if (col.accessorKey === "phone") return <CreatePhoneCell />;
+                  if (col.accessorKey === "color") return <CreateColorCell />;
                 }
                 return col.cell ? col.cell({ row } as any) : null;
               },
@@ -185,7 +211,7 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
 }
 
 // Create mode cells - store state globally
-let createState = { name: "", email: "", phone: "" };
+let createState = { name: "", email: "", phone: "", color: "#3788d8" };
 
 function CreateNameCell() {
   return (
@@ -218,6 +244,19 @@ function CreatePhoneCell() {
   );
 }
 
+function CreateColorCell() {
+  const [value, setValue] = useState(createState.color);
+  return (
+    <ColorPicker
+      value={value}
+      onChange={(color) => {
+        setValue(color);
+        createState.color = color;
+      }}
+    />
+  );
+}
+
 function CreateCatererActions({ onDone }: { onDone: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -230,9 +269,10 @@ function CreateCatererActions({ onDone }: { onDone: () => void }) {
         name: createState.name,
         email: createState.email,
         phone: createState.phone,
+        color: createState.color,
         active: true,
       });
-      createState = { name: "", email: "", phone: "" }; // Reset
+      createState = { name: "", email: "", phone: "", color: "#3788d8" }; // Reset
       onDone();
       toast({ title: "Caterer created" });
     } catch (error) {
@@ -383,6 +423,48 @@ function EditablePhoneCell({
         onChange={(e) => setValue(e.target.value)}
         disabled={isLoading}
       />
+      <Button
+        size="icon"
+        variant="ghost"
+        onClick={handleSave}
+        disabled={isLoading}
+      >
+        <Check className="h-4 w-4 text-green-600" />
+      </Button>
+      <Button size="icon" variant="ghost" onClick={onDone}>
+        <X className="h-4 w-4 text-red-600" />
+      </Button>
+    </div>
+  );
+}
+
+function EditableColorCell({
+  caterer,
+  onDone,
+}: {
+  caterer: Tables<"caterers">;
+  onDone: () => void;
+}) {
+  const [value, setValue] = useState(caterer.color ?? "#3788d8");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      await updateCaterer(caterer.id, { color: value });
+      onDone();
+      toast({ title: "Caterer color updated" });
+    } catch (error) {
+      toast({ title: "Error updating color", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <ColorPicker value={value} onChange={setValue} disabled={isLoading} />
       <Button
         size="icon"
         variant="ghost"

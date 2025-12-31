@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { CateringJobsCalendar } from "@/components/catering-jobs-calendar";
+import { DetailedMealCard } from "@/components/catering/detailed-meal-card";
 import {
   Card,
   CardContent,
@@ -14,58 +15,98 @@ import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateLabel, type EnrichedMealJob } from "@/lib/catering";
+import type { MealJobCommentWithAuthor } from "@/lib/queries/bookings.server";
+
+interface AdminCateringJobsClientProps {
+  jobs: EnrichedMealJob[];
+  commentsMap: Map<string, MealJobCommentWithAuthor[]>;
+  caterers: { id: string; name: string }[];
+  menuItems: {
+    id: string;
+    label: string;
+    catererId: string | null;
+    mealType: string | null;
+  }[];
+}
 
 export default function AdminCateringJobsClient({
   jobs,
-}: {
-  jobs: EnrichedMealJob[];
-}) {
+  commentsMap,
+  caterers,
+  menuItems,
+}: AdminCateringJobsClientProps) {
   const [view, setView] = useState("calendar");
-
-  const enrichedJobs = jobs;
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const todaysJobs = useMemo(
-    () => enrichedJobs.filter((job) => job.date === today),
-    [enrichedJobs, today],
+    () => jobs.filter((job) => job.date === today),
+    [jobs, today]
   );
 
-  const jobsByDate = useMemo(() => {
-    const grouped = enrichedJobs.reduce<Record<string, EnrichedMealJob[]>>(
-      (acc, job) => {
-        if (!acc[job.date]) {
-          acc[job.date] = [];
-        }
-        acc[job.date].push(job);
-        return acc;
-      },
-      {},
-    );
+  // Group by date, then by booking within each date
+  const jobsByDateAndBooking = useMemo(() => {
+    // First group by date
+    const byDate = jobs.reduce<Record<string, EnrichedMealJob[]>>((acc, job) => {
+      if (!acc[job.date]) acc[job.date] = [];
+      acc[job.date].push(job);
+      return acc;
+    }, {});
 
-    const sortedDates = Object.keys(grouped).sort();
-    return { grouped, sortedDates };
-  }, [enrichedJobs]);
+    // Sort dates
+    const sortedDates = Object.keys(byDate).sort();
+
+    // For each date, group by booking
+    const result = sortedDates.map((date) => {
+      const jobsForDate = byDate[date];
+      const byBooking = jobsForDate.reduce<Record<string, EnrichedMealJob[]>>(
+        (acc, job) => {
+          if (!acc[job.bookingId]) acc[job.bookingId] = [];
+          acc[job.bookingId].push(job);
+          return acc;
+        },
+        {}
+      );
+
+      return {
+        date,
+        bookings: Object.entries(byBooking).map(([bookingId, bookingJobs]) => ({
+          bookingId,
+          groupName: bookingJobs[0]?.groupName ?? "Unknown",
+          jobs: bookingJobs.sort(
+            (a, b) => a.startDate.getTime() - b.startDate.getTime()
+          ),
+        })),
+        totalJobs: jobsForDate.length,
+      };
+    });
+
+    return result;
+  }, [jobs]);
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <CardTitle>Catering jobs</CardTitle>
-            <CardDescription>Assign caterers and export run sheets</CardDescription>
+            <CardTitle>Catering Jobs</CardTitle>
+            <CardDescription>
+              Manage caterer assignments and job details
+            </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button>Assign caterer</Button>
-            <Button variant="outline">Export run sheets</Button>
+            <Button>Assign Caterer</Button>
+            <Button variant="outline">Export Run Sheets</Button>
           </div>
         </CardHeader>
       </Card>
+
       <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
         <Card>
           <CardHeader className="space-y-2">
-            <CardTitle>Catering schedule</CardTitle>
+            <CardTitle>Catering Schedule</CardTitle>
             <CardDescription>
-              Toggle between calendar and list views to manage upcoming services.
+              Toggle between calendar and list views to manage upcoming
+              services.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -74,62 +115,76 @@ export default function AdminCateringJobsClient({
                 <TabsTrigger value="calendar">Calendar</TabsTrigger>
                 <TabsTrigger value="list">List</TabsTrigger>
               </TabsList>
+
               <TabsContent value="calendar" className="pt-4">
-                <CateringJobsCalendar jobs={enrichedJobs} />
+                <CateringJobsCalendar
+                  jobs={jobs}
+                  caterers={caterers}
+                  menuItems={menuItems}
+                />
               </TabsContent>
+
               <TabsContent value="list" className="pt-4">
-                <div className="space-y-6">
-                  {jobsByDate.sortedDates.length === 0 ? (
+                <div className="space-y-8">
+                  {jobsByDateAndBooking.length === 0 ? (
                     <p className="text-sm text-olive-700">
                       No catering services scheduled.
                     </p>
                   ) : null}
-                  {jobsByDate.sortedDates.map((dateKey) => {
-                    const jobsForDate = jobsByDate.grouped[dateKey];
-                    const groupNames = Array.from(
-                      new Set(jobsForDate.map((job) => job.groupName)),
-                    ).join(", ");
-                    return (
-                      <div
-                        key={dateKey}
-                        className="space-y-3 rounded-xl border border-olive-100 bg-white/70 p-4"
-                      >
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <h3 className="text-sm font-semibold text-olive-900">
-                              {formatDateLabel(dateKey)}
-                            </h3>
-                            <p className="text-xs text-olive-700">
-                              {jobsForDate.length} {jobsForDate.length === 1 ? "service" : "services"}
-                            </p>
-                          </div>
-                          <span className="text-xs font-medium text-olive-700">
-                            {groupNames || "Group TBC"}
+
+                  {jobsByDateAndBooking.map(({ date, bookings, totalJobs }) => (
+                    <section key={date} className="space-y-4">
+                      {/* Day header */}
+                      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 border-b border-border/50">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-text">
+                            {formatDateLabel(date)}
+                          </h3>
+                          <span className="text-sm text-text-light">
+                            {totalJobs} {totalJobs === 1 ? "service" : "services"}
                           </span>
                         </div>
-                        <div className="space-y-4">
-                          {jobsForDate.map((job) => (
-                            <div key={job.id} className="space-y-2">
-                              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                                <p className="text-sm font-semibold text-olive-800">
-                                  {job.groupName}
-                                </p>
-                                <span className="text-xs text-olive-700">
-                                  {job.timeRangeLabel}
-                                </span>
-                              </div>
-                              <MealSlotCard job={job} />
-                            </div>
-                          ))}
-                        </div>
                       </div>
-                    );
-                  })}
+
+                      {/* Bookings for this day */}
+                      {bookings.map(
+                        ({ bookingId, groupName, jobs: bookingJobs }) => (
+                          <div
+                            key={bookingId}
+                            className="space-y-3 rounded-2xl border border-border/70 bg-white/90 p-5 shadow-soft"
+                          >
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium text-text">
+                                {groupName}
+                              </h4>
+                              <span className="text-xs text-text-light">
+                                {bookingJobs.length}{" "}
+                                {bookingJobs.length === 1 ? "meal" : "meals"}
+                              </span>
+                            </div>
+
+                            <div className="space-y-3">
+                              {bookingJobs.map((job) => (
+                                <DetailedMealCard
+                                  key={job.id}
+                                  job={job}
+                                  comments={commentsMap.get(job.id) ?? []}
+                                  currentUserRole="admin"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </section>
+                  ))}
                 </div>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* Today's jobs sidebar */}
         <Card>
           <CardHeader>
             <CardTitle>Today</CardTitle>
@@ -143,7 +198,9 @@ export default function AdminCateringJobsClient({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-olive-700">No catering services scheduled today.</p>
+              <p className="text-sm text-text-light">
+                No catering services scheduled today.
+              </p>
             )}
           </CardContent>
         </Card>

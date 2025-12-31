@@ -291,43 +291,49 @@ async function getMenuDetailsForJobs(
   return map;
 }
 
-async function getCatererNames(
+async function getCatererDetails(
   supabase: Awaited<ReturnType<typeof sbServer>>,
   catererIds: string[]
-): Promise<Map<string, string>> {
+): Promise<Map<string, { name: string; color: string | null }>> {
   if (!catererIds.length) return new Map();
 
   const { data, error } = await supabase
     .from("caterers")
-    .select("id, name")
+    .select("id, name, color")
     .in("id", catererIds);
   if (error) throw new Error(`Failed to load caterers: ${error.message}`);
 
-  const validCaterers = data as { id: string; name: string }[] | null;
+  const validCaterers = data as { id: string; name: string; color: string | null }[] | null;
 
   return new Map(
-    (validCaterers ?? []).map((caterer) => [caterer.id, caterer.name])
+    (validCaterers ?? []).map((caterer) => [
+      caterer.id,
+      { name: caterer.name, color: caterer.color },
+    ])
   );
 }
 
 function mapMealJobs(
   jobs: Tables<"meal_jobs">[] | null,
   menuDetails: Map<string, { id: string; label: string }[]>,
-  catererLookup: Map<string, string>
+  catererLookup: Map<string, { name: string; color: string | null }>
 ): MealJobDetail[] {
   return (jobs ?? []).map((job) => {
     const details = menuDetails.get(job.id) ?? [];
+    const caterer = job.assigned_caterer_id
+      ? catererLookup.get(job.assigned_caterer_id)
+      : null;
     return {
       ...job,
       counts_by_diet: parseCounts(job.counts_by_diet),
       menu_labels: details.map((d) => d.label),
       menu_ids: details.map((d) => d.id),
-      assigned_caterer_name: job.assigned_caterer_id
-        ? catererLookup.get(job.assigned_caterer_id) ?? null
-        : null,
+      assigned_caterer_name: caterer?.name ?? null,
+      assigned_caterer_color: caterer?.color ?? null,
       percolated_coffee_quantity:
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (job as any).percolated_coffee_quantity ?? null,
+      changes_requested: (job as any).changes_requested ?? false,
     };
   });
 }
@@ -354,7 +360,7 @@ export async function getMealJobsForBooking(
         .filter(Boolean) as string[]
     )
   );
-  const caterers = await getCatererNames(supabase, catererIds);
+  const caterers = await getCatererDetails(supabase, catererIds);
 
   return mapMealJobs(jobs, menuDetails, caterers);
 }
@@ -384,7 +390,7 @@ export async function getAssignedMealJobs(
         .filter(Boolean) as string[]
     )
   );
-  const caterers = await getCatererNames(supabase, catererIds);
+  const caterers = await getCatererDetails(supabase, catererIds);
 
   return mapMealJobs(jobs, menuDetails, caterers);
 }
@@ -445,4 +451,87 @@ export async function getDietaryProfilesForBooking(
   if (error)
     throw new Error(`Failed to load dietary profiles: ${error.message}`);
   return data ?? [];
+}
+
+export type MealJobCommentWithAuthor = {
+  id: string;
+  mealJobId: string;
+  authorId: string;
+  authorRole: "admin" | "caterer";
+  authorName: string;
+  content: string;
+  createdAt: Date;
+};
+
+export async function getCommentsForMealJobs(
+  mealJobIds: string[]
+): Promise<Map<string, MealJobCommentWithAuthor[]>> {
+  if (!mealJobIds.length) return new Map();
+
+  const supabase = await sbServer();
+
+  const { data: comments, error } = await supabase
+    .from("meal_job_comments")
+    .select("*")
+    .in("meal_job_id", mealJobIds)
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(`Failed to load comments: ${error.message}`);
+
+  // Get author names from profiles
+  const authorIds = Array.from(
+    new Set((comments ?? []).map((c) => c.author_id))
+  );
+
+  const { data: profiles, error: profilesError } = authorIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", authorIds)
+    : { data: [], error: null };
+
+  if (profilesError)
+    throw new Error(`Failed to load profiles: ${profilesError.message}`);
+
+  const profileLookup = new Map(
+    (profiles ?? []).map((p) => [p.id, p.full_name ?? "Unknown"])
+  );
+
+  const map = new Map<string, MealJobCommentWithAuthor[]>();
+  for (const c of comments ?? []) {
+    const list = map.get(c.meal_job_id) ?? [];
+    list.push({
+      id: c.id,
+      mealJobId: c.meal_job_id,
+      authorId: c.author_id,
+      authorRole: c.author_role as "admin" | "caterer",
+      authorName: profileLookup.get(c.author_id) ?? "Unknown",
+      content: c.content,
+      createdAt: new Date(c.created_at),
+    });
+    map.set(c.meal_job_id, list);
+  }
+  return map;
+}
+
+export async function getMealJobsForCurrentCaterer(): Promise<MealJobDetail[]> {
+  const supabase = await sbServer();
+
+  // Get current user's caterer_id from profile
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("caterer_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.caterer_id) {
+    return []; // User is not linked to a caterer
+  }
+
+  return getAssignedMealJobs(profile.caterer_id);
 }

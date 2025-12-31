@@ -14,8 +14,10 @@ export type MealJobDetail = Omit<Tables<"meal_jobs">, "counts_by_diet"> & {
   menu_labels: string[];
   menu_ids: string[];
   assigned_caterer_name: string | null;
+  assigned_caterer_color: string | null;
   percolated_coffee_quantity: number | null;
   requested_service_time: string | null;
+  changes_requested: boolean;
 };
 
 // Extended room_assignment with new fields (until types regenerated)

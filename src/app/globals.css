@@ -15,16 +15,16 @@
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --olive-50: #e8f5e9;
-  --olive-100: #d7eadc;
-  --olive-200: #bbd9c4;
-  --olive-300: #9cc9aa;
-  --olive-400: #7cb990;
-  --olive-500: #5daa76;
-  --olive-600: #2f5233;
-  --olive-700: #254026;
-  --olive-800: #1a2e1a;
-  --olive-900: #101f11;
+  --olive-50: #F8F9F5;
+  --olive-100: #E8EBE0;
+  --olive-200: #D1D6C1;
+  --olive-300: #B8C4A3;
+  --olive-400: #9FAB85;
+  --olive-500: #869267;
+  --olive-600: #6B7455;
+  --olive-700: #545D44;
+  --olive-800: #3D4333;
+  --olive-900: #2F3729;
 }
 
 @theme inline {
@@ -45,6 +45,16 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-olive-50: var(--olive-50);
+  --color-olive-100: var(--olive-100);
+  --color-olive-200: var(--olive-200);
+  --color-olive-300: var(--olive-300);
+  --color-olive-400: var(--olive-400);
+  --color-olive-500: var(--olive-500);
+  --color-olive-600: var(--olive-600);
+  --color-olive-700: var(--olive-700);
+  --color-olive-800: var(--olive-800);
+  --color-olive-900: var(--olive-900);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

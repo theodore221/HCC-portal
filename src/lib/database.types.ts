@@ -71,6 +71,7 @@ export type Database = {
           phone: string | null;
           active: boolean;
           user_id: string | null;
+          color: string | null;
         };
         Insert: Partial<Database["public"]["Tables"]["caterers"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["caterers"]["Row"]>;
@@ -136,6 +137,39 @@ export type Database = {
         Update: Database["public"]["Tables"]["meal_job_items"]["Row"];
         Relationships: [];
       };
+      meal_job_comments: {
+        Row: {
+          id: string;
+          meal_job_id: string;
+          author_id: string;
+          author_role: "admin" | "caterer";
+          content: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          meal_job_id: string;
+          author_id: string;
+          author_role: "admin" | "caterer";
+          content: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["meal_job_comments"]["Row"]>;
+        Relationships: [
+          {
+            foreignKeyName: "meal_job_comments_meal_job_id_fkey";
+            columns: ["meal_job_id"];
+            referencedRelation: "meal_jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "meal_job_comments_author_id_fkey";
+            columns: ["author_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       meal_jobs: {
         Row: {
           id: string;
@@ -151,6 +185,7 @@ export type Database = {
           assigned_caterer_id: string | null;
           status: Database["public"]["Enums"]["meal_job_status"];
           requested_service_time: string | null;
+          changes_requested: boolean;
         };
         Insert: Partial<Database["public"]["Tables"]["meal_jobs"]["Row"]>;
         Update: Partial<Database["public"]["Tables"]["meal_jobs"]["Row"]>;

@@ -1,31 +1,28 @@
 import { Metadata } from "next";
 
-import { MealJobsGridCard } from "@/components/meal-jobs-grid-card";
 import { enrichMealJobs } from "@/lib/catering";
 import {
-  getAssignedMealJobs,
   getBookingsForAdmin,
+  getCommentsForMealJobs,
+  getMealJobsForCurrentCaterer,
 } from "@/lib/queries/bookings.server";
+import CatererJobsClient from "./client";
 
 export const metadata: Metadata = {
-  title: "Caterer jobs",
+  title: "Caterer Jobs",
 };
 
 export default async function CatererJobsPage() {
   const [bookings, mealJobsRaw] = await Promise.all([
     getBookingsForAdmin(),
-    getAssignedMealJobs(),
+    getMealJobsForCurrentCaterer(),
   ]);
+
   const jobs = enrichMealJobs(mealJobsRaw, bookings);
 
-  return (
-    <div className="space-y-6">
-      <MealJobsGridCard
-        title="Upcoming week"
-        description="Meals assigned to you"
-        jobs={jobs}
-        emptyMessage="No catering services scheduled."
-      />
-    </div>
-  );
+  // Fetch comments for jobs
+  const jobIds = jobs.map((j) => j.id);
+  const commentsMap = await getCommentsForMealJobs(jobIds);
+
+  return <CatererJobsClient jobs={jobs} commentsMap={commentsMap} />;
 }

@@ -7,7 +7,9 @@
       "Bash(find:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
-      "Bash(git -C \"c:\\\\Users\\\\newpc\\\\Documents\\\\repo\\\\HCC-portal\" diff HEAD src/app/\\\\\\(app\\\\\\)/\\\\\\(admin\\\\\\)/admin/schedule/schedule-card.tsx)"
+      "Bash(git -C \"c:\\\\Users\\\\newpc\\\\Documents\\\\repo\\\\HCC-portal\" diff HEAD src/app/\\\\\\(app\\\\\\)/\\\\\\(admin\\\\\\)/admin/schedule/schedule-card.tsx)",
+      "Bash(xargs cat:*)",
+      "Bash(dir:*)"
     ]
   }
 }
