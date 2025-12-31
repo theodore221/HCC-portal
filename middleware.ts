@@ -117,13 +117,14 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/login",
-    "/",
-    "/admin/:path*",
-    "/staff/:path*",
-    "/caterer/:path*",
-    "/portal/:path*",
-    "/profile",
-    "/settings",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - auth/callback (authentication callback handler)
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!auth/callback|api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

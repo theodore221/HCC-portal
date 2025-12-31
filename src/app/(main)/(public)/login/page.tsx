@@ -23,6 +23,7 @@ export default function LoginPage() {
 
   const redirectParam = searchParams.get('redirect');
   const redirectTo = redirectParam?.startsWith('/') ? redirectParam : null;
+  const errorParam = searchParams.get('error');
 
   const supabase = sbBrowser();
 
@@ -78,6 +79,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     void (async () => {
+      // Set error from URL parameter if present
+      if (errorParam) {
+        setError(errorParam);
+      }
+
       const { data } = await supabase.auth.getSession();
       const userId = data.session?.user.id;
       if (userId) {
@@ -85,7 +91,7 @@ export default function LoginPage() {
         void navigateToWorkspace();
       }
     })();
-  }, [navigateToWorkspace, supabase]);
+  }, [navigateToWorkspace, supabase, errorParam]);
 
   const handlePasswordSignIn = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
