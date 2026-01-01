@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { CateringJobsCalendar } from "@/components/catering-jobs-calendar";
 import { DetailedMealCard } from "@/components/catering/detailed-meal-card";
+import { CollapsibleDaySection } from "@/components/catering/collapsible-day-section";
 import {
   Card,
   CardContent,
@@ -45,8 +46,11 @@ export default function AdminCateringJobsClient({
 
   // Group by date, then by booking within each date
   const jobsByDateAndBooking = useMemo(() => {
+    // Filter to today and future only for list view
+    const upcomingJobs = jobs.filter((job) => job.date >= today);
+
     // First group by date
-    const byDate = jobs.reduce<Record<string, EnrichedMealJob[]>>((acc, job) => {
+    const byDate = upcomingJobs.reduce<Record<string, EnrichedMealJob[]>>((acc, job) => {
       if (!acc[job.date]) acc[job.date] = [];
       acc[job.date].push(job);
       return acc;
@@ -67,6 +71,9 @@ export default function AdminCateringJobsClient({
         {}
       );
 
+      // Collect unique group names for this date
+      const groupNames = [...new Set(jobsForDate.map((j) => j.groupName))];
+
       return {
         date,
         bookings: Object.entries(byBooking).map(([bookingId, bookingJobs]) => ({
@@ -77,11 +84,12 @@ export default function AdminCateringJobsClient({
           ),
         })),
         totalJobs: jobsForDate.length,
+        groupNames,
       };
     });
 
     return result;
-  }, [jobs]);
+  }, [jobs, today]);
 
   return (
     <div className="space-y-6">
@@ -132,20 +140,15 @@ export default function AdminCateringJobsClient({
                     </p>
                   ) : null}
 
-                  {jobsByDateAndBooking.map(({ date, bookings, totalJobs }) => (
-                    <section key={date} className="space-y-4">
-                      {/* Day header */}
-                      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 border-b border-border/50">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold text-text">
-                            {formatDateLabel(date)}
-                          </h3>
-                          <span className="text-sm text-text-light">
-                            {totalJobs} {totalJobs === 1 ? "service" : "services"}
-                          </span>
-                        </div>
-                      </div>
-
+                  {jobsByDateAndBooking.map(({ date, bookings, totalJobs, groupNames }) => (
+                    <CollapsibleDaySection
+                      key={date}
+                      date={date}
+                      formattedDate={formatDateLabel(date)}
+                      totalJobs={totalJobs}
+                      groupNames={groupNames}
+                      isToday={date === today}
+                    >
                       {/* Bookings for this day */}
                       {bookings.map(
                         ({ bookingId, groupName, jobs: bookingJobs }) => (
@@ -176,7 +179,7 @@ export default function AdminCateringJobsClient({
                           </div>
                         )
                       )}
-                    </section>
+                    </CollapsibleDaySection>
                   ))}
                 </div>
               </TabsContent>

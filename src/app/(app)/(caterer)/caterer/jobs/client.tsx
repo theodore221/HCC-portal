@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useMemo } from "react";
 
 import { DetailedMealCard } from "@/components/catering/detailed-meal-card";
+import { CateringJobsCalendar } from "@/components/catering-jobs-calendar";
+import { CollapsibleDaySection } from "@/components/catering/collapsible-day-section";
 import {
   Card,
   CardContent,
@@ -19,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDateLabel, type EnrichedMealJob } from "@/lib/catering";
@@ -32,11 +35,20 @@ import {
 interface CatererJobsClientProps {
   jobs: EnrichedMealJob[];
   commentsMap: Map<string, MealJobCommentWithAuthor[]>;
+  caterers: { id: string; name: string }[];
+  menuItems: {
+    id: string;
+    label: string;
+    catererId: string | null;
+    mealType: string | null;
+  }[];
 }
 
 export default function CatererJobsClient({
   jobs,
   commentsMap,
+  caterers,
+  menuItems,
 }: CatererJobsClientProps) {
   const [declineDialogJob, setDeclineDialogJob] =
     useState<EnrichedMealJob | null>(null);
@@ -44,10 +56,16 @@ export default function CatererJobsClient({
     useState<EnrichedMealJob | null>(null);
   const [reason, setReason] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [view, setView] = useState("calendar");
 
-  // Group jobs by date
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  // Group jobs by date (filtered to upcoming only)
   const jobsByDate = useMemo(() => {
-    const grouped = jobs.reduce<Record<string, EnrichedMealJob[]>>(
+    // Filter to today and future only for list view
+    const upcomingJobs = jobs.filter((job) => job.date >= today);
+
+    const grouped = upcomingJobs.reduce<Record<string, EnrichedMealJob[]>>(
       (acc, job) => {
         if (!acc[job.date]) acc[job.date] = [];
         acc[job.date].push(job);
@@ -63,8 +81,9 @@ export default function CatererJobsClient({
         jobs: dateJobs.sort(
           (a, b) => a.startDate.getTime() - b.startDate.getTime()
         ),
+        groupNames: [...new Set(dateJobs.map((j) => j.groupName))],
       }));
-  }, [jobs]);
+  }, [jobs, today]);
 
   const handleConfirm = (job: EnrichedMealJob) => {
     startTransition(async () => {
@@ -107,46 +126,67 @@ export default function CatererJobsClient({
           </CardHeader>
         </Card>
 
-        <div className="space-y-8">
-          {jobsByDate.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-olive-600">
-                No catering jobs assigned to you.
-              </CardContent>
-            </Card>
-          ) : null}
+        <Card>
+          <CardHeader className="space-y-2">
+            <CardTitle>Catering Schedule</CardTitle>
+            <CardDescription>
+              View your assigned catering jobs in calendar or list format.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Tabs value={view} onValueChange={setView}>
+              <TabsList>
+                <TabsTrigger value="calendar">Calendar</TabsTrigger>
+                <TabsTrigger value="list">List</TabsTrigger>
+              </TabsList>
 
-          {jobsByDate.map(({ date, jobs: dateJobs }) => (
-            <section key={date} className="space-y-4">
-              <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 border-b border-olive-100">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-olive-900">
-                    {formatDateLabel(date)}
-                  </h3>
-                  <span className="text-sm text-olive-600">
-                    {dateJobs.length}{" "}
-                    {dateJobs.length === 1 ? "service" : "services"}
-                  </span>
+              <TabsContent value="calendar" className="pt-4">
+                <CateringJobsCalendar
+                  jobs={jobs}
+                  caterers={caterers}
+                  menuItems={menuItems}
+                  readOnly
+                />
+              </TabsContent>
+
+              <TabsContent value="list" className="pt-4">
+                <div className="space-y-8">
+                  {jobsByDate.length === 0 ? (
+                    <p className="text-sm text-olive-700">
+                      No upcoming catering jobs assigned to you.
+                    </p>
+                  ) : null}
+
+                  {jobsByDate.map(({ date, jobs: dateJobs, groupNames }) => (
+                    <CollapsibleDaySection
+                      key={date}
+                      date={date}
+                      formattedDate={formatDateLabel(date)}
+                      totalJobs={dateJobs.length}
+                      groupNames={groupNames}
+                      isToday={date === today}
+                    >
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {dateJobs.map((job) => (
+                          <DetailedMealCard
+                            key={job.id}
+                            job={job}
+                            comments={commentsMap.get(job.id) ?? []}
+                            currentUserRole="caterer"
+                            showCatererActions
+                            onConfirm={() => handleConfirm(job)}
+                            onDecline={() => setDeclineDialogJob(job)}
+                            onRequestChanges={() => setChangesDialogJob(job)}
+                          />
+                        ))}
+                      </div>
+                    </CollapsibleDaySection>
+                  ))}
                 </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                {dateJobs.map((job) => (
-                  <DetailedMealCard
-                    key={job.id}
-                    job={job}
-                    comments={commentsMap.get(job.id) ?? []}
-                    currentUserRole="caterer"
-                    showCatererActions
-                    onConfirm={() => handleConfirm(job)}
-                    onDecline={() => setDeclineDialogJob(job)}
-                    onRequestChanges={() => setChangesDialogJob(job)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Decline Dialog */}

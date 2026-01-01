@@ -47,12 +47,14 @@ interface CateringJobsCalendarProps {
     catererId: string | null;
     mealType: string | null;
   }[];
+  readOnly?: boolean;
 }
 
 export function CateringJobsCalendar({
   jobs,
   caterers,
   menuItems,
+  readOnly = false,
 }: CateringJobsCalendarProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -331,7 +333,7 @@ export function CateringJobsCalendar({
                             {/* Serves Count */}
                             <MealServesDisplay
                               count={meal.countsTotal}
-                              editable={true}
+                              editable={!readOnly}
                               onUpdate={(count) => handleServesUpdate(meal.id, count)}
                               disabled={loading === meal.id}
                             />
@@ -354,59 +356,70 @@ export function CateringJobsCalendar({
                         </div>
 
                         {/* Caterer and Menu Row */}
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          {/* Caterer Assignment */}
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-text-light">
-                              Assigned Caterer
-                            </label>
-                            <Select
-                              value={meal.assignedCatererId ?? "unassigned"}
-                              onValueChange={(val) =>
-                                handleCatererChange(meal.id, val)
-                              }
-                              disabled={loading === meal.id}
-                            >
-                              <SelectTrigger className="h-9 border-border/50 bg-white">
-                                <SelectValue placeholder="Select caterer" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="unassigned">
-                                  Unassigned
-                                </SelectItem>
-                                {caterers.map((caterer) => (
-                                  <SelectItem key={caterer.id} value={caterer.id}>
-                                    {caterer.name}
+                        {!readOnly && (
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {/* Caterer Assignment */}
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-medium text-text-light">
+                                Assigned Caterer
+                              </label>
+                              <Select
+                                value={meal.assignedCatererId ?? "unassigned"}
+                                onValueChange={(val) =>
+                                  handleCatererChange(meal.id, val)
+                                }
+                                disabled={loading === meal.id}
+                              >
+                                <SelectTrigger className="h-9 border-border/50 bg-white">
+                                  <SelectValue placeholder="Select caterer" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="unassigned">
+                                    Unassigned
                                   </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                                  {caterers.map((caterer) => (
+                                    <SelectItem key={caterer.id} value={caterer.id}>
+                                      {caterer.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
 
-                          {/* Menu Items */}
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-text-light">
-                              Menu Selection
-                            </label>
-                            <InlineMenuDisplay
-                              selectedIds={meal.menuIds ?? []}
-                              selectedLabel={selectedMenuLabel}
-                              availableItems={availableMenuItems}
-                              placeholder={
-                                meal.assignedCatererId
-                                  ? "Select menu item..."
-                                  : "Assign caterer first"
-                              }
-                              onSelect={(items) => handleMenuChange(meal.id, items)}
-                              disabled={
-                                !meal.assignedCatererId || loading === meal.id
-                              }
-                            />
+                            {/* Menu Items */}
+                            <div className="space-y-1.5">
+                              <label className="text-xs font-medium text-text-light">
+                                Menu Selection
+                              </label>
+                              <InlineMenuDisplay
+                                selectedIds={meal.menuIds ?? []}
+                                selectedLabel={selectedMenuLabel}
+                                availableItems={availableMenuItems}
+                                placeholder={
+                                  meal.assignedCatererId
+                                    ? "Select menu item..."
+                                    : "Assign caterer first"
+                                }
+                                onSelect={(items) => handleMenuChange(meal.id, items)}
+                                disabled={
+                                  !meal.assignedCatererId || loading === meal.id
+                                }
+                              />
+                            </div>
                           </div>
-                        </div>
+                        )}
+
+                        {/* Read-only menu display */}
+                        {readOnly && meal.menu.length > 0 && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <UtensilsCrossed className="h-4 w-4 text-olive-600" />
+                            <span className="text-text-light">Menu:</span>
+                            <span className="text-text">{meal.menu.join(", ")}</span>
+                          </div>
+                        )}
 
                         {/* Coffee Option */}
-                        {isCoffeeEligible && (
+                        {isCoffeeEligible && !readOnly && (
                           <PercolatedCoffeeToggle
                             checked={meal.percolatedCoffee}
                             quantity={meal.percolatedCoffeeQuantity}
@@ -415,6 +428,18 @@ export function CateringJobsCalendar({
                             }
                             disabled={loading === meal.id}
                           />
+                        )}
+
+                        {/* Read-only coffee display */}
+                        {isCoffeeEligible && readOnly && meal.percolatedCoffee && (
+                          <div className="flex items-center gap-2 text-sm rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                            <span className="text-amber-700">
+                              ☕ Percolated Coffee
+                              {meal.percolatedCoffeeQuantity
+                                ? ` (${meal.percolatedCoffeeQuantity} cups)`
+                                : ""}
+                            </span>
+                          </div>
                         )}
 
                         {/* Dietary Counts */}

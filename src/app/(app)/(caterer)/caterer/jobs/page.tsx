@@ -6,6 +6,7 @@ import {
   getCommentsForMealJobs,
   getMealJobsForCurrentCaterer,
 } from "@/lib/queries/bookings.server";
+import { getCateringOptions } from "@/lib/queries/catering.server";
 import CatererJobsClient from "./client";
 
 export const metadata: Metadata = {
@@ -13,9 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default async function CatererJobsPage() {
-  const [bookings, mealJobsRaw] = await Promise.all([
+  const [bookings, mealJobsRaw, cateringOptions] = await Promise.all([
     getBookingsForAdmin(),
     getMealJobsForCurrentCaterer(),
+    getCateringOptions(),
   ]);
 
   const jobs = enrichMealJobs(mealJobsRaw, bookings);
@@ -24,5 +26,12 @@ export default async function CatererJobsPage() {
   const jobIds = jobs.map((j) => j.id);
   const commentsMap = await getCommentsForMealJobs(jobIds);
 
-  return <CatererJobsClient jobs={jobs} commentsMap={commentsMap} />;
+  return (
+    <CatererJobsClient
+      jobs={jobs}
+      commentsMap={commentsMap}
+      caterers={cateringOptions.caterers}
+      menuItems={cateringOptions.menuItems}
+    />
+  );
 }
