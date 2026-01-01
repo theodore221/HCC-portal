@@ -1,6 +1,5 @@
-// @ts-nocheck
 "use server";
-import { createServerActionClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient as SupabaseJsClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
@@ -33,9 +32,28 @@ interface BookingLookup {
 
 async function createSupabaseClient() {
   const cookieStore = await cookies();
-  return createServerActionClient<Database>({
-    cookies: () => cookieStore,
-  });
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // The `setAll` method was called from a Server Action.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
+  );
 }
 
 function createServiceRoleClient(): ServiceSupabaseClient {
@@ -128,11 +146,11 @@ async function ensureProfileWithClient(
   let fallbackCatererId: string | null = null;
 
   if (metadata.caterer_id) {
-    const { data: catererLookup, error: catererError } = await serviceSupabase
+    const { data: catererLookup, error: catererError } = (await serviceSupabase
       .from("caterers")
       .select("id")
       .eq("id", metadata.caterer_id)
-      .maybeSingle();
+      .maybeSingle()) as { data: { id: string } | null; error: any };
 
     if (catererError) {
       throw new ProfileServiceError(
@@ -146,12 +164,11 @@ async function ensureProfileWithClient(
 
     matchedCatererId = catererLookup?.id ?? null;
   } else {
-    const { data: fallbackCaterer, error: fallbackError } =
-      await serviceSupabase
+    const { data: fallbackCaterer, error: fallbackError } = (await serviceSupabase
         .from("caterers")
         .select("id")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .maybeSingle()) as { data: { id: string } | null; error: any };
 
     if (fallbackError) {
       throw new ProfileServiceError(
@@ -177,6 +194,7 @@ async function ensureProfileWithClient(
 
   const { data: insertedProfile, error: insertError } = await serviceSupabase
     .from("profiles")
+    // @ts-ignore - Type compatibility issue with @supabase/ssr
     .insert({
       id: user.id,
       email: user.email ? user.email.toLowerCase() : null,
@@ -226,6 +244,7 @@ export async function markPasswordInitialized(): Promise<NormalizedProfile> {
 
   const { data: updatedProfile, error: updateError } = await supabase
     .from("profiles")
+    // @ts-ignore - Type compatibility issue with @supabase/ssr
     .update({ password_initialized_at: timestamp })
     .eq("id", user.id)
     .select("*")

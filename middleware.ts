@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 
 import { getHomePathForRole } from "./src/lib/auth/paths";
-import type { Database } from "./src/lib/database.types";
+import type { Database, ProfileRole } from "./src/lib/database.types";
 
 const PROTECTED_PREFIXES = [
   "/admin",
@@ -14,27 +14,25 @@ const PROTECTED_PREFIXES = [
   "/settings",
 ];
 
-function redirectWithCookies(res: NextResponse, url: string | URL) {
-  const redirectResponse = NextResponse.redirect(url);
-
-  const middlewareSetCookie = res.headers.get("x-middleware-set-cookie");
-  if (middlewareSetCookie) {
-    redirectResponse.headers.set(
-      "x-middleware-set-cookie",
-      middlewareSetCookie
-    );
-  }
-
-  for (const { name, value, ...options } of res.cookies.getAll()) {
-    redirectResponse.cookies.set({ name, value, ...options });
-  }
-
-  return redirectResponse;
-}
-
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  const supabase = createMiddlewareClient<Database>({ req, res });
+
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
 
   const {
     data: { session },
@@ -49,7 +47,8 @@ export async function middleware(req: NextRequest) {
 
   if (!session?.user) {
     if (isRootRoute) {
-      return redirectWithCookies(res, new URL("/login", req.url));
+      const redirectResponse = NextResponse.redirect(new URL("/login", req.url));
+      return redirectResponse;
     }
 
     if (isLoginRoute || !isProtectedRoute) {
@@ -58,14 +57,15 @@ export async function middleware(req: NextRequest) {
 
     const redirectUrl = new URL("/login", req.url);
     redirectUrl.searchParams.set("redirect", `${pathname}${search}`);
-    return redirectWithCookies(res, redirectUrl);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    return redirectResponse;
   }
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, booking_reference, guest_token")
     .eq("id", session.user.id)
-    .maybeSingle();
+    .maybeSingle() as { data: { role: ProfileRole; booking_reference: string | null; guest_token: string | null } | null };
 
   const role = profile?.role ?? null;
   const destinationHome = getHomePathForRole(
@@ -74,7 +74,8 @@ export async function middleware(req: NextRequest) {
   );
 
   if (isLoginRoute || isRootRoute) {
-    return redirectWithCookies(res, new URL(destinationHome, req.url));
+    const redirectResponse = NextResponse.redirect(new URL(destinationHome, req.url));
+    return redirectResponse;
   }
 
   if (!isProtectedRoute) {
@@ -82,15 +83,18 @@ export async function middleware(req: NextRequest) {
   }
 
   if (pathname.startsWith("/admin") && role !== "admin") {
-    return redirectWithCookies(res, new URL(destinationHome, req.url));
+    const redirectResponse = NextResponse.redirect(new URL(destinationHome, req.url));
+    return redirectResponse;
   }
 
-  if (pathname.startsWith("/staff") && !["staff", "admin"].includes(role)) {
-    return redirectWithCookies(res, new URL(destinationHome, req.url));
+  if (pathname.startsWith("/staff") && (!role || !["staff", "admin"].includes(role))) {
+    const redirectResponse = NextResponse.redirect(new URL(destinationHome, req.url));
+    return redirectResponse;
   }
 
-  if (pathname.startsWith("/caterer") && !["caterer", "admin"].includes(role)) {
-    return redirectWithCookies(res, new URL(destinationHome, req.url));
+  if (pathname.startsWith("/caterer") && (!role || !["caterer", "admin"].includes(role))) {
+    const redirectResponse = NextResponse.redirect(new URL(destinationHome, req.url));
+    return redirectResponse;
   }
 
   if (pathname.startsWith("/portal")) {
@@ -103,7 +107,8 @@ export async function middleware(req: NextRequest) {
 
     // If not a customer and no guest access, redirect home
     if (profile?.role !== "customer" && !hasGuestAccess) {
-      return redirectWithCookies(res, new URL(destinationHome, req.url));
+      const redirectResponse = NextResponse.redirect(new URL(destinationHome, req.url));
+      return redirectResponse;
     }
 
     // If customer, they can access /portal (home) or /portal/[ref] (detail)

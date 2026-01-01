@@ -9,7 +9,8 @@
       "Bash(npm run build:*)",
       "Bash(git -C \"c:\\\\Users\\\\newpc\\\\Documents\\\\repo\\\\HCC-portal\" diff HEAD src/app/\\\\\\(app\\\\\\)/\\\\\\(admin\\\\\\)/admin/schedule/schedule-card.tsx)",
       "Bash(xargs cat:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(git show:*)"
     ]
   }
 }

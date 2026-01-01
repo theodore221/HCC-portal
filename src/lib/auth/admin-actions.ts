@@ -48,3 +48,100 @@ export async function ensureCustomerProfile(email: string, name: string) {
 
   return newUser.user.id;
 }
+
+export async function ensureCatererUser(
+  email: string,
+  name: string,
+  catererId: string
+): Promise<string> {
+  const supabase = sbAdmin();
+
+  // 1. Check if user exists
+  const {
+    data: { users },
+    error: searchError,
+  } = await supabase.auth.admin.listUsers();
+
+  if (searchError) {
+    console.error("Error listing users:", searchError);
+    throw new Error("Failed to check for existing user");
+  }
+
+  const existingUser = users.find(
+    (u) => u.email?.toLowerCase() === email.toLowerCase()
+  );
+
+  if (existingUser) {
+    // Check if user already has a profile with a different role
+    const { data: existingProfile } = (await supabase
+      .from("profiles")
+      .select("role, caterer_id")
+      .eq("id", existingUser.id)
+      .maybeSingle()) as {
+      data: { role: string; caterer_id: string | null } | null;
+    };
+
+    if (existingProfile) {
+      // User already has a profile
+      if (existingProfile.role !== "caterer") {
+        throw new Error(
+          `This email already belongs to a ${existingProfile.role} user. Please use a different email address for the caterer.`
+        );
+      }
+      // If they're already a caterer, just update the caterer_id link
+      if (existingProfile.caterer_id !== catererId) {
+        await supabase
+          .from("profiles")
+          // @ts-ignore - Type compatibility issue with @supabase/ssr
+          .update({ caterer_id: catererId })
+          .eq("id", existingUser.id);
+      }
+      return existingUser.id;
+    }
+
+    // User exists but no profile - update metadata for when they first log in
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      existingUser.id,
+      {
+        app_metadata: {
+          profile_seed: {
+            role: "caterer",
+            caterer_id: catererId,
+          },
+        },
+      }
+    );
+
+    if (updateError) {
+      console.error("Error updating user metadata:", updateError);
+      throw new Error(
+        `Failed to update caterer user: ${updateError.message}`
+      );
+    }
+
+    return existingUser.id;
+  }
+
+  // 2. Create user if not exists
+  const { data: newUser, error: createError } =
+    await supabase.auth.admin.createUser({
+      email,
+      email_confirm: true, // Auto-confirm so they can login immediately via magic link
+      user_metadata: {
+        full_name: name,
+      },
+      app_metadata: {
+        profile_seed: {
+          role: "caterer",
+          caterer_id: catererId,
+        },
+      },
+    });
+
+  if (createError) {
+    console.error("Error creating caterer user:", createError);
+    throw new Error(`Failed to create caterer user: ${createError.message}`);
+  }
+
+  return newUser.user.id;
+}
