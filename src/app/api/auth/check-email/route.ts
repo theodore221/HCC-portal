@@ -25,11 +25,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = sbAdmin();
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", trimmedEmail)
-      .maybeSingle();
+    // Check if user exists in Supabase Auth (not profiles table)
+    // This allows newly created users (e.g., caterers) to receive magic links
+    // before their profile is created on first login
+    const {
+      data: { users },
+      error,
+    } = await supabase.auth.admin.listUsers();
 
     if (error) {
       console.error("Error checking email:", error);
@@ -39,8 +41,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const userExists = users.some(
+      (u) => u.email?.toLowerCase() === trimmedEmail
+    );
+
     return NextResponse.json({
-      data: { exists: !!data },
+      data: { exists: userExists },
     });
   } catch (error) {
     console.error("Error in check-email endpoint:", error);
