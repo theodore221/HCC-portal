@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DietaryTable } from "@/components/catering";
+import { DietaryDataTable } from "@/components/catering";
 import { useToast } from "@/components/ui/use-toast";
 import type { EnrichedMealJob } from "@/lib/catering";
 import type { DietaryProfile } from "@/lib/queries/bookings";
@@ -267,7 +267,7 @@ export function CustomerCateringTab({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <DietaryTable
+          <DietaryDataTable
             dietaryProfiles={dietaryProfiles}
             mealJobs={cateringJobs}
             mealAttendance={mealAttendance}

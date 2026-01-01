@@ -9,7 +9,7 @@ import type { Enums } from "@/lib/database.types";
 import { CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DietaryTable } from "@/components/catering";
+import { DietaryDataTable } from "@/components/catering";
 import { useToast } from "@/components/ui/use-toast";
 import {
   createDietaryProfile,
@@ -255,7 +255,7 @@ export function CateringTab({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <DietaryTable
+          <DietaryDataTable
             dietaryProfiles={dietaryProfiles}
             mealJobs={meals}
             mealAttendance={mealAttendance}
