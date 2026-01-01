@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -5,10 +6,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MealSlotCard } from "@/components/ui/meal-slot-card";
+import { Button } from "@/components/ui/button";
+import { StaffMealCard } from "@/components/catering/staff-meal-card";
 import { enrichMealJobs } from "@/lib/catering";
 import { getBookingDisplayName } from "@/lib/queries/bookings";
 import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings.server";
+import { ArrowRight } from "lucide-react";
 
 export default async function StaffDashboard() {
   const [bookings, mealJobsRaw] = await Promise.all([
@@ -53,20 +56,35 @@ export default async function StaffDashboard() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Catering run sheet preview</CardTitle>
-          <CardDescription>Upcoming services</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Today&apos;s Kitchen Schedule</CardTitle>
+              <CardDescription>
+                {todaysJobs.length > 0
+                  ? `${todaysJobs.length} meal service${todaysJobs.length === 1 ? "" : "s"} scheduled`
+                  : "No services scheduled"}
+              </CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/staff/kitchen">
+                View All
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm font-semibold uppercase tracking-wide text-olive-600">
-            Today
-          </p>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {todaysJobs.length ? (
-              todaysJobs.map((job) => <MealSlotCard key={job.id} job={job} />)
-            ) : (
-              <p className="text-sm text-olive-700">No services scheduled for today.</p>
-            )}
-          </div>
+          {todaysJobs.length ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {todaysJobs.map((job) => (
+                <StaffMealCard key={job.id} job={job} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-center py-8 text-sm text-olive-700">
+              No meal services scheduled for today.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>

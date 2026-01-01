@@ -188,6 +188,7 @@ function getIconForItem(href: string, label: string) {
     case "catering":
     case "catering jobs":
     case "catering schedule":
+    case "kitchen":
       return Utensils;
     case "accommodation":
       return Bed;
