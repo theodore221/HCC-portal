@@ -221,7 +221,7 @@ export default function LoginPage() {
       <Button variant="outline" className="w-full" asChild>
         <Link href="/magic-link">
           <Mail className="h-4 w-4" />
-          Sign in with email link
+          Sign in with email code
         </Link>
       </Button>
       <footer className="flex flex-col gap-2 text-xs text-olive-600">

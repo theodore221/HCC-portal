@@ -11,7 +11,8 @@
       "Bash(xargs cat:*)",
       "Bash(dir:*)",
       "Bash(git show:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(cat:*)"
     ]
   }
 }
