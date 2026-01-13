@@ -51,8 +51,9 @@ export async function getRoomStatusForDate(
   console.log("Next day:", nextDayStr);
 
   // Fetch all active rooms with room types
-  const { data: rooms, error: roomsError } = await supabase
-    .from("rooms")
+  const { data: rooms, error: roomsError } = await (
+    supabase.from("rooms") as any
+  )
     .select(
       `
       *,
@@ -68,8 +69,8 @@ export async function getRoomStatusForDate(
 
   // Fetch room assignments with booking details
   // We need: arrivals tomorrow (needs_setup), current stays (in_use), departures today (cleaning_required)
-  const { data: assignments, error: assignmentsError } = await supabase.from(
-    "room_assignments"
+  const { data: assignments, error: assignmentsError } = await (
+    supabase.from("room_assignments") as any
   ).select(`
       *,
       bookings (
@@ -106,18 +107,18 @@ export async function getRoomStatusForDate(
   // Create lookup maps
   const cleanedRooms = new Set(
     statusLogs
-      ?.filter((l) => l.action_type === "cleaned")
-      .map((l) => l.room_id) ?? []
+      ?.filter((l: any) => l.action_type === "cleaned")
+      .map((l: any) => l.room_id) ?? []
   );
   const setupCompleteRooms = new Set(
     statusLogs
-      ?.filter((l) => l.action_type === "setup_complete")
-      .map((l) => l.room_id) ?? []
+      ?.filter((l: any) => l.action_type === "setup_complete")
+      .map((l: any) => l.room_id) ?? []
   );
 
   // Compute status for each room
-  return (rooms ?? []).map((room) => {
-    const roomAssignments = (assignments ?? []).filter((a) => {
+  return (rooms ?? []).map((room: any) => {
+    const roomAssignments = (assignments ?? []).filter((a: any) => {
       const booking = Array.isArray(a.bookings) ? a.bookings[0] : a.bookings;
       return a.room_id === room.id && booking && booking.status !== "Cancelled";
     });

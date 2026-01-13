@@ -59,8 +59,76 @@ export type Database = {
           deposit_reference: string | null;
           accommodation_requests: Json;
         };
-        Insert: Partial<Database["public"]["Tables"]["bookings"]["Row"]>;
-        Update: Partial<Database["public"]["Tables"]["bookings"]["Row"]>;
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          external_id?: string | null;
+          form_response_id?: string | null;
+          customer_user_id?: string | null;
+          customer_email?: string;
+          customer_name?: string | null;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          reference?: string | null;
+          booking_type?: "Group" | "Individual";
+          event_type?: string | null;
+          is_overnight?: boolean;
+          headcount?: number;
+          minors?: boolean;
+          whole_centre?: boolean;
+          arrival_date?: string;
+          departure_date?: string;
+          arrival_time?: string | null;
+          departure_time?: string | null;
+          nights?: number;
+          date_range?: unknown;
+          catering_required?: boolean;
+          chapel_required?: boolean;
+          notes?: string | null;
+          status?: Database["public"]["Enums"]["booking_status"];
+          cancel_reason?: string | null;
+          deposit_amount?: number | null;
+          deposit_status?: Database["public"]["Enums"]["payment_status"];
+          deposit_received_at?: string | null;
+          deposit_reference?: string | null;
+          accommodation_requests?: Json;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+          external_id?: string | null;
+          form_response_id?: string | null;
+          customer_user_id?: string | null;
+          customer_email?: string;
+          customer_name?: string | null;
+          contact_name?: string | null;
+          contact_phone?: string | null;
+          reference?: string | null;
+          booking_type?: "Group" | "Individual";
+          event_type?: string | null;
+          is_overnight?: boolean;
+          headcount?: number;
+          minors?: boolean;
+          whole_centre?: boolean;
+          arrival_date?: string;
+          departure_date?: string;
+          arrival_time?: string | null;
+          departure_time?: string | null;
+          nights?: number;
+          date_range?: unknown;
+          catering_required?: boolean;
+          chapel_required?: boolean;
+          notes?: string | null;
+          status?: Database["public"]["Enums"]["booking_status"];
+          cancel_reason?: string | null;
+          deposit_amount?: number | null;
+          deposit_status?: Database["public"]["Enums"]["payment_status"];
+          deposit_received_at?: string | null;
+          deposit_reference?: string | null;
+          accommodation_requests?: Json;
+        };
         Relationships: [];
       };
       caterers: {
@@ -236,13 +304,34 @@ export type Database = {
           service_date: string | null;
           special_requests: string | null;
         };
-        Insert: Partial<
-          Database["public"]["Tables"]["room_assignments"]["Row"]
-        >;
-        Update: Partial<
-          Database["public"]["Tables"]["room_assignments"]["Row"]
-        >;
-        Relationships: [];
+        Insert: {
+          id?: string;
+          booking_id?: string;
+          room_id?: string;
+          occupant_name?: string;
+          bed_number?: number;
+          is_extra_bed?: boolean;
+          service_date?: string | null;
+          special_requests?: string | null;
+        };
+        Update: {
+          id?: string;
+          booking_id?: string;
+          room_id?: string;
+          occupant_name?: string;
+          bed_number?: number;
+          is_extra_bed?: boolean;
+          service_date?: string | null;
+          special_requests?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "room_assignments_booking_id_fkey";
+            columns: ["booking_id"];
+            referencedRelation: "bookings";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       rooming_groups: {
         Row: {
@@ -303,8 +392,26 @@ export type Database = {
           active: boolean;
           room_type_id: string | null;
         };
-        Insert: Partial<Database["public"]["Tables"]["rooms"]["Row"]>;
-        Update: Partial<Database["public"]["Tables"]["rooms"]["Row"]>;
+        Insert: {
+          id?: string;
+          building?: string | null;
+          name?: string;
+          base_beds?: number;
+          extra_bed_allowed?: boolean;
+          extra_bed_fee?: number | null;
+          active?: boolean;
+          room_type_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          building?: string | null;
+          name?: string;
+          base_beds?: number;
+          extra_bed_allowed?: boolean;
+          extra_bed_fee?: number | null;
+          active?: boolean;
+          room_type_id?: string | null;
+        };
         Relationships: [
           {
             foreignKeyName: "rooms_room_type_id_fkey";
@@ -324,8 +431,24 @@ export type Database = {
           created_at: string;
           updated_at: string;
         };
-        Insert: Partial<Database["public"]["Tables"]["room_types"]["Row"]>;
-        Update: Partial<Database["public"]["Tables"]["room_types"]["Row"]>;
+        Insert: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          price?: number;
+          capacity?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          price?: number;
+          capacity?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
         Relationships: [];
       };
       space_reservations: {
