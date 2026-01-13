@@ -11,6 +11,7 @@ const navItems = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/schedule", label: "Schedule" },
+  { href: "/admin/rooms", label: "Rooms" },
   { href: "/admin/catering/jobs", label: "Kitchen" },
   { href: "/admin/catering/schedule", label: "Catering Schedule" },
   { href: "/admin/resources", label: "Resources" },

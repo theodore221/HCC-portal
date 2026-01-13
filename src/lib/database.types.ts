@@ -257,6 +257,21 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["rooming_groups"]["Row"]>;
         Relationships: [];
       };
+      room_status_logs: {
+        Row: {
+          id: string;
+          room_id: string;
+          action_type: "cleaned" | "setup_complete";
+          action_date: string;
+          performed_by: string | null;
+          performed_at: string;
+          booking_id: string | null;
+          notes: string | null;
+        };
+        Insert: Partial<Database["public"]["Tables"]["room_status_logs"]["Row"]>;
+        Update: Partial<Database["public"]["Tables"]["room_status_logs"]["Row"]>;
+        Relationships: [];
+      };
       rooms: {
         Row: {
           id: string;

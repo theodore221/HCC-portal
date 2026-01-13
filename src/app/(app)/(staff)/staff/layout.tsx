@@ -10,6 +10,7 @@ import { getCurrentProfile } from "@/lib/auth/server";
 const navItems = [
   { href: "/staff", label: "Dashboard" },
   { href: "/staff/schedule", label: "Schedule" },
+  { href: "/staff/rooms", label: "Rooms" },
   { href: "/staff/kitchen", label: "Kitchen" },
 ];
 

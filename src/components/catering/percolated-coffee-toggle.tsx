@@ -59,45 +59,41 @@ export function PercolatedCoffeeToggle({
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-lg border border-border/50 bg-neutral-50 px-4 py-3",
+        "flex items-center gap-3 text-sm",
         disabled && "opacity-50"
       )}
     >
-      <div className="flex flex-col gap-0.5">
-        <Label htmlFor="percolated-coffee" className="text-sm font-medium">
-          Percolated Coffee
+      <div className="flex items-center gap-2">
+        <Switch
+          id="percolated-coffee"
+          checked={isChecked}
+          onCheckedChange={handleToggle}
+          disabled={disabled || isPending}
+        />
+        <Label htmlFor="percolated-coffee" className="text-sm text-text-light">
+          ☕ Percolated Coffee
         </Label>
-        <p className="text-xs text-muted-foreground">$3 per person</p>
       </div>
-      <div className="flex items-center gap-3">
-        {isChecked && (
-          <Input
-            type="number"
-            min="1"
-            value={qty}
-            onChange={(e) => setQty(e.target.value)}
-            onBlur={handleQuantityBlur}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.currentTarget.blur();
-              }
-            }}
-            className="h-9 w-20 text-center"
-            disabled={disabled || isPending}
-            placeholder="Qty"
-          />
-        )}
-        {isPending ? (
-          <Loader2 className="size-4 animate-spin text-muted-foreground" />
-        ) : (
-          <Switch
-            id="percolated-coffee"
-            checked={isChecked}
-            onCheckedChange={handleToggle}
-            disabled={disabled || isPending}
-          />
-        )}
-      </div>
+      {isChecked && (
+        <Input
+          type="number"
+          min="1"
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          onBlur={handleQuantityBlur}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+          className="h-7 w-16 text-center text-xs"
+          disabled={disabled || isPending}
+          placeholder="Qty"
+        />
+      )}
+      {isPending && (
+        <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+      )}
     </div>
   );
 }

@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateLabel, type EnrichedMealJob } from "@/lib/catering";
@@ -39,10 +38,6 @@ export default function AdminCateringJobsClient({
   const [view, setView] = useState("calendar");
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const todaysJobs = useMemo(
-    () => jobs.filter((job) => job.date === today),
-    [jobs, today]
-  );
 
   // Group by date, then by booking within each date
   const jobsByDateAndBooking = useMemo(() => {
@@ -108,106 +103,83 @@ export default function AdminCateringJobsClient({
         </CardHeader>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr,1fr]">
-        <Card>
-          <CardHeader className="space-y-2">
-            <CardTitle>Catering Schedule</CardTitle>
-            <CardDescription>
-              Toggle between calendar and list views to manage upcoming
-              services.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Tabs value={view} onValueChange={setView}>
-              <TabsList>
-                <TabsTrigger value="calendar">Calendar</TabsTrigger>
-                <TabsTrigger value="list">List</TabsTrigger>
-              </TabsList>
+      <Card>
+        <CardHeader className="space-y-2">
+          <CardTitle>Catering Schedule</CardTitle>
+          <CardDescription>
+            Toggle between calendar and list views to manage upcoming
+            services.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Tabs value={view} onValueChange={setView}>
+            <TabsList>
+              <TabsTrigger value="calendar">Calendar</TabsTrigger>
+              <TabsTrigger value="list">List</TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="calendar" className="pt-4">
-                <CateringJobsCalendar
-                  jobs={jobs}
-                  caterers={caterers}
-                  menuItems={menuItems}
-                />
-              </TabsContent>
+            <TabsContent value="calendar" className="pt-4">
+              <CateringJobsCalendar
+                jobs={jobs}
+                caterers={caterers}
+                menuItems={menuItems}
+              />
+            </TabsContent>
 
-              <TabsContent value="list" className="pt-4">
-                <div className="space-y-8">
-                  {jobsByDateAndBooking.length === 0 ? (
-                    <p className="text-sm text-olive-700">
-                      No catering services scheduled.
-                    </p>
-                  ) : null}
+            <TabsContent value="list" className="pt-4">
+              <div className="space-y-8">
+                {jobsByDateAndBooking.length === 0 ? (
+                  <p className="text-sm text-olive-700">
+                    No catering services scheduled.
+                  </p>
+                ) : null}
 
-                  {jobsByDateAndBooking.map(({ date, bookings, totalJobs, groupNames }) => (
-                    <CollapsibleDaySection
-                      key={date}
-                      date={date}
-                      formattedDate={formatDateLabel(date)}
-                      totalJobs={totalJobs}
-                      groupNames={groupNames}
-                      isToday={date === today}
-                    >
-                      {/* Bookings for this day */}
-                      {bookings.map(
-                        ({ bookingId, groupName, jobs: bookingJobs }) => (
-                          <div
-                            key={bookingId}
-                            className="space-y-3 rounded-2xl border border-border/70 bg-white/90 p-5 shadow-soft"
-                          >
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium text-text">
-                                {groupName}
-                              </h4>
-                              <span className="text-xs text-text-light">
-                                {bookingJobs.length}{" "}
-                                {bookingJobs.length === 1 ? "meal" : "meals"}
-                              </span>
-                            </div>
-
-                            <div className="space-y-3">
-                              {bookingJobs.map((job) => (
-                                <DetailedMealCard
-                                  key={job.id}
-                                  job={job}
-                                  comments={commentsMap.get(job.id) ?? []}
-                                  currentUserRole="admin"
-                                />
-                              ))}
-                            </div>
+                {jobsByDateAndBooking.map(({ date, bookings, totalJobs, groupNames }) => (
+                  <CollapsibleDaySection
+                    key={date}
+                    date={date}
+                    formattedDate={formatDateLabel(date)}
+                    totalJobs={totalJobs}
+                    groupNames={groupNames}
+                    isToday={date === today}
+                  >
+                    {/* Bookings for this day */}
+                    {bookings.map(
+                      ({ bookingId, groupName, jobs: bookingJobs }) => (
+                        <div
+                          key={bookingId}
+                          className="space-y-3 rounded-2xl border border-border/70 bg-white/90 p-5 shadow-soft"
+                        >
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-text">
+                              {groupName}
+                            </h4>
+                            <span className="text-xs text-text-light">
+                              {bookingJobs.length}{" "}
+                              {bookingJobs.length === 1 ? "meal" : "meals"}
+                            </span>
                           </div>
-                        )
-                      )}
-                    </CollapsibleDaySection>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
 
-        {/* Today's jobs sidebar */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Today</CardTitle>
-            <CardDescription>{todaysJobs.length} services</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {todaysJobs.length ? (
-              <div className="space-y-3">
-                {todaysJobs.map((job) => (
-                  <MealSlotCard key={job.id} job={job} />
+                          <div className="space-y-3">
+                            {bookingJobs.map((job) => (
+                              <DetailedMealCard
+                                key={job.id}
+                                job={job}
+                                comments={commentsMap.get(job.id) ?? []}
+                                currentUserRole="admin"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </CollapsibleDaySection>
                 ))}
               </div>
-            ) : (
-              <p className="text-sm text-text-light">
-                No catering services scheduled today.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
