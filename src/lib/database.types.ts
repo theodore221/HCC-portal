@@ -125,7 +125,7 @@ export type Database = {
             columns: ["meal_job_id"];
             referencedRelation: "meal_jobs";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
       meal_job_items: {
@@ -154,7 +154,9 @@ export type Database = {
           content: string;
           created_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["meal_job_comments"]["Row"]>;
+        Update: Partial<
+          Database["public"]["Tables"]["meal_job_comments"]["Row"]
+        >;
         Relationships: [
           {
             foreignKeyName: "meal_job_comments_meal_job_id_fkey";
@@ -167,7 +169,7 @@ export type Database = {
             columns: ["author_id"];
             referencedRelation: "users";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
       meal_jobs: {
@@ -268,8 +270,26 @@ export type Database = {
           booking_id: string | null;
           notes: string | null;
         };
-        Insert: Partial<Database["public"]["Tables"]["room_status_logs"]["Row"]>;
-        Update: Partial<Database["public"]["Tables"]["room_status_logs"]["Row"]>;
+        Insert: {
+          id?: string;
+          room_id: string;
+          action_type: "cleaned" | "setup_complete";
+          action_date: string;
+          performed_by?: string | null;
+          performed_at?: string;
+          booking_id?: string | null;
+          notes?: string | null;
+        };
+        Update: {
+          id?: string;
+          room_id?: string;
+          action_type?: "cleaned" | "setup_complete";
+          action_date?: string;
+          performed_by?: string | null;
+          performed_at?: string;
+          booking_id?: string | null;
+          notes?: string | null;
+        };
         Relationships: [];
       };
       rooms: {
@@ -291,7 +311,7 @@ export type Database = {
             columns: ["room_type_id"];
             referencedRelation: "room_types";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
       room_types: {

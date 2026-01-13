@@ -1,7 +1,12 @@
 import { sbServer } from "@/lib/supabase-server";
 import type { Tables } from "@/lib/database.types";
 
-export type RoomStatus = "ready" | "needs_setup" | "setup_complete" | "in_use" | "cleaning_required";
+export type RoomStatus =
+  | "ready"
+  | "needs_setup"
+  | "setup_complete"
+  | "in_use"
+  | "cleaning_required";
 
 export interface RoomWithStatus extends Tables<"rooms"> {
   room_types: Tables<"room_types"> | null;
@@ -27,7 +32,9 @@ export interface RoomWithStatus extends Tables<"rooms"> {
  * - NEEDS_SETUP: arrival_date == date+1 AND not marked setup_complete
  * - READY: default (no booking activity or actions completed)
  */
-export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus[]> {
+export async function getRoomStatusForDate(
+  date: string
+): Promise<RoomWithStatus[]> {
   const supabase = await sbServer();
 
   // Calculate dates for status logic (avoid timezone issues)
@@ -46,10 +53,12 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
   // Fetch all active rooms with room types
   const { data: rooms, error: roomsError } = await supabase
     .from("rooms")
-    .select(`
+    .select(
+      `
       *,
       room_types (*)
-    `)
+    `
+    )
     .eq("active", true)
     .order("room_number");
 
@@ -59,9 +68,9 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
 
   // Fetch room assignments with booking details
   // We need: arrivals tomorrow (needs_setup), current stays (in_use), departures today (cleaning_required)
-  const { data: assignments, error: assignmentsError } = await supabase
-    .from("room_assignments")
-    .select(`
+  const { data: assignments, error: assignmentsError } = await supabase.from(
+    "room_assignments"
+  ).select(`
       *,
       bookings (
         id,
@@ -80,8 +89,9 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
   }
 
   // Fetch status logs for this date
-  const { data: statusLogs, error: logsError } = await supabase
-    .from("room_status_logs")
+  const { data: statusLogs, error: logsError } = await (
+    supabase.from("room_status_logs") as any
+  )
     .select("room_id, action_type")
     .eq("action_date", date);
 
@@ -95,20 +105,22 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
 
   // Create lookup maps
   const cleanedRooms = new Set(
-    statusLogs?.filter((l) => l.action_type === "cleaned").map((l) => l.room_id) ?? []
+    statusLogs
+      ?.filter((l) => l.action_type === "cleaned")
+      .map((l) => l.room_id) ?? []
   );
   const setupCompleteRooms = new Set(
-    statusLogs?.filter((l) => l.action_type === "setup_complete").map((l) => l.room_id) ?? []
+    statusLogs
+      ?.filter((l) => l.action_type === "setup_complete")
+      .map((l) => l.room_id) ?? []
   );
 
   // Compute status for each room
   return (rooms ?? []).map((room) => {
-    const roomAssignments = (assignments ?? []).filter(
-      (a) => {
-        const booking = Array.isArray(a.bookings) ? a.bookings[0] : a.bookings;
-        return a.room_id === room.id && booking && booking.status !== "Cancelled";
-      }
-    );
+    const roomAssignments = (assignments ?? []).filter((a) => {
+      const booking = Array.isArray(a.bookings) ? a.bookings[0] : a.bookings;
+      return a.room_id === room.id && booking && booking.status !== "Cancelled";
+    });
 
     let status: RoomStatus = "ready";
     let occupantCount = 0;
@@ -121,7 +133,9 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
     let relatedBookingName: string | null = null;
 
     for (const assignment of roomAssignments) {
-      const booking = Array.isArray(assignment.bookings) ? assignment.bookings[0] : assignment.bookings;
+      const booking = Array.isArray(assignment.bookings)
+        ? assignment.bookings[0]
+        : assignment.bookings;
       if (!booking) continue;
 
       const arrivalDate = booking.arrival_date;
@@ -129,11 +143,16 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
 
       // Debug logging for rooms with assignments
       if (roomAssignments.length > 0 && room.room_number) {
-        console.log(`Room ${room.room_number}: arrival=${arrivalDate}, departure=${departureDate}, date=${date}, nextDay=${nextDayStr}`);
+        console.log(
+          `Room ${room.room_number}: arrival=${arrivalDate}, departure=${departureDate}, date=${date}, nextDay=${nextDayStr}`
+        );
       }
 
       // Extract BYO linen info from accommodation_requests
-      const accommodationRequests = booking.accommodation_requests as Record<string, any> | null;
+      const accommodationRequests = booking.accommodation_requests as Record<
+        string,
+        any
+      > | null;
       if (accommodationRequests?.byo_linen === true) {
         byoLinen = true;
       }
@@ -142,13 +161,17 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
       if (arrivalDate <= date && date < departureDate) {
         status = "in_use";
         const assignmentGuestNames = (assignment as any).guest_names;
-        guestNames = Array.isArray(assignmentGuestNames) ? assignmentGuestNames : [];
+        guestNames = Array.isArray(assignmentGuestNames)
+          ? assignmentGuestNames
+          : [];
         occupantCount = guestNames.filter((n) => n && n.trim()).length || 1;
         extraBedSelected = (assignment as any).extra_bed_selected || false;
         ensuiteSelected = (assignment as any).ensuite_selected || false;
-        privateStudySelected = (assignment as any).private_study_selected || false;
+        privateStudySelected =
+          (assignment as any).private_study_selected || false;
         relatedBookingId = booking.id;
-        relatedBookingName = booking.customer_name || booking.contact_name || "Guest";
+        relatedBookingName =
+          booking.customer_name || booking.contact_name || "Guest";
         console.log(`Room ${room.room_number}: Status = IN_USE`);
         break; // in_use takes priority
       }
@@ -157,7 +180,8 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
       if (departureDate === date && !cleanedRooms.has(room.id)) {
         status = "cleaning_required";
         relatedBookingId = booking.id;
-        relatedBookingName = booking.customer_name || booking.contact_name || "Guest";
+        relatedBookingName =
+          booking.customer_name || booking.contact_name || "Guest";
         console.log(`Room ${room.room_number}: Status = CLEANING_REQUIRED`);
         // Continue checking - may find a same-day arrival
       }
@@ -167,32 +191,43 @@ export async function getRoomStatusForDate(date: string): Promise<RoomWithStatus
       const isAlreadySetup = setupCompleteRooms.has(room.id);
 
       if (roomAssignments.length > 0 && room.room_number) {
-        console.log(`Room ${room.room_number}: Checking needs_setup - arrivalDate="${arrivalDate}", nextDayStr="${nextDayStr}", match=${isArrivalTomorrow}, alreadySetup=${isAlreadySetup}, currentStatus="${status}"`);
+        console.log(
+          `Room ${room.room_number}: Checking needs_setup - arrivalDate="${arrivalDate}", nextDayStr="${nextDayStr}", match=${isArrivalTomorrow}, alreadySetup=${isAlreadySetup}, currentStatus="${status}"`
+        );
       }
 
       if (isArrivalTomorrow) {
         const assignmentGuestNames = (assignment as any).guest_names;
-        guestNames = Array.isArray(assignmentGuestNames) ? assignmentGuestNames : [];
+        guestNames = Array.isArray(assignmentGuestNames)
+          ? assignmentGuestNames
+          : [];
         const capacity = (room as any).room_types?.capacity ?? 1;
-        occupantCount = guestNames.filter((n) => n && n.trim()).length || capacity;
+        occupantCount =
+          guestNames.filter((n) => n && n.trim()).length || capacity;
         extraBedSelected = (assignment as any).extra_bed_selected || false;
         ensuiteSelected = (assignment as any).ensuite_selected || false;
-        privateStudySelected = (assignment as any).private_study_selected || false;
+        privateStudySelected =
+          (assignment as any).private_study_selected || false;
         relatedBookingId = booking.id;
-        relatedBookingName = booking.customer_name || booking.contact_name || "Guest";
+        relatedBookingName =
+          booking.customer_name || booking.contact_name || "Guest";
 
         if (isAlreadySetup) {
           // Room is setup and ready for arrival tomorrow
           if (status !== "cleaning_required") {
             status = "setup_complete";
-            console.log(`✓ Room ${room.room_number}: Status = SETUP_COMPLETE (ready for arrival)`);
+            console.log(
+              `✓ Room ${room.room_number}: Status = SETUP_COMPLETE (ready for arrival)`
+            );
           }
         } else if (status !== "cleaning_required") {
           // Cleaning takes priority
           status = "needs_setup";
           console.log(`✓ Room ${room.room_number}: Status = NEEDS_SETUP`);
         } else {
-          console.log(`✗ Room ${room.room_number}: Would be NEEDS_SETUP but CLEANING_REQUIRED takes priority`);
+          console.log(
+            `✗ Room ${room.room_number}: Would be NEEDS_SETUP but CLEANING_REQUIRED takes priority`
+          );
         }
       }
     }

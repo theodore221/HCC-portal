@@ -23,7 +23,7 @@ export async function markRoomCleaned(
     }
 
     // Upsert (in case they're re-marking)
-    const { error } = await supabase.from("room_status_logs").upsert(
+    const { error } = await (supabase.from("room_status_logs") as any).upsert(
       {
         room_id: roomId,
         action_type: "cleaned" as const,
@@ -37,7 +37,10 @@ export async function markRoomCleaned(
     );
 
     if (error) {
-      return { success: false, error: `Failed to mark room cleaned: ${error.message}` };
+      return {
+        success: false,
+        error: `Failed to mark room cleaned: ${error.message}`,
+      };
     }
 
     revalidatePath("/staff/rooms");
@@ -70,7 +73,7 @@ export async function markRoomSetupComplete(
       return { success: false, error: "Not authenticated" };
     }
 
-    const { error } = await supabase.from("room_status_logs").upsert(
+    const { error } = await (supabase.from("room_status_logs") as any).upsert(
       {
         room_id: roomId,
         action_type: "setup_complete" as const,
@@ -113,15 +116,17 @@ export async function undoRoomAction(
   try {
     const supabase = await sbServer();
 
-    const { error } = await supabase
-      .from("room_status_logs")
+    const { error } = await (supabase.from("room_status_logs") as any)
       .delete()
       .eq("room_id", roomId)
       .eq("action_date", date)
       .eq("action_type", actionType);
 
     if (error) {
-      return { success: false, error: `Failed to undo action: ${error.message}` };
+      return {
+        success: false,
+        error: `Failed to undo action: ${error.message}`,
+      };
     }
 
     revalidatePath("/staff/rooms");
