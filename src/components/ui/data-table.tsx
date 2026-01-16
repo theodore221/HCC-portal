@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -13,11 +13,11 @@ import {
   SortingState,
   Table as TanstackTable,
   useReactTable,
-} from "@tanstack/react-table"
+} from "@tanstack/react-table";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-import { Button } from "./button"
+import { Button } from "./button";
 import {
   Table,
   TableBody,
@@ -25,14 +25,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "./table"
+} from "./table";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  emptyMessage?: React.ReactNode
-  renderToolbar?: (table: TanstackTable<TData>) => React.ReactNode
-  zebra?: boolean
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  emptyMessage?: React.ReactNode;
+  renderToolbar?: (table: TanstackTable<TData>) => React.ReactNode;
+  zebra?: boolean;
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -41,11 +42,15 @@ export function DataTable<TData, TValue>({
   emptyMessage,
   renderToolbar,
   zebra = false,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
     data,
@@ -70,11 +75,13 @@ export function DataTable<TData, TValue>({
         pageSize: 10,
       },
     },
-  })
+  });
 
-  const pageStart = table.getState().pagination.pageIndex * table.getState().pagination.pageSize
-  const rowCount = table.getRowModel().rows.length
-  const totalFiltered = table.getFilteredRowModel().rows.length
+  const pageStart =
+    table.getState().pagination.pageIndex *
+    table.getState().pagination.pageSize;
+  const rowCount = table.getRowModel().rows.length;
+  const totalFiltered = table.getFilteredRowModel().rows.length;
 
   return (
     <div className="space-y-4">
@@ -83,18 +90,24 @@ export function DataTable<TData, TValue>({
         <Table>
           <TableHeader className="bg-neutral">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="border-b border-border/60">
+              <TableRow
+                key={headerGroup.id}
+                className="border-b border-border/60"
+              >
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     className={cn(
                       "text-left align-middle text-xs font-semibold uppercase tracking-wider text-text-light",
-                      header.column.columnDef.meta as string | undefined,
+                      header.column.columnDef.meta as string | undefined
                     )}
                   >
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -109,25 +122,33 @@ export function DataTable<TData, TValue>({
                   className={cn(
                     "border-b border-border/60 transition-colors duration-200 hover:bg-gray-50",
                     zebra && "odd:bg-neutral/60",
-                    "last:border-b-0 cursor-pointer"
+                    "last:border-b-0",
+                    onRowClick && "cursor-pointer"
                   )}
+                  onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
                       className={cn(
                         "align-middle text-sm text-text",
-                        cell.column.columnDef.meta as string | undefined,
+                        cell.column.columnDef.meta as string | undefined
                       )}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-sm text-text-light">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center text-sm text-text-light"
+                >
                   {emptyMessage ?? "No results."}
                 </TableCell>
               </TableRow>
@@ -163,5 +184,5 @@ export function DataTable<TData, TValue>({
         </div>
       </div>
     </div>
-  )
+  );
 }

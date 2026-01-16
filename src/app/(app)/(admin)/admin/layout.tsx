@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 
 import { getHomePathForRole } from "@/lib/auth/paths";
@@ -13,7 +12,7 @@ const navItems = [
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/rooms", label: "Rooms" },
   { href: "/admin/catering/jobs", label: "Kitchen" },
-  { href: "/admin/catering/schedule", label: "Catering Schedule" },
+
   { href: "/admin/resources", label: "Resources" },
   { href: "/admin/audit", label: "Audit" },
 ];
@@ -30,7 +29,12 @@ export default async function AdminLayout({
   }
 
   if (profile?.role !== "admin") {
-    redirect(getHomePathForRole(profile?.role ?? null, profile?.booking_reference ?? null));
+    redirect(
+      getHomePathForRole(
+        profile?.role ?? null,
+        profile?.booking_reference ?? null
+      )
+    );
   }
 
   return (
@@ -38,7 +42,6 @@ export default async function AdminLayout({
       title="Admin control panel"
       description="Oversee bookings, catering, and resources."
       navItems={navItems}
-
       user={{
         name: profile?.full_name ?? profile?.email ?? undefined,
         email: profile?.email ?? session?.user.email ?? undefined,

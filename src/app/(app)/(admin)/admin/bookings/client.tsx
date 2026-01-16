@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpRight,
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { StatusChip } from "@/components/ui/status-chip";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import {
   getBookingDisplayName,
   type BookingStatus,
@@ -117,7 +119,7 @@ const columns: ColumnDef<BookingWithMeta>[] = [
         {row.original.is_overnight && (
           <Badge
             variant="secondary"
-            className="w-fit gap-1.5 bg-primary/10 px-2 py-0.5 text-primary hover:bg-primary/20"
+            className="w-fit gap-1.5 bg-primary/10 px-2 py-0.5 text-primary hover:bg-primary/10"
           >
             <Bed className="size-3.5" />
             <span className="text-[11px] font-semibold">Overnight</span>
@@ -129,9 +131,22 @@ const columns: ColumnDef<BookingWithMeta>[] = [
       if (!filterValue) return true;
       const value = (filterValue as string).toLowerCase();
       const booking = row.original;
+      const query = (filterValue as string).toLowerCase();
+
+      // Group Name: Starts with
       const displayName = getBookingDisplayName(booking).toLowerCase();
+      if (displayName.startsWith(query)) return true;
+
+      // Contact Name: First or Last name starts with
+      const contactName = booking.contact_name?.toLowerCase() ?? "";
+      if (contactName) {
+        const parts = contactName.split(/\s+/);
+        if (parts.some((part) => part.startsWith(query))) return true;
+      }
+
+      // Reference: Includes (keep existing behavior for flexibility)
       const reference = booking.reference?.toLowerCase() ?? "";
-      return displayName.includes(value) || reference.includes(value);
+      return reference.includes(query);
     },
   },
   {
@@ -178,8 +193,8 @@ const columns: ColumnDef<BookingWithMeta>[] = [
         {row.original.spaces.map((space) => (
           <Badge
             key={`${row.original.id}-${space}`}
-            variant="outline"
-            className="border-border/70 bg-white px-2.5 py-1 text-xs font-medium text-text-light"
+            variant="secondary"
+            className="bg-neutral px-2.5 py-1 text-xs font-medium text-text-light hover:bg-neutral"
           >
             {space}
           </Badge>
@@ -198,12 +213,12 @@ const columns: ColumnDef<BookingWithMeta>[] = [
     ),
     cell: ({ row }) => (
       <Badge
-        variant="outline"
+        variant="secondary"
         className={cn(
-          "border-border/70 text-xs font-semibold whitespace-nowrap",
+          "text-xs font-semibold whitespace-nowrap hover:bg-opacity-100",
           row.original.catering_required
-            ? "bg-success/10 text-success"
-            : "bg-neutral text-text-light"
+            ? "bg-success/10 text-success hover:bg-success/10"
+            : "bg-neutral text-text-light hover:bg-neutral"
         )}
       >
         {row.original.catering_required ? "Yes" : "No"}
@@ -239,32 +254,6 @@ const columns: ColumnDef<BookingWithMeta>[] = [
       return statuses.includes(row.getValue(columnId) as BookingStatus);
     },
   },
-  {
-    id: "actions",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="" />
-    ),
-    cell: ({ row }) => {
-      const booking = row.original;
-
-      return (
-        <div className="flex items-center justify-end">
-          <Link
-            href={`/admin/bookings/${booking.id}`}
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "icon-sm" }),
-              "rounded-xl bg-white text-text-light transition-colors duration-200 hover:bg-neutral hover:text-text"
-            )}
-            aria-label="Open booking details"
-          >
-            <ArrowUpRight className="size-4" aria-hidden />
-          </Link>
-        </div>
-      );
-    },
-    enableSorting: false,
-    meta: "text-right w-[60px]",
-  },
 ];
 
 export default function AdminBookingsClient({
@@ -273,11 +262,17 @@ export default function AdminBookingsClient({
   bookings: BookingWithMeta[];
 }) {
   const statusCounts = useMemo(() => {
-    return bookings.reduce<Record<BookingStatus, number>>((acc, booking) => {
-      acc[booking.status] = (acc[booking.status] ?? 0) + 1;
-      return acc;
-    }, {} as Record<BookingStatus, number>);
+    return bookings.reduce<Record<BookingStatus, number>>(
+      (acc, booking) => {
+        acc[booking.status] = (acc[booking.status] ?? 0) + 1;
+        return acc;
+      },
+      {} as Record<BookingStatus, number>
+    );
   }, [bookings]);
+
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const toolbarBadges = [
     { label: "Pending", status: "Pending" as BookingStatus },
@@ -286,6 +281,7 @@ export default function AdminBookingsClient({
 
   return (
     <Card>
+      {isLoading && <LoadingOverlay />}
       <CardHeader>
         <CardTitle className="text-lg text-text">Bookings list</CardTitle>
         <CardDescription className="text-sm text-text-light">
@@ -298,20 +294,20 @@ export default function AdminBookingsClient({
           data={bookings}
           emptyMessage={<TableEmptyState />}
           zebra
+          onRowClick={(row) => {
+            setIsLoading(true);
+            router.push(`/admin/bookings/${row.id}`);
+          }}
           renderToolbar={(table) => {
             const searchValue =
-              (table
-                .getColumn("customer_name")
-                ?.getFilterValue() as string) ?? "";
+              (table.getColumn("customer_name")?.getFilterValue() as string) ??
+              "";
             const statusFilter =
               (table.getColumn("status")?.getFilterValue() as
                 | BookingStatus[]
                 | undefined) ?? [];
 
-            const toggleStatus = (
-              status: BookingStatus,
-              enabled: boolean
-            ) => {
+            const toggleStatus = (status: BookingStatus, enabled: boolean) => {
               const column = table.getColumn("status");
               if (!column) return;
               const current = new Set(
@@ -368,54 +364,6 @@ export default function AdminBookingsClient({
                       className="rounded-full border-border/70 bg-white pl-9"
                     />
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 rounded-full border-border/70 text-text-light hover:bg-neutral"
-                      >
-                        <SlidersHorizontal
-                          className="size-4"
-                          aria-hidden="true"
-                        />
-                        Advanced filters
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-60">
-                      <DropdownMenuLabel>Status filters</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {statusOptions.map(({ label, value }) => (
-                        <DropdownMenuCheckboxItem
-                          key={value}
-                          checked={statusFilter.includes(value)}
-                          onCheckedChange={(checked) =>
-                            toggleStatus(value, Boolean(checked))
-                          }
-                          className="capitalize"
-                        >
-                          {label}
-                          <DropdownMenuShortcut>
-                            {statusCounts[value] ?? 0}
-                          </DropdownMenuShortcut>
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full border-border/70 text-text-light hover:bg-neutral"
-                  >
-                    <Filter className="size-4" aria-hidden />
-                    Export list
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="rounded-full bg-primary px-5 text-white hover:bg-primary/90"
-                  >
-                    New booking
-                  </Button>
                 </div>
               </div>
             );
