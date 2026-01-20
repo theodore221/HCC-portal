@@ -382,17 +382,10 @@ function TableEmptyState() {
         <h3 className="text-sm font-semibold text-text">
           No bookings match your filters
         </h3>
-        <p className="text-sm text-text-light">
-          Try adjusting your filters or start a new booking to add to the
-          pipeline.
+        <p className="text-sm text-text-light text-balance">
+          Try adjusting your search or filters to find what you're looking for.
         </p>
       </div>
-      <Button
-        size="sm"
-        className="rounded-full bg-primary px-5 text-white hover:bg-primary/90"
-      >
-        Create booking
-      </Button>
     </div>
   );
 }
