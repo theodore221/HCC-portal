@@ -72,7 +72,7 @@ export function UserMenu({
       <Button
         variant="ghost"
         className={cn(
-          "h-auto w-full items-center justify-between gap-3 rounded-xl border border-border bg-neutral px-3 py-3 text-left text-text hover:bg-white",
+          "h-auto w-full max-w-full items-center justify-between gap-3 rounded-xl border border-border bg-neutral px-3 py-3 text-left text-text hover:bg-white",
           collapsed &&
             "w-full justify-center border-none bg-transparent px-0 py-0 text-text-light hover:bg-neutral"
         )}

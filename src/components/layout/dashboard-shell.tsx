@@ -12,7 +12,6 @@ import {
   Menu,
   PanelLeftClose,
   PanelRightOpen,
-
   Settings,
   Users,
   Utensils,
@@ -75,14 +74,14 @@ export function DashboardShell({
     setMobileOpen(false);
   }, [pathname]);
 
-  const sidebarWidth = collapsed ? 88 : 280;
+  const sidebarWidth = collapsed ? 88 : 250;
   const layoutOffset = isDesktop ? sidebarWidth : 0;
 
   return (
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
       <div className="min-h-screen bg-neutral text-text">
         <aside
-          className="fixed inset-y-0 left-0 z-40 hidden h-screen border-r border-border bg-white shadow-soft transition-[width] duration-300 lg:flex"
+          className="fixed inset-y-0 left-0 z-40 hidden h-[100dvh] border-r border-border bg-white shadow-soft transition-[width] duration-300 lg:flex"
           style={isDesktop ? { width: sidebarWidth } : undefined}
         >
           <SidebarContent
@@ -98,7 +97,7 @@ export function DashboardShell({
 
         <SheetContent
           side="left"
-          className="w-[280px] border-r border-border p-0 lg:hidden"
+          className="w-[250px] !w-[250px] !max-w-[250px] border-r border-border p-0 lg:hidden"
         >
           <SidebarContent
             navItems={navItems}
@@ -135,7 +134,6 @@ export function DashboardShell({
               </div>
 
               <div className="flex items-center gap-3">
-
                 <Button
                   variant="ghost"
                   size="icon-sm"
@@ -217,11 +215,11 @@ function SidebarContent({
   onToggleCollapse?: () => void;
 }) {
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex h-full w-full max-w-full flex-col">
       <div
         className={cn(
           "flex h-16 items-center border-b border-border",
-          collapsed ? "px-4" : "px-6"
+          collapsed ? "px-4" : "px-4"
         )}
       >
         <Link
@@ -232,7 +230,11 @@ function SidebarContent({
           )}
         >
           <div className="flex size-14 items-center justify-center rounded-xl">
-            <img src="/logo_notext.svg" alt="HCC Logo" className="size-full object-contain" />
+            <img
+              src="/logo_notext.svg"
+              alt="HCC Logo"
+              className="size-full object-contain"
+            />
           </div>
           {!collapsed ? (
             <div className="min-w-0">
@@ -266,14 +268,18 @@ function SidebarContent({
         <nav className="space-y-2">
           {navItems.map((item) => {
             const isActive =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
+              pathname === item.href ||
+              (pathname.startsWith(`${item.href}/`) &&
+                item.href !== "/admin" &&
+                item.href !== "/staff" &&
+                item.href !== "/caterer");
             const Icon = getIconForItem(item.href, item.label);
             return (
               <SheetClose asChild key={item.href}>
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:scale-[1.02]",
+                    "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                     isActive
                       ? "bg-secondary text-primary"
                       : "text-text-light hover:bg-neutral hover:text-text",
@@ -296,7 +302,7 @@ function SidebarContent({
       <div
         className={cn(
           "mt-auto border-t border-border py-5",
-          collapsed ? "flex justify-center px-4" : "px-6"
+          collapsed ? "flex justify-center px-4" : "px-4"
         )}
       >
         {user?.email ? (
@@ -308,12 +314,14 @@ function SidebarContent({
           />
         ) : (
           <div className="flex size-10 items-center justify-center rounded-full overflow-hidden">
-            <img src="/logo_notext.svg" alt="HCC" className="h-full w-full object-cover" />
+            <img
+              src="/logo_notext.svg"
+              alt="HCC"
+              className="h-full w-full object-cover"
+            />
           </div>
         )}
       </div>
     </div>
   );
 }
-
-
