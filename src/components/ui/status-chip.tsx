@@ -46,11 +46,6 @@ const statusConfig: Record<
     className: "border-warning/20 bg-warning/10 text-warning",
     icon: Wallet,
   },
-  DepositReceived: {
-    label: "Deposit received",
-    className: "border-success/20 bg-success/10 text-success",
-    icon: CheckCircle2,
-  },
   InProgress: {
     label: "In progress",
     className: "border-primary/20 bg-primary/10 text-primary",

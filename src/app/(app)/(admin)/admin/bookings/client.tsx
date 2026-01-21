@@ -49,7 +49,6 @@ const statusOptions: { label: string; value: BookingStatus }[] = [
   { label: "Pending", value: "Pending" },
   { label: "Approved", value: "Approved" },
   { label: "Confirmed", value: "Confirmed" },
-  { label: "Deposit received", value: "DepositReceived" },
   { label: "In progress", value: "InProgress" },
   { label: "Completed", value: "Completed" },
   { label: "Cancelled", value: "Cancelled" },
@@ -61,7 +60,6 @@ const statusBadgeStyles: Partial<Record<BookingStatus, string>> = {
   Approved: "border-success/20 bg-success/10 text-success",
   Confirmed: "border-success/20 bg-success/10 text-success",
   DepositPending: "border-warning/20 bg-warning/10 text-warning",
-  DepositReceived: "border-success/20 bg-success/10 text-success",
   InProgress: "border-primary/20 bg-primary/10 text-primary",
   Completed: "border-border/60 bg-neutral text-text",
   Cancelled: "border-danger/20 bg-danger/10 text-danger",
@@ -280,7 +278,7 @@ export default function AdminBookingsClient({
   ];
 
   return (
-    <Card>
+    <Card className="px-0">
       {isLoading && <LoadingOverlay />}
       <CardHeader>
         <CardTitle className="text-lg text-text">Bookings list</CardTitle>

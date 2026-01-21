@@ -54,7 +54,6 @@ const statusTone: Record<BookingStatus, { label: string; tone: Tone }> = {
   Approved: { label: "Approved", tone: "primary" },
   Confirmed: { label: "Confirmed", tone: "success" },
   DepositPending: { label: "Deposit pending", tone: "warning" },
-  DepositReceived: { label: "Deposit received", tone: "success" },
   InProgress: { label: "In progress", tone: "primary" },
   Completed: { label: "Completed", tone: "success" },
   Cancelled: { label: "Cancelled", tone: "danger" },
@@ -67,9 +66,7 @@ export default async function AdminDashboard() {
 
   const pending = bookings.filter((b) => b.status === "Pending");
   const depositPending = bookings.filter((b) => b.status === "DepositPending");
-  const depositReceived = bookings.filter(
-    (b) => b.status === "DepositReceived" || b.status === "Confirmed"
-  );
+  const depositReceived = bookings.filter((b) => b.status === "Confirmed");
   const activeCatering = enrichedJobs.length;
   const activeBookings = bookings.filter(
     (b) => !["Cancelled", "Completed"].includes(b.status)

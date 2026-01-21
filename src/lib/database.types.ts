@@ -511,7 +511,6 @@ export type Database = {
         | "Approved"
         | "Confirmed"
         | "DepositPending"
-        | "DepositReceived"
         | "InProgress"
         | "Completed"
         | "Cancelled";

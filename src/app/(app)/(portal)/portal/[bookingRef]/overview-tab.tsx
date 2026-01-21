@@ -52,8 +52,7 @@ export function CustomerOverviewTab({ booking }: { booking: BookingWithMeta }) {
               <Badge
                 variant={
                   booking.status === "Approved" ||
-                  booking.status === "Confirmed" ||
-                  booking.status === "DepositReceived"
+                  booking.status === "Confirmed"
                     ? "default"
                     : "secondary"
                 }

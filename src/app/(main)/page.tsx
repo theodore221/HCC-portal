@@ -24,9 +24,7 @@ export default async function HomePage() {
 
   const bookings = await getBookingsForAdmin();
   const upcoming = bookings
-    .filter((booking) =>
-      ["Approved", "DepositReceived", "InProgress"].includes(booking.status),
-    )
+    .filter((booking) => ["Approved", "InProgress"].includes(booking.status))
     .slice(0, 3);
 
   return (
@@ -56,7 +54,9 @@ export default async function HomePage() {
                   className="group flex items-center justify-between rounded-xl border border-olive-100 bg-white px-4 py-3 shadow-soft transition hover:-translate-y-0.5"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-olive-900">{link.title}</p>
+                    <p className="text-sm font-semibold text-olive-900">
+                      {link.title}
+                    </p>
                     <p className="text-xs text-olive-700">{link.subtitle}</p>
                   </div>
                   <span
@@ -90,10 +90,14 @@ export default async function HomePage() {
                         {getBookingDisplayName(booking)}
                       </p>
                       <p className="text-xs text-olive-700">
-                        {formatDateRange(booking.arrival_date, booking.departure_date)}
+                        {formatDateRange(
+                          booking.arrival_date,
+                          booking.departure_date
+                        )}
                       </p>
                       <p className="mt-2 text-xs text-olive-700">
-                        {booking.headcount} guests · Spaces: {booking.spaces.join(", ") || "TBC"}
+                        {booking.headcount} guests · Spaces:{" "}
+                        {booking.spaces.join(", ") || "TBC"}
                       </p>
                     </div>
                     <StatusChip status={booking.status} />

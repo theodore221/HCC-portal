@@ -163,7 +163,6 @@ export default function BookingDetailClient({
               className={`rounded-2xl border p-4 text-sm shadow-soft ${
                 booking.status === "Approved" ||
                 booking.status === "Confirmed" ||
-                booking.status === "DepositReceived" ||
                 booking.status === "InProgress" ||
                 booking.status === "Completed"
                   ? "bg-secondary border-secondary text-secondary-foreground"
@@ -174,7 +173,6 @@ export default function BookingDetailClient({
               <p className="text-xs opacity-80">
                 {booking.status === "Approved" ||
                 booking.status === "Confirmed" ||
-                booking.status === "DepositReceived" ||
                 booking.status === "InProgress" ||
                 booking.status === "Completed"
                   ? new Date(booking.updated_at).toLocaleDateString()
@@ -206,8 +204,8 @@ export default function BookingDetailClient({
                 !booking.is_overnight
                   ? "bg-neutral text-text-light opacity-50 border-dashed border-border/70"
                   : rooms.length > 0
-                  ? "bg-secondary border-secondary text-secondary-foreground"
-                  : "bg-white border-border/70 text-text"
+                    ? "bg-secondary border-secondary text-secondary-foreground"
+                    : "bg-white border-border/70 text-text"
               }`}
             >
               <p className="font-semibold">Room List received</p>
@@ -215,8 +213,8 @@ export default function BookingDetailClient({
                 {!booking.is_overnight
                   ? "Not Applicable"
                   : rooms.length > 0
-                  ? "Received"
-                  : "Pending"}
+                    ? "Received"
+                    : "Pending"}
               </p>
             </div>
             <div
@@ -224,8 +222,8 @@ export default function BookingDetailClient({
                 !booking.catering_required
                   ? "bg-neutral text-text-light opacity-50 border-dashed border-border/70"
                   : mealJobs.length > 0
-                  ? "bg-secondary border-secondary text-secondary-foreground"
-                  : "bg-white border-border/70 text-text"
+                    ? "bg-secondary border-secondary text-secondary-foreground"
+                    : "bg-white border-border/70 text-text"
               }`}
             >
               <p className="font-semibold">Catering Selections received</p>
@@ -233,8 +231,8 @@ export default function BookingDetailClient({
                 {!booking.catering_required
                   ? "Not Applicable"
                   : mealJobs.length > 0
-                  ? "Received"
-                  : "Pending"}
+                    ? "Received"
+                    : "Pending"}
               </p>
             </div>
           </div>

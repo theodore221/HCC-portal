@@ -57,8 +57,8 @@ export default async function CustomerPortalPage() {
             </div>
             <h3 className="text-lg font-semibold">No bookings found</h3>
             <p className="text-muted-foreground mt-2 max-w-sm">
-              You don&apos;t have any bookings linked to your account yet. If you
-              believe this is an error, please contact the administration.
+              You don&apos;t have any bookings linked to your account yet. If
+              you believe this is an error, please contact the administration.
             </p>
           </CardContent>
         </Card>
@@ -115,7 +115,6 @@ function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case "Approved":
     case "Confirmed":
-    case "DepositReceived":
       variant = "default"; // or success color if available
       break;
     case "Pending":
