@@ -106,8 +106,7 @@ export default async function BookingDetail({
 
         const iAmPriority =
           myStatus === "Confirmed" ||
-          myStatus === "Approved" ||
-          myStatus === "DepositReceived"; // Treat DepositReceived as high priority too just in case
+          myStatus === "Approved";
         const otherIsPending = otherStatus === "Pending";
 
         if (iAmPriority && otherIsPending) {

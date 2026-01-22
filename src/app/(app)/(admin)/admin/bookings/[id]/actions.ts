@@ -173,7 +173,7 @@ export async function deleteBooking(bookingId: string) {
   redirect("/admin/bookings");
 }
 
-export async function recordDeposit(bookingId: string) {
+export async function recordDeposit(bookingId: string, depositReference?: string) {
   const supabase: any = await sbServer();
   const { error } = await supabase
     .from("bookings")
@@ -181,6 +181,7 @@ export async function recordDeposit(bookingId: string) {
       status: "Confirmed",
       deposit_status: "Paid",
       deposit_received_at: new Date().toISOString(),
+      deposit_reference: depositReference || null,
     })
     .eq("id", bookingId);
 
@@ -633,4 +634,59 @@ export async function getDietaryMealAttendance(bookingId: string) {
   }
 
   return result;
+}
+
+// ==================== Booking Detail Edit Actions ====================
+
+export async function updatePrimaryContact(
+  bookingId: string,
+  data: {
+    contact_name: string | null;
+    contact_phone: string | null;
+    customer_email: string;
+  }
+) {
+  const supabase: any = await sbServer();
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      contact_name: data.contact_name,
+      contact_phone: data.contact_phone,
+      customer_email: data.customer_email,
+    })
+    .eq("id", bookingId);
+
+  if (error) throw new Error(`Failed to update primary contact: ${error.message}`);
+  revalidatePath(`/admin/bookings/${bookingId}`);
+}
+
+export async function updateBookingSpecifics(
+  bookingId: string,
+  data: {
+    booking_type: "Group" | "Individual";
+    headcount: number;
+    catering_required: boolean;
+    arrival_date: string;
+    departure_date: string;
+    arrival_time: string | null;
+    departure_time: string | null;
+  }
+) {
+  const supabase: any = await sbServer();
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      booking_type: data.booking_type,
+      headcount: data.headcount,
+      catering_required: data.catering_required,
+      arrival_date: data.arrival_date,
+      departure_date: data.departure_date,
+      arrival_time: data.arrival_time,
+      departure_time: data.departure_time,
+    })
+    .eq("id", bookingId);
+
+  if (error) throw new Error(`Failed to update booking specifics: ${error.message}`);
+  revalidatePath(`/admin/bookings/${bookingId}`);
 }

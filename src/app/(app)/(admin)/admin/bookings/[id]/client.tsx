@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ExternalLink,
+  Pencil,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -46,7 +47,10 @@ import { SpacesTab } from "./spaces-tab";
 import { CateringTab } from "./catering-tab";
 import { AccommodationTab } from "./accommodation-tab";
 import { ApprovalChecklist } from "./_components/approval-checklist";
-import { updateBookingStatus, recordDeposit, deleteBooking } from "./actions";
+import { RecordDepositDialog } from "./_components/record-deposit-dialog";
+import { EditPrimaryContactDialog } from "./_components/edit-primary-contact-dialog";
+import { EditBookingSpecificsDialog } from "./_components/edit-booking-specifics-dialog";
+import { updateBookingStatus, deleteBooking } from "./actions";
 import type {
   BookingWithMeta,
   RoomWithAssignments,
@@ -151,16 +155,13 @@ export default function BookingDetailClient({
   const [cancelReason, setCancelReason] = useState<string>("");
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isRecordDepositOpen, setIsRecordDepositOpen] = useState(false);
+  const [isPrimaryContactOpen, setIsPrimaryContactOpen] = useState(false);
+  const [isBookingSpecificsOpen, setIsBookingSpecificsOpen] = useState(false);
 
   const handleApprove = () => {
     startTransition(async () => {
       await updateBookingStatus(booking.id, "Approved");
-    });
-  };
-
-  const handleRecordDeposit = () => {
-    startTransition(async () => {
-      await recordDeposit(booking.id);
     });
   };
 
@@ -215,7 +216,7 @@ export default function BookingDetailClient({
     <TooltipProvider>
       <Tabs defaultValue="overview" className="space-y-6">
       <Card className="shadow-soft">
-        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <CardHeader className="flex flex-col gap-4">
           <div className="space-y-1">
             <CardTitle className="text-xl font-semibold text-text">
               {displayName}
@@ -229,7 +230,7 @@ export default function BookingDetailClient({
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {conflicts.length > 0 && (
               <Badge variant="destructive" className="gap-1.5 px-3 py-1">
                 <AlertTriangle className="size-3.5" />
@@ -237,7 +238,7 @@ export default function BookingDetailClient({
               </Badge>
             )}
             <StatusChip status={booking.status} />
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="ml-auto">
               <Link
                 href={`/portal/${booking.reference ?? booking.id}`}
                 target="_blank"
@@ -251,29 +252,34 @@ export default function BookingDetailClient({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <TabsList className="flex flex-wrap items-center gap-2 rounded-full bg-neutral p-1">
-              {tabConfig.map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="rounded-full px-4 py-2 text-sm font-semibold text-text-light transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-text data-[state=active]:shadow-sm"
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+          <div className="flex flex-col gap-4">
+            {/* Tabs - Scrollable on mobile */}
+            <div className="w-full overflow-x-auto pb-2 -mx-6 px-6 md:mx-0 md:px-0">
+              <TabsList className="inline-flex items-center gap-2 rounded-full bg-neutral p-1 min-w-min">
+                {tabConfig.map((tab) => (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-text-light transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-text data-[state=active]:shadow-sm"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
-            <div className="flex items-center gap-3">
+            {/* Action Buttons - Stack on mobile, row on md+ */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:flex-wrap">
               <Button
                 variant="outline"
-                onClick={handleRecordDeposit}
+                size="sm"
+                onClick={() => setIsRecordDepositOpen(true)}
                 disabled={
                   isPending ||
                   booking.deposit_status === "Paid" ||
                   booking.status !== "Approved"
                 }
-                className="border-olive-200 hover:bg-olive-50"
+                className="border-olive-200 hover:bg-olive-50 w-full sm:w-auto"
               >
                 {booking.deposit_status === "Paid" ? (
                   <span className="flex items-center gap-2 text-olive-700">
@@ -287,6 +293,7 @@ export default function BookingDetailClient({
                 <TooltipTrigger asChild>
                   <div>
                     <Button
+                      size="sm"
                       onClick={handleApprove}
                       disabled={
                         isPending ||
@@ -296,6 +303,7 @@ export default function BookingDetailClient({
                         !canApprove
                       }
                       className={cn(
+                        "w-full sm:w-auto",
                         !canApprove
                           ? "opacity-50 cursor-not-allowed"
                           : "bg-primary hover:bg-primary/90"
@@ -325,7 +333,8 @@ export default function BookingDetailClient({
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
-                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                    size="sm"
+                    className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 w-full sm:w-auto"
                     disabled={booking.status === "Cancelled"}
                   >
                     <XCircle className="mr-2 h-4 w-4" />
@@ -430,12 +439,11 @@ export default function BookingDetailClient({
         {/* Status Timeline */}
         <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
           <SectionHeading>Status timeline</SectionHeading>
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <div
               className={`rounded-2xl border p-4 text-sm shadow-soft ${
                 booking.status === "Approved" ||
                 booking.status === "Confirmed" ||
-                booking.status === "DepositReceived" ||
                 booking.status === "InProgress" ||
                 booking.status === "Completed"
                   ? "bg-secondary border-secondary text-secondary-foreground"
@@ -446,7 +454,6 @@ export default function BookingDetailClient({
               <p className="text-xs opacity-80">
                 {booking.status === "Approved" ||
                 booking.status === "Confirmed" ||
-                booking.status === "DepositReceived" ||
                 booking.status === "InProgress" ||
                 booking.status === "Completed"
                   ? new Date(booking.updated_at).toLocaleDateString()
@@ -472,6 +479,11 @@ export default function BookingDetailClient({
                     : new Date(booking.updated_at).toLocaleDateString()
                   : "Pending"}
               </p>
+              {booking.deposit_reference && (
+                <p className="mt-2 text-xs font-semibold text-green-700">
+                  Deposit Reference: {booking.deposit_reference}
+                </p>
+              )}
             </div>
             <div
               className={`rounded-2xl border p-4 text-sm shadow-soft ${
@@ -524,7 +536,15 @@ export default function BookingDetailClient({
         <div className="grid gap-6 md:grid-cols-2">
           {/* Primary Contact */}
           <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-            <SectionHeading>Primary Contact</SectionHeading>
+            <SectionHeading
+              onEdit={
+                booking.status !== "Completed" && booking.status !== "Cancelled"
+                  ? () => setIsPrimaryContactOpen(true)
+                  : undefined
+              }
+            >
+              Primary Contact
+            </SectionHeading>
             <div className="space-y-4">
               <DetailRow
                 label="Name"
@@ -537,7 +557,15 @@ export default function BookingDetailClient({
 
           {/* Booking Specifics */}
           <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-            <SectionHeading>Booking Specifics</SectionHeading>
+            <SectionHeading
+              onEdit={
+                booking.status !== "Completed" && booking.status !== "Cancelled"
+                  ? () => setIsBookingSpecificsOpen(true)
+                  : undefined
+              }
+            >
+              Booking Specifics
+            </SectionHeading>
             <div className="space-y-4">
               <DetailRow label="Type" value={booking.booking_type} />
               <DetailRow
@@ -550,6 +578,16 @@ export default function BookingDetailClient({
                   booking.catering_required ? "Yes (See Catering tab)" : "No"
                 }
               />
+              <DetailRow label="Arrival Date" value={booking.arrival_date} />
+              <DetailRow label="Departure Date" value={booking.departure_date} />
+              <DetailRow
+                label="Arrival Time"
+                value={booking.arrival_time || "Not specified"}
+              />
+              <DetailRow
+                label="Departure Time"
+                value={booking.departure_time || "Not specified"}
+              />
             </div>
           </section>
         </div>
@@ -557,7 +595,7 @@ export default function BookingDetailClient({
         {/* Financial Status */}
         <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
           <SectionHeading>Financial Status</SectionHeading>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="space-y-4">
             <DetailRow
               label="Deposit Status"
               value={
@@ -570,20 +608,25 @@ export default function BookingDetailClient({
                 </Badge>
               }
             />
-            <DetailRow
-              label="Deposit Amount"
-              value={
-                booking.deposit_amount
-                  ? `$${booking.deposit_amount.toLocaleString()}`
-                  : "—"
-              }
-            />
-            {/* <DetailRow
-              label="Payment Method"
-              value={booking.payment_method || "—"}
-            /> */}
           </div>
         </section>
+
+        {/* Edit Dialogs */}
+        <RecordDepositDialog
+          bookingId={booking.id}
+          open={isRecordDepositOpen}
+          onOpenChange={setIsRecordDepositOpen}
+        />
+        <EditPrimaryContactDialog
+          booking={booking}
+          open={isPrimaryContactOpen}
+          onOpenChange={setIsPrimaryContactOpen}
+        />
+        <EditBookingSpecificsDialog
+          booking={booking}
+          open={isBookingSpecificsOpen}
+          onOpenChange={setIsBookingSpecificsOpen}
+        />
       </TabsContent>
 
       <TabsContent value="spaces" className="space-y-6">
@@ -633,11 +676,30 @@ export default function BookingDetailClient({
   );
 }
 
-function SectionHeading({ children }: { children: ReactNode }) {
+function SectionHeading({
+  children,
+  onEdit,
+}: {
+  children: ReactNode;
+  onEdit?: () => void;
+}) {
   return (
-    <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-text-light">
-      {children}
-    </h3>
+    <div className="mb-4 flex items-center justify-between">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-text-light">
+        {children}
+      </h3>
+      {onEdit && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onEdit}
+          className="h-8 gap-1.5"
+        >
+          <Pencil className="size-3.5" />
+          Edit
+        </Button>
+      )}
+    </div>
   );
 }
 

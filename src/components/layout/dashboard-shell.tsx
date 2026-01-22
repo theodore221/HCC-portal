@@ -112,7 +112,7 @@ export function DashboardShell({
           className="min-h-screen transition-[margin-left] duration-300"
           style={{ marginLeft: layoutOffset }}
         >
-          <div className="px-4 pb-10 pt-4 sm:px-6 lg:px-6">
+          <div className="px-4 pb-10 pt-4 sm:px-6 lg:px-8 xl:px-12">
             <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <SheetTrigger asChild>

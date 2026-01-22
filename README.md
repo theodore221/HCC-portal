@@ -29,6 +29,17 @@ To lint the project:
 npm run lint
 ```
 
+## Development Guidelines
+
+**Important**: Before making UI changes, please review the [Development Guidelines](./docs/claude.md) which includes:
+- Responsive design principles for all screen sizes
+- Tailwind CSS breakpoint usage
+- Layout patterns and best practices
+- Component-specific guidelines
+- Testing checklist
+
+This ensures consistent, mobile-friendly experiences across the entire application.
+
 ## Shadcn UI setup
 
 To regenerate or extend the component library with the official Shadcn CLI, run the following commands from the project root:
