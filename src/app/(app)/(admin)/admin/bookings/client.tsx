@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpRight,
@@ -256,21 +256,53 @@ const columns: ColumnDef<BookingWithMeta>[] = [
 
 export default function AdminBookingsClient({
   bookings,
+  totalCount,
+  currentPage,
+  pageSize,
+  statusCounts,
+  initialStatusFilter,
+  initialSearch,
 }: {
   bookings: BookingWithMeta[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  statusCounts: Record<string, number>;
+  initialStatusFilter?: BookingStatus[];
+  initialSearch?: string;
 }) {
-  const statusCounts = useMemo(() => {
-    return bookings.reduce<Record<BookingStatus, number>>(
-      (acc, booking) => {
-        acc[booking.status] = (acc[booking.status] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<BookingStatus, number>
-    );
-  }, [bookings]);
-
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+
+  const updateSearchParams = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === undefined || value === "") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      // Reset to page 1 when filters change
+      if ("status" in updates || "search" in updates) {
+        params.delete("page");
+      }
+
+      router.push(`/admin/bookings?${params.toString()}`);
+    },
+    [router, searchParams]
+  );
+
+  const handlePageChange = useCallback(
+    (page: number) => {
+      updateSearchParams({ page: page.toString() });
+    },
+    [updateSearchParams]
+  );
 
   const toolbarBadges = [
     { label: "Pending", status: "Pending" as BookingStatus },
@@ -296,35 +328,34 @@ export default function AdminBookingsClient({
             setIsLoading(true);
             router.push(`/admin/bookings/${row.id}`);
           }}
+          serverPagination={{
+            totalCount,
+            currentPage,
+            pageSize,
+            onPageChange: handlePageChange,
+          }}
           renderToolbar={(table) => {
-            const searchValue =
-              (table.getColumn("customer_name")?.getFilterValue() as string) ??
-              "";
-            const statusFilter =
-              (table.getColumn("status")?.getFilterValue() as
-                | BookingStatus[]
-                | undefined) ?? [];
+            const activeStatusFilter = new Set(initialStatusFilter ?? []);
+            const [searchValue, setSearchValue] = useState(initialSearch ?? "");
 
             const toggleStatus = (status: BookingStatus, enabled: boolean) => {
-              const column = table.getColumn("status");
-              if (!column) return;
-              const current = new Set(
-                (column.getFilterValue() as BookingStatus[] | undefined) ?? []
-              );
+              const current = new Set(activeStatusFilter);
               if (enabled) {
                 current.add(status);
               } else {
                 current.delete(status);
               }
               const next = Array.from(current);
-              column.setFilterValue(next.length ? next : undefined);
+              updateSearchParams({
+                status: next.length ? next.join(",") : undefined,
+              });
             };
 
             return (
               <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-neutral/60 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   {statusOptions.map(({ label, value }) => {
-                    const isActive = statusFilter.includes(value);
+                    const isActive = activeStatusFilter.has(value);
                     return (
                       <button
                         key={value}
@@ -353,11 +384,15 @@ export default function AdminBookingsClient({
                     />
                     <Input
                       value={searchValue}
-                      onChange={(event) =>
-                        table
-                          .getColumn("customer_name")
-                          ?.setFilterValue(event.target.value)
-                      }
+                      onChange={(event) => setSearchValue(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          updateSearchParams({ search: searchValue || undefined });
+                        }
+                      }}
+                      onBlur={() => {
+                        updateSearchParams({ search: searchValue || undefined });
+                      }}
                       placeholder="Search by group or reference"
                       className="rounded-full border-border/70 bg-white pl-9"
                     />

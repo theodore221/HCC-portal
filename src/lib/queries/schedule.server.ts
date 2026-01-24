@@ -116,8 +116,25 @@ function getBedType(
   return hasAccommodation ? "Fully Provided" : null;
 }
 
-export async function getScheduleData(): Promise<ScheduleRow[]> {
+export async function getScheduleData(
+  startDate?: string,
+  endDate?: string
+): Promise<ScheduleRow[]> {
   const supabase = await sbServer();
+
+  // Build bookings query with optional date range filter
+  let bookingsQuery = supabase
+    .from("bookings")
+    .select("*")
+    .neq("status", "Cancelled")
+    .order("arrival_date", { ascending: true });
+
+  if (startDate) {
+    bookingsQuery = bookingsQuery.gte("arrival_date", startDate);
+  }
+  if (endDate) {
+    bookingsQuery = bookingsQuery.lte("arrival_date", endDate);
+  }
 
   // Fetch all data in parallel
   const [
@@ -127,11 +144,7 @@ export async function getScheduleData(): Promise<ScheduleRow[]> {
     { data: dietaryProfiles, error: dietaryError },
     { data: mealJobs, error: mealJobsError },
   ] = await Promise.all([
-    supabase
-      .from("bookings")
-      .select("*")
-      .neq("status", "Cancelled")
-      .order("arrival_date", { ascending: true }),
+    bookingsQuery,
     supabase
       .from("space_reservations")
       .select("booking_id, space_id"),
@@ -236,8 +249,5 @@ export async function getScheduleDataByDateRange(
   startDate: string,
   endDate: string
 ): Promise<ScheduleRow[]> {
-  const allData = await getScheduleData();
-  return allData.filter(
-    (row) => row.arrivalDate >= startDate && row.arrivalDate <= endDate
-  );
+  return getScheduleData(startDate, endDate);
 }

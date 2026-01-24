@@ -34,6 +34,12 @@ interface DataTableProps<TData, TValue> {
   renderToolbar?: (table: TanstackTable<TData>) => React.ReactNode;
   zebra?: boolean;
   onRowClick?: (row: TData) => void;
+  serverPagination?: {
+    totalCount: number;
+    currentPage: number;
+    pageSize: number;
+    onPageChange: (page: number) => void;
+  };
 }
 
 export function DataTable<TData, TValue>({
@@ -43,6 +49,7 @@ export function DataTable<TData, TValue>({
   renderToolbar,
   zebra = false,
   onRowClick,
+  serverPagination,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -60,6 +67,12 @@ export function DataTable<TData, TValue>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      ...(serverPagination && {
+        pagination: {
+          pageIndex: serverPagination.currentPage - 1,
+          pageSize: serverPagination.pageSize,
+        },
+      }),
     },
     enableRowSelection: true,
     onSortingChange: setSorting,
@@ -69,19 +82,32 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(serverPagination
+      ? {
+          manualPagination: true,
+          pageCount: Math.ceil(
+            serverPagination.totalCount / serverPagination.pageSize
+          ),
+        }
+      : {
+          getPaginationRowModel: getPaginationRowModel(),
+        }),
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: serverPagination?.pageSize ?? 10,
       },
     },
   });
 
-  const pageStart =
-    table.getState().pagination.pageIndex *
-    table.getState().pagination.pageSize;
+  const isServerMode = !!serverPagination;
+  const pageStart = isServerMode
+    ? (serverPagination.currentPage - 1) * serverPagination.pageSize
+    : table.getState().pagination.pageIndex *
+      table.getState().pagination.pageSize;
   const rowCount = table.getRowModel().rows.length;
-  const totalFiltered = table.getFilteredRowModel().rows.length;
+  const totalFiltered = isServerMode
+    ? serverPagination.totalCount
+    : table.getFilteredRowModel().rows.length;
 
   return (
     <div className="space-y-4">
@@ -167,8 +193,16 @@ export function DataTable<TData, TValue>({
             variant="outline"
             size="sm"
             className="rounded-full border-border/70 text-text-light hover:bg-neutral"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() =>
+              isServerMode
+                ? serverPagination.onPageChange(serverPagination.currentPage - 1)
+                : table.previousPage()
+            }
+            disabled={
+              isServerMode
+                ? serverPagination.currentPage <= 1
+                : !table.getCanPreviousPage()
+            }
           >
             Previous
           </Button>
@@ -176,8 +210,17 @@ export function DataTable<TData, TValue>({
             variant="outline"
             size="sm"
             className="rounded-full border-border/70 text-text-light hover:bg-neutral"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() =>
+              isServerMode
+                ? serverPagination.onPageChange(serverPagination.currentPage + 1)
+                : table.nextPage()
+            }
+            disabled={
+              isServerMode
+                ? serverPagination.currentPage >=
+                  Math.ceil(serverPagination.totalCount / serverPagination.pageSize)
+                : !table.getCanNextPage()
+            }
           >
             Next
           </Button>

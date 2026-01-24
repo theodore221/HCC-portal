@@ -3,11 +3,19 @@ import { sbServer } from "@/lib/supabase-server";
 import type { Tables, Views } from "@/lib/database.types";
 import type {
   BookingWithMeta,
+  BookingStatus,
   DietaryProfile,
   MealJobDetail,
   RoomWithAssignments,
   SpaceReservation,
 } from "./bookings";
+
+// Columns needed for booking list views (reduces payload size)
+const BOOKING_LIST_COLUMNS = `
+  id, reference, customer_name, customer_email, contact_name,
+  arrival_date, departure_date, nights, headcount, status,
+  is_overnight, catering_required, created_at
+`;
 
 function parseCounts(
   json: Tables<"meal_jobs">["counts_by_diet"]
@@ -95,7 +103,7 @@ export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
   ] = await Promise.all([
     supabase
       .from("bookings")
-      .select("*")
+      .select(BOOKING_LIST_COLUMNS)
       .order("arrival_date", { ascending: true }),
     supabase
       .from("space_reservations")
@@ -163,6 +171,206 @@ export async function getBookingsForAdmin(): Promise<BookingWithMeta[]> {
     ),
     conflicts: conflictsByBooking.get(booking.id) ?? [],
   }));
+}
+
+export async function getBookingsForAdminPaginated(params: {
+  page?: number;
+  pageSize?: number;
+  status?: BookingStatus[];
+  search?: string;
+}): Promise<{
+  bookings: BookingWithMeta[];
+  totalCount: number;
+  statusCounts: Record<string, number>;
+}> {
+  const supabase = await sbServer();
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 50;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  // Build query with filters
+  let query = supabase
+    .from("bookings")
+    .select(BOOKING_LIST_COLUMNS, { count: "exact" })
+    .order("arrival_date", { ascending: true });
+
+  // Apply status filter if provided
+  if (params.status && params.status.length > 0) {
+    query = query.in("status", params.status);
+  }
+
+  // Apply search filter if provided
+  if (params.search && params.search.trim()) {
+    const searchTerm = `%${params.search.trim()}%`;
+    query = query.or(
+      `customer_name.ilike.${searchTerm},customer_email.ilike.${searchTerm},contact_name.ilike.${searchTerm},reference.ilike.${searchTerm}`
+    );
+  }
+
+  // Apply pagination
+  query = query.range(from, to);
+
+  const { data: bookings, error: bookingsError, count } = await query;
+
+  if (bookingsError)
+    throw new Error(`Failed to load bookings: ${bookingsError.message}`);
+
+  // Fetch related data for the current page of bookings
+  const bookingIds = (bookings ?? []).map((b) => b.id);
+
+  const [
+    { data: reservations, error: reservationsError },
+    { data: spaces, error: spacesError },
+  ] = await Promise.all([
+    supabase
+      .from("space_reservations")
+      .select("booking_id, space_id, service_date, start_time, end_time, status")
+      .in("booking_id", bookingIds),
+    supabase.from("spaces").select("id, name"),
+  ]);
+
+  if (reservationsError)
+    throw new Error(
+      `Failed to load space reservations: ${reservationsError.message}`
+    );
+  if (spacesError)
+    throw new Error(`Failed to load spaces: ${spacesError.message}`);
+
+  const spaceLookup = new Map((spaces ?? []).map((space) => [space.id, space]));
+  const bookingLookup = new Map(
+    (bookings ?? []).map((booking) => [booking.id, booking])
+  );
+
+  const spacesByBooking = new Map<string, Set<string>>();
+  for (const reservation of reservations ?? []) {
+    if (!reservation.booking_id) continue;
+    const set =
+      spacesByBooking.get(reservation.booking_id) ?? new Set<string>();
+    const label = reservation.space_id
+      ? spaceLookup.get(reservation.space_id)?.name ?? reservation.space_id
+      : null;
+    if (label) {
+      set.add(label);
+      spacesByBooking.set(reservation.booking_id, set);
+    }
+  }
+
+  const conflictsByBooking = new Map<string, string[]>();
+  for (const booking of bookings ?? []) {
+    const myReservations = (reservations ?? []).filter(
+      (res) => res.booking_id === booking.id
+    );
+    const overlappingReservations = (reservations ?? []).filter(
+      (res) =>
+        res.booking_id !== booking.id &&
+        res.service_date >= booking.arrival_date &&
+        res.service_date <= booking.departure_date
+    );
+
+    const conflicts = deriveConflicts(
+      booking.id,
+      myReservations,
+      overlappingReservations
+    );
+    const labels = conflicts.map((conflict) =>
+      conflictLabel(conflict, bookingLookup, spaceLookup)
+    );
+    conflictsByBooking.set(booking.id, labels);
+  }
+
+  const bookingsWithMeta = (bookings ?? []).map((booking) => ({
+    ...booking,
+    spaces: Array.from(spacesByBooking.get(booking.id) ?? []).sort((a, b) =>
+      a.localeCompare(b)
+    ),
+    conflicts: conflictsByBooking.get(booking.id) ?? [],
+  }));
+
+  // Fetch status counts for all bookings (not just current page)
+  const { data: statusCountData } = await supabase
+    .from("bookings")
+    .select("status")
+    .not("status", "is", null);
+
+  const statusCounts: Record<string, number> = {};
+  for (const row of statusCountData ?? []) {
+    if (row.status) {
+      statusCounts[row.status] = (statusCounts[row.status] ?? 0) + 1;
+    }
+  }
+
+  return {
+    bookings: bookingsWithMeta,
+    totalCount: count ?? 0,
+    statusCounts,
+  };
+}
+
+export async function getBookingById(
+  id: string
+): Promise<BookingWithMeta | null> {
+  const supabase = await sbServer();
+
+  const { data: booking, error } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(`Failed to load booking: ${error.message}`);
+  if (!booking) return null;
+
+  const [
+    { data: reservations, error: reservationsError },
+    { data: conflicts, error: conflictsError },
+    { data: spaces, error: spacesError },
+  ] = await Promise.all([
+    supabase
+      .from("space_reservations")
+      .select("space_id")
+      .eq("booking_id", booking.id),
+    supabase
+      .from("v_space_conflicts")
+      .select("booking_id, conflicts_with, space_id, service_date")
+      .eq("booking_id", booking.id),
+    supabase.from("spaces").select("id, name"),
+  ]);
+
+  if (reservationsError)
+    throw new Error(
+      `Failed to load spaces for booking: ${reservationsError.message}`
+    );
+  if (conflictsError)
+    throw new Error(
+      `Failed to load conflicts for booking: ${conflictsError.message}`
+    );
+  if (spacesError)
+    throw new Error(`Failed to load spaces metadata: ${spacesError.message}`);
+
+  const spaceLookup = new Map((spaces ?? []).map((space) => [space.id, space]));
+  const bookingLookup = new Map([[booking.id, booking]]);
+
+  const spacesForBooking = (reservations ?? []).reduce<string[]>(
+    (acc, reservation) => {
+      if (!reservation.space_id) return acc;
+      const label =
+        spaceLookup.get(reservation.space_id)?.name ?? reservation.space_id;
+      if (!acc.includes(label)) acc.push(label);
+      return acc;
+    },
+    []
+  );
+
+  const conflictMessages = (conflicts ?? []).map((conflict) =>
+    conflictLabel(conflict, bookingLookup, spaceLookup)
+  );
+
+  return {
+    ...booking,
+    spaces: spacesForBooking.sort((a, b) => a.localeCompare(b)),
+    conflicts: conflictMessages,
+  };
 }
 
 export async function getBookingByReference(

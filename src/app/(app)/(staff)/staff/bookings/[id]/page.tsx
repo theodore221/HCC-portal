@@ -4,7 +4,7 @@ import { sbServer } from "@/lib/supabase-server";
 import { enrichMealJobs } from "@/lib/catering";
 import { getBookingDisplayName } from "@/lib/queries/bookings";
 import {
-  getBookingsForAdmin,
+  getBookingById,
   getMealJobsForBooking,
   getRoomsForBooking,
 } from "@/lib/queries/bookings.server";
@@ -20,8 +20,7 @@ export default async function StaffBookingDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const bookings = await getBookingsForAdmin();
-  const booking = bookings.find((b) => b.id === id);
+  const booking = await getBookingById(id);
   if (!booking) return notFound();
 
   const mealJobsRaw = await getMealJobsForBooking(booking.id);

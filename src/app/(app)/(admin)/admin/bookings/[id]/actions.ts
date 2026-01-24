@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { sbServer } from "@/lib/supabase-server";
 import type { BookingStatus } from "@/lib/queries/bookings";
@@ -8,6 +8,14 @@ import type { BookingStatus } from "@/lib/queries/bookings";
 import { ensureCustomerProfile } from "@/lib/auth/admin-actions";
 import { sendBookingApprovedEmail } from "@/lib/email/send-booking-approved";
 import { enrichMealJobs } from "@/lib/catering";
+import {
+  CACHE_TAGS,
+  getBookingCacheTags,
+  getMealJobCacheTags,
+  getSpaceReservationCacheTags,
+  getRoomAssignmentCacheTags,
+  getDietaryProfileCacheTags,
+} from "@/lib/cache";
 
 export async function updateBookingStatus(
   bookingId: string,
@@ -108,6 +116,8 @@ export async function updateBookingStatus(
     }
 
     revalidatePath(`/admin/bookings/${bookingId}`);
+    // Invalidate caches
+    getBookingCacheTags(bookingId).forEach(tag => revalidateTag(tag));
     return;
   }
 
@@ -121,6 +131,8 @@ export async function updateBookingStatus(
     throw new Error(`Failed to update booking status: ${error.message}`);
 
   revalidatePath(`/admin/bookings/${bookingId}`);
+  // Invalidate caches
+  getBookingCacheTags(bookingId).forEach(tag => revalidateTag(tag));
 }
 
 export async function deleteBooking(bookingId: string) {
@@ -170,6 +182,9 @@ export async function deleteBooking(bookingId: string) {
   }
 
   revalidatePath("/admin/bookings");
+  // Invalidate all booking-related caches
+  revalidateTag(CACHE_TAGS.BOOKINGS);
+  revalidateTag(CACHE_TAGS.BOOKING_STATUS_COUNTS);
   redirect("/admin/bookings");
 }
 
@@ -188,6 +203,7 @@ export async function recordDeposit(bookingId: string, depositReference?: string
   if (error) throw new Error(`Failed to record deposit: ${error.message}`);
 
   revalidatePath(`/admin/bookings/${bookingId}`);
+  getBookingCacheTags(bookingId).forEach(tag => revalidateTag(tag));
 }
 
 export async function updateSpaceReservation(
@@ -204,6 +220,7 @@ export async function updateSpaceReservation(
     throw new Error(`Failed to update space reservation: ${error.message}`);
 
   revalidatePath("/admin/bookings/[id]", "page");
+  revalidateTag(CACHE_TAGS.SPACE_RESERVATIONS);
 }
 
 export async function assignCaterer(
@@ -221,6 +238,7 @@ export async function assignCaterer(
 
   if (error) throw new Error(`Failed to assign caterer: ${error.message}`);
   revalidatePath("/admin/bookings/[id]", "page");
+  revalidateTag(CACHE_TAGS.MEAL_JOBS);
 }
 
 export async function updateMealJobItems(
@@ -251,6 +269,7 @@ export async function updateMealJobItems(
   }
 
   revalidatePath("/admin/bookings/[id]", "page");
+  revalidateTag(CACHE_TAGS.MEAL_JOBS);
 }
 
 export async function updateCoffeeRequest(
@@ -362,6 +381,7 @@ export async function allocateRoom(bookingId: string, roomId: string) {
   }
 
   revalidatePath(`/admin/bookings/${bookingId}`);
+  getRoomAssignmentCacheTags(bookingId).forEach(tag => revalidateTag(tag));
 }
 
 export async function deallocateRoom(bookingId: string, roomId: string) {
@@ -378,6 +398,7 @@ export async function deallocateRoom(bookingId: string, roomId: string) {
   }
 
   revalidatePath(`/admin/bookings/${bookingId}`);
+  getRoomAssignmentCacheTags(bookingId).forEach(tag => revalidateTag(tag));
 }
 
 // Note: activateRoom was removed - we now allow allocating inactive rooms
@@ -513,6 +534,7 @@ export async function createDietaryProfile(
   }
 
   revalidatePath("/admin/bookings/[id]", "page");
+  revalidateTag(CACHE_TAGS.DIETARY_PROFILES);
   return profile;
 }
 
@@ -547,6 +569,7 @@ export async function updateDietaryProfile(
   }
 
   revalidatePath("/admin/bookings/[id]", "page");
+  revalidateTag(CACHE_TAGS.DIETARY_PROFILES);
   return profile;
 }
 
@@ -563,6 +586,7 @@ export async function deleteDietaryProfile(profileId: string) {
   }
 
   revalidatePath("/admin/bookings/[id]", "page");
+  revalidateTag(CACHE_TAGS.DIETARY_PROFILES);
 }
 
 // ==================== Dietary Meal Attendance Actions ====================
