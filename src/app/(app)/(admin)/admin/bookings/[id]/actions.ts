@@ -714,3 +714,51 @@ export async function updateBookingSpecifics(
   if (error) throw new Error(`Failed to update booking specifics: ${error.message}`);
   revalidatePath(`/admin/bookings/${bookingId}`);
 }
+
+// ==================== Admin Notes Actions ====================
+
+export async function updateAdminNotes(bookingId: string, notes: string) {
+  const supabase: any = await sbServer();
+
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      admin_notes: notes || null,
+    })
+    .eq("id", bookingId);
+
+  if (error) {
+    throw new Error(`Failed to update admin notes: ${error.message}`);
+  }
+
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  getBookingCacheTags(bookingId).forEach(tag => revalidateTag(tag));
+}
+
+export async function approveBookingWithNotes(
+  bookingId: string,
+  notes?: string
+) {
+  const supabase: any = await sbServer();
+
+  // Update notes if provided
+  if (notes) {
+    await updateAdminNotes(bookingId, notes);
+  }
+
+  // Approve the booking
+  await updateBookingStatus(bookingId, "Approved");
+}
+
+export async function rejectBooking(
+  bookingId: string,
+  reason: string
+) {
+  const supabase: any = await sbServer();
+
+  // Update admin notes with rejection reason
+  await updateAdminNotes(bookingId, `REJECTED: ${reason}`);
+
+  // Update status to Cancelled with cancel reason
+  await updateBookingStatus(bookingId, "Cancelled", reason);
+}

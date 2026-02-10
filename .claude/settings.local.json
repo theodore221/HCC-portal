@@ -12,7 +12,9 @@
       "Bash(dir:*)",
       "Bash(git show:*)",
       "Bash(grep:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm info:*)"
     ]
   }
 }

@@ -46,7 +46,11 @@ export default async function CustomerPortalPage() {
             Manage your upcoming and past bookings.
           </p>
         </div>
-        {/* Future: Add "New Booking" button here */}
+        <Button asChild>
+          <Link href="/portal/new-booking">
+            Create New Booking
+          </Link>
+        </Button>
       </div>
 
       {bookings.length === 0 ? (
