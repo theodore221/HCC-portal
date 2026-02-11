@@ -9,7 +9,7 @@ import AdminCateringJobsClient from "./client";
 
 export default async function AdminCateringJobsPage() {
   const [bookings, mealJobsRaw, cateringOptions] = await Promise.all([
-    getBookingsForAdmin(),
+    getBookingsForAdmin({ excludeCancelled: true }),
     getAssignedMealJobs(),
     getCateringOptions(),
   ]);

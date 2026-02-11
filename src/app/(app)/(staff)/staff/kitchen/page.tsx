@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function StaffKitchenPage() {
   const [bookings, mealJobsRaw] = await Promise.all([
-    getBookingsForAdmin(),
+    getBookingsForAdmin({ excludeCancelled: true }),
     getAssignedMealJobs(),
   ]);
 

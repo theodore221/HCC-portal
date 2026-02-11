@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default async function CatererJobsPage() {
   const [bookings, mealJobsRaw, cateringOptions] = await Promise.all([
-    getBookingsForAdmin(),
+    getBookingsForAdmin({ excludeCancelled: true }),
     getMealJobsForCurrentCaterer(),
     getCateringOptions(),
   ]);

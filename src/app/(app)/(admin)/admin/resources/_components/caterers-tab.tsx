@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState } from "react";
 import { Tables } from "@/lib/database.types";
@@ -20,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { Pencil, Trash2, Plus, Mail, Phone, Palette, User } from "lucide-react";
 import { updateCaterer, createCaterer, deleteCaterer } from "../actions";
-import { useToast } from "@/components/ui/use-toast";
 
 interface CaterersTabProps {
   caterers: Tables<"caterers">[];
@@ -37,7 +37,6 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
   const [editingCaterer, setEditingCaterer] = useState<Tables<"caterers"> | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const { toast } = useToast();
 
   const columns: ColumnDef<Tables<"caterers">>[] = [
     {
@@ -104,12 +103,9 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
               ) {
                 try {
                   await deleteCaterer(row.original.id);
-                  toast({ title: "Caterer deleted successfully" });
+                  toast.success("Caterer deleted successfully");
                 } catch (error) {
-                  toast({
-                    title: "Error deleting caterer",
-                    variant: "destructive",
-                  });
+                  toast.error("Error deleting caterer");
                 }
               }
             }}
@@ -138,7 +134,7 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
               mode="create"
               onSuccess={() => {
                 setIsCreateOpen(false);
-                toast({ title: "Caterer created successfully" });
+                toast.success("Caterer created successfully");
               }}
               onCancel={() => setIsCreateOpen(false)}
             />
@@ -157,7 +153,7 @@ export function CaterersTab({ caterers }: CaterersTabProps) {
               onSuccess={() => {
                 setIsEditOpen(false);
                 setEditingCaterer(null);
-                toast({ title: "Caterer updated successfully" });
+                toast.success("Caterer updated successfully");
               }}
               onCancel={() => {
                 setIsEditOpen(false);
@@ -191,7 +187,6 @@ function CatererForm({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,10 +219,8 @@ function CatererForm({
     } catch (error: any) {
       const errorMessage = error?.message || `Error ${mode === "create" ? "creating" : "updating"} caterer`;
       setError(errorMessage);
-      toast({
-        title: `Error ${mode === "create" ? "creating" : "updating"} caterer`,
+      toast.error(`Error ${mode === "create" ? "creating" : "updating"} caterer`, {
         description: errorMessage,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);

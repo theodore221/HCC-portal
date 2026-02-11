@@ -1,9 +1,9 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { EnrichedMealJob } from "@/lib/catering";
@@ -34,7 +34,6 @@ export function DayMealCard({
   meals,
   menuItems,
 }: DayMealCardProps) {
-  const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -45,9 +44,9 @@ export function DayMealCard({
       setLoading(mealJobId);
       await customerUpdateMealJobItems(mealJobId, items);
       router.refresh();
-      toast({ title: "Menu updated" });
+      toast.success("Menu updated");
     } catch (error) {
-      toast({ title: "Failed to update menu", variant: "destructive" });
+      toast.error("Failed to update menu");
       throw error;
     } finally {
       setLoading(null);
@@ -62,9 +61,9 @@ export function DayMealCard({
     try {
       await customerUpdateCoffeeRequest(mealJobId, checked, quantity);
       router.refresh();
-      toast({ title: "Coffee request updated" });
+      toast.success("Coffee request updated");
     } catch (error) {
-      toast({ title: "Failed to update coffee", variant: "destructive" });
+      toast.error("Failed to update coffee");
       throw error;
     }
   };
@@ -74,9 +73,9 @@ export function DayMealCard({
       setLoading(mealJobId);
       await customerUpdateMealJobServes(mealJobId, count);
       router.refresh();
-      toast({ title: "Serves updated" });
+      toast.success("Serves updated");
     } catch (error) {
-      toast({ title: "Failed to update serves", variant: "destructive" });
+      toast.error("Failed to update serves");
       throw error;
     } finally {
       setLoading(null);

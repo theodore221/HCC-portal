@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "./fullcalendar.css";
 
 :root {
   --background: #f8f9fa;
@@ -57,6 +56,18 @@
   --color-olive-900: var(--olive-900);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Shadcn semantic tokens (for component library compatibility) */
+  --color-card: #ffffff;
+  --color-card-foreground: var(--text);
+  --color-popover: #ffffff;
+  --color-popover-foreground: var(--olive-800);
+  --color-muted: var(--olive-100);
+  --color-muted-foreground: var(--olive-600);
+  --color-ring: var(--olive-500);
+  --color-input: var(--olive-200);
+  --color-destructive: var(--danger);
+  --radius: 0.75rem;
 }
 
 body {
@@ -74,32 +85,7 @@ a {
   box-sizing: border-box;
 }
 
-.bg-olive-50 { background-color: var(--olive-50); }
-.bg-olive-100 { background-color: var(--olive-100); }
-.bg-olive-200 { background-color: var(--olive-200); }
-.bg-olive-300 { background-color: var(--olive-300); }
-.bg-olive-400 { background-color: var(--olive-400); }
-.bg-olive-500 { background-color: var(--olive-500); }
-.bg-olive-600 { background-color: var(--olive-600); }
-.bg-olive-700 { background-color: var(--olive-700); }
-.bg-olive-800 { background-color: var(--olive-800); }
-.bg-olive-900 { background-color: var(--olive-900); }
-
-.text-olive-600 { color: var(--olive-600); }
-.text-olive-700 { color: var(--olive-700); }
-.text-olive-800 { color: var(--olive-800); }
-.text-olive-900 { color: var(--olive-900); }
-
-.bg-accent { background-color: var(--accent); }
-.text-accent { color: var(--accent); }
-.border-accent { border-color: var(--accent); }
-.bg-neutral { background-color: var(--neutral); }
-.text-neutral { color: var(--neutral); }
-.border-neutral { border-color: var(--neutral); }
-.text-muted { color: var(--text-light); }
-
-.border-olive-200 { border-color: var(--olive-200); }
-.border-olive-300 { border-color: var(--olive-300); }
+/* Removed duplicate olive utilities - now provided by Tailwind v4 via @theme inline */
 
 .shadow-soft {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);

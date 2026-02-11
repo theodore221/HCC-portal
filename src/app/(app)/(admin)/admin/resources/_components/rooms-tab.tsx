@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState } from "react";
 import { Tables } from "@/lib/database.types";
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/select";
 import { Check, Pencil, X } from "lucide-react";
 import { updateRoom, updateRoomType } from "../actions";
-import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 
 interface RoomsTabProps {
@@ -193,7 +193,6 @@ function PhysicalRoomsTable({
   roomTypes: Tables<"room_types">[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const columns: ColumnDef<
     Tables<"rooms"> & { room_types: Tables<"room_types"> | null }
@@ -409,16 +408,15 @@ function EditableDescriptionCell({
 }) {
   const [value, setValue] = useState(type.description || "");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoomType(type.id, { description: value });
       onDone();
-      toast({ title: "Room type updated" });
+      toast.success("Room type updated");
     } catch (error) {
-      toast({ title: "Error updating room type", variant: "destructive" });
+      toast.error("Error updating room type");
     } finally {
       setIsLoading(false);
     }
@@ -455,16 +453,15 @@ function EditableCapacityCell({
 }) {
   const [value, setValue] = useState(type.capacity.toString());
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoomType(type.id, { capacity: parseInt(value) || 0 });
       onDone();
-      toast({ title: "Room type updated" });
+      toast.success("Room type updated");
     } catch (error) {
-      toast({ title: "Error updating room type", variant: "destructive" });
+      toast.error("Error updating room type");
     } finally {
       setIsLoading(false);
     }
@@ -503,16 +500,15 @@ function EditablePriceCell({
 }) {
   const [value, setValue] = useState(type.price.toString());
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoomType(type.id, { price: parseFloat(value) || 0 });
       onDone();
-      toast({ title: "Room type updated" });
+      toast.success("Room type updated");
     } catch (error) {
-      toast({ title: "Error updating room type", variant: "destructive" });
+      toast.error("Error updating room type");
     } finally {
       setIsLoading(false);
     }
@@ -552,16 +548,15 @@ function EditablePricingUnitCell({
 }) {
   const [value, setValue] = useState((type as any).pricing_unit || "PerRoom");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoomType(type.id, { pricing_unit: value } as any);
       onDone();
-      toast({ title: "Room type updated" });
+      toast.success("Room type updated");
     } catch (error) {
-      toast({ title: "Error updating room type", variant: "destructive" });
+      toast.error("Error updating room type");
     } finally {
       setIsLoading(false);
     }
@@ -603,16 +598,15 @@ function EditableRoomNameCell({
 }) {
   const [value, setValue] = useState(room.name);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoom(room.id, { name: value });
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }
@@ -649,16 +643,15 @@ function EditableBuildingCell({
 }) {
   const [value, setValue] = useState(room.building || "");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoom(room.id, { building: value });
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }
@@ -697,16 +690,15 @@ function EditableRoomTypeCell({
 }) {
   const [value, setValue] = useState(room.room_type_id || "");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoom(room.id, { room_type_id: value });
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }
@@ -751,7 +743,6 @@ function EditableExtraBedCell({
   const [allowed, setAllowed] = useState(room.extra_bed_allowed || false);
   const [fee, setFee] = useState(room.extra_bed_fee?.toString() || "0");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -761,9 +752,9 @@ function EditableExtraBedCell({
         extra_bed_fee: parseFloat(fee) || 0,
       });
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }
@@ -810,16 +801,15 @@ function EditableRoomNumberCell({
 }) {
   const [value, setValue] = useState((room as any).room_number || room.name);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoom(room.id, { room_number: value, name: value } as any);
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }
@@ -857,16 +847,15 @@ function EditableLevelCell({
 }) {
   const [value, setValue] = useState((room as any).level || "");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoom(room.id, { level: value } as any);
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }
@@ -903,16 +892,15 @@ function EditableWingCell({
 }) {
   const [value, setValue] = useState((room as any).wing || "");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateRoom(room.id, { wing: value } as any);
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }
@@ -952,7 +940,6 @@ function EditableEnsuiteCell({
   );
   const [fee, setFee] = useState((room as any).ensuite_fee?.toString() || "0");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -962,9 +949,9 @@ function EditableEnsuiteCell({
         ensuite_fee: parseFloat(fee) || 0,
       } as any);
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }
@@ -1017,7 +1004,6 @@ function EditablePrivateStudyCell({
     (room as any).private_study_fee?.toString() || "0"
   );
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -1027,9 +1013,9 @@ function EditablePrivateStudyCell({
         private_study_fee: parseFloat(fee) || 0,
       } as any);
       onDone();
-      toast({ title: "Room updated" });
+      toast.success("Room updated");
     } catch (error) {
-      toast({ title: "Error updating room", variant: "destructive" });
+      toast.error("Error updating room");
     } finally {
       setIsLoading(false);
     }

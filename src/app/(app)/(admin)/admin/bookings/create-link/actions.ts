@@ -16,7 +16,7 @@ export async function createCustomBookingLink(data: {
   custom_pricing_notes?: string;
   enquiry_id?: string;
 }) {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   // Generate secure token
   const { token, hash, expires_at } = generateCustomPricingToken();

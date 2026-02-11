@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useTransition, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -37,7 +38,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 
 import { AuditTimeline } from "@/components/ui/audit-timeline";
 import { Button } from "@/components/ui/button";
@@ -154,7 +154,6 @@ export default function BookingDetailClient({
   validationChecks: BookingValidationChecks;
 }) {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
   const [cancelReason, setCancelReason] = useState<string>("");
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -181,15 +180,12 @@ export default function BookingDetailClient({
       try {
         await updateBookingStatus(booking.id, "Cancelled", cancelReason);
         setIsCancelOpen(false);
-        toast({
-          title: "Booking Cancelled",
+        toast.success("Booking Cancelled", {
           description: "The booking has been successfully cancelled.",
         });
       } catch (error) {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "Failed to cancel booking. Please try again.",
-          variant: "destructive",
         });
       }
     });
@@ -200,16 +196,13 @@ export default function BookingDetailClient({
       try {
         await deleteBooking(booking.id);
         setIsDeleteOpen(false);
-        toast({
-          title: "Booking Deleted",
+        toast.success("Booking Deleted", {
           description:
             "The booking and all related records have been permanently deleted.",
         });
       } catch (error) {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: "Failed to delete booking. Please try again.",
-          variant: "destructive",
         });
       }
     });

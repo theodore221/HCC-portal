@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState, useTransition } from "react";
 import {
@@ -12,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { updatePrimaryContact } from "../actions";
 import type { BookingWithMeta } from "@/lib/queries/bookings";
 
@@ -28,7 +28,6 @@ export function EditPrimaryContactDialog({
   onOpenChange,
 }: EditPrimaryContactDialogProps) {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
   const [formData, setFormData] = useState({
     contact_name: booking.contact_name || booking.customer_name || "",
     contact_phone: booking.contact_phone || "",
@@ -39,9 +38,7 @@ export function EditPrimaryContactDialog({
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.customer_email)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid email",
+      toast.error("Invalid email", {
         description: "Please enter a valid email address.",
       });
       return;
@@ -54,15 +51,12 @@ export function EditPrimaryContactDialog({
           contact_phone: formData.contact_phone || null,
           customer_email: formData.customer_email,
         });
-        toast({
-          title: "Contact updated",
+        toast.success("Contact updated", {
           description: "Primary contact information has been updated successfully.",
         });
         onOpenChange(false);
       } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Failed to update contact",
+        toast.error("Failed to update contact", {
           description: error instanceof Error ? error.message : "Unknown error",
         });
       }

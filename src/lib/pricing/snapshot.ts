@@ -26,7 +26,7 @@ export async function createPriceSnapshot(
   snapshotType: 'standard' | 'custom_link' | 'admin_override',
   overriddenBy?: string
 ): Promise<BookingPriceSnapshot> {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   const snapshotData = {
     booking_id: bookingId,
@@ -63,7 +63,7 @@ export async function createPriceSnapshot(
 export async function getLatestPriceSnapshot(
   bookingId: string
 ): Promise<BookingPriceSnapshot | null> {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   const { data, error } = await supabase
     .from('booking_price_snapshots')
@@ -93,7 +93,7 @@ export async function getLatestPriceSnapshot(
 export async function getAllPriceSnapshots(
   bookingId: string
 ): Promise<BookingPriceSnapshot[]> {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   const { data, error } = await supabase
     .from('booking_price_snapshots')
@@ -117,7 +117,7 @@ export async function getAllPriceSnapshots(
 export async function getPriceSnapshotById(
   snapshotId: string
 ): Promise<BookingPriceSnapshot | null> {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   const { data, error } = await supabase
     .from('booking_price_snapshots')

@@ -1,11 +1,11 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateNavigation } from "@/components/rooms/date-navigation";
 import { RoomStatusGrid } from "@/components/rooms/room-status-grid";
 import { RoomStatusLegend } from "@/components/rooms/room-status-legend";
-import { useToast } from "@/components/ui/use-toast";
 import { markRoomCleaned, markRoomSetupComplete } from "./actions";
 import type { RoomWithStatus } from "@/lib/queries/rooms.server";
 
@@ -16,7 +16,6 @@ interface RoomsClientProps {
 
 export default function RoomsClient({ rooms, selectedDate }: RoomsClientProps) {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
   const handleMarkCleaned = async (
     roomId: string,
@@ -26,15 +25,10 @@ export default function RoomsClient({ rooms, selectedDate }: RoomsClientProps) {
     startTransition(async () => {
       const result = await markRoomCleaned(roomId, date, bookingId);
       if (result.success) {
-        toast({
-          title: "Room marked as cleaned",
-          description: "The room status has been updated.",
-        });
+        toast.success("Room marked as cleaned", { description: "The room status has been updated." });
       } else {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: result.error || "Failed to mark room as cleaned",
-          variant: "destructive",
         });
       }
     });
@@ -48,15 +42,10 @@ export default function RoomsClient({ rooms, selectedDate }: RoomsClientProps) {
     startTransition(async () => {
       const result = await markRoomSetupComplete(roomId, date, bookingId);
       if (result.success) {
-        toast({
-          title: "Room setup complete",
-          description: "The room has been marked as ready for guests.",
-        });
+        toast.success("Room setup complete", { description: "The room has been marked as ready for guests." });
       } else {
-        toast({
-          title: "Error",
+        toast.error("Error", {
           description: result.error || "Failed to mark setup as complete",
-          variant: "destructive",
         });
       }
     });

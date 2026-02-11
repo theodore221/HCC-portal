@@ -136,29 +136,42 @@ export async function getScheduleData(
     bookingsQuery = bookingsQuery.lte("arrival_date", endDate);
   }
 
-  // Fetch all data in parallel
+  // Fetch bookings first to get IDs for scoped auxiliary queries
+  const { data: bookings, error: bookingsError } = await bookingsQuery;
+
+  if (bookingsError)
+    throw new Error(`Failed to load bookings: ${bookingsError.message}`);
+
+  const bookingIds = (bookings ?? []).map((b) => b.id);
+
+  // Fetch auxiliary data scoped to fetched bookings
   const [
-    { data: bookings, error: bookingsError },
     { data: reservations, error: reservationsError },
     { data: spaces, error: spacesError },
     { data: dietaryProfiles, error: dietaryError },
     { data: mealJobs, error: mealJobsError },
   ] = await Promise.all([
-    bookingsQuery,
-    supabase
-      .from("space_reservations")
-      .select("booking_id, space_id"),
+    bookingIds.length > 0
+      ? supabase
+          .from("space_reservations")
+          .select("booking_id, space_id")
+          .in("booking_id", bookingIds)
+      : { data: [], error: null },
     supabase.from("spaces").select("id, name"),
-    supabase
-      .from("dietary_profiles")
-      .select("booking_id"),
-    supabase
-      .from("meal_jobs")
-      .select("booking_id, meal, service_time, percolated_coffee"),
+    bookingIds.length > 0
+      ? supabase
+          .from("dietary_profiles")
+          .select("booking_id")
+          .in("booking_id", bookingIds)
+      : { data: [], error: null },
+    bookingIds.length > 0
+      ? supabase
+          .from("meal_jobs")
+          .select("booking_id, meal, service_time, percolated_coffee")
+          .in("booking_id", bookingIds)
+      : { data: [], error: null },
   ]);
 
-  if (bookingsError)
-    throw new Error(`Failed to load bookings: ${bookingsError.message}`);
   if (reservationsError)
     throw new Error(`Failed to load reservations: ${reservationsError.message}`);
   if (spacesError)

@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -21,7 +22,6 @@ import {
   updateCoffeeRequest,
   updateMealJobServes,
 } from "./actions";
-import { useToast } from "@/components/ui/use-toast";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -50,7 +50,6 @@ export function DayMealCard({
   caterers,
   menuItems,
 }: DayMealCardProps) {
-  const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [customizeMode, setCustomizeMode] = useState(false);
@@ -69,14 +68,12 @@ export function DayMealCard({
       await assignCatererToDay(date, bookingId, bulkCatererId);
       router.refresh();
       const unassignedCount = meals.filter((m) => !m.assignedCatererId).length;
-      toast({
-        title: `Assigned caterer to ${unassignedCount} meal${
+      toast.success(`Assigned caterer to ${unassignedCount} meal${
           unassignedCount !== 1 ? "s" : ""
-        }`,
-      });
+        }`);
       setBulkCatererId("");
     } catch (error) {
-      toast({ title: "Failed to assign caterer", variant: "destructive" });
+      toast.error("Failed to assign caterer");
     } finally {
       setBulkLoading(false);
     }
@@ -90,9 +87,9 @@ export function DayMealCard({
         catererId === "unassigned" ? null : catererId
       );
       router.refresh();
-      toast({ title: "Caterer updated" });
+      toast.success("Caterer updated");
     } catch (error) {
-      toast({ title: "Failed to update caterer", variant: "destructive" });
+      toast.error("Failed to update caterer");
     } finally {
       setLoading(null);
     }
@@ -103,9 +100,9 @@ export function DayMealCard({
       setLoading(mealJobId);
       await updateMealJobItems(mealJobId, items);
       router.refresh();
-      toast({ title: "Menu updated" });
+      toast.success("Menu updated");
     } catch (error) {
-      toast({ title: "Failed to update menu", variant: "destructive" });
+      toast.error("Failed to update menu");
     } finally {
       setLoading(null);
     }
@@ -119,9 +116,9 @@ export function DayMealCard({
     try {
       await updateCoffeeRequest(mealJobId, checked, quantity);
       router.refresh();
-      toast({ title: "Coffee request updated" });
+      toast.success("Coffee request updated");
     } catch (error) {
-      toast({ title: "Failed to update coffee", variant: "destructive" });
+      toast.error("Failed to update coffee");
       throw error;
     }
   };
@@ -130,9 +127,9 @@ export function DayMealCard({
     try {
       await updateMealJobServes(mealJobId, count);
       router.refresh();
-      toast({ title: "Serves updated" });
+      toast.success("Serves updated");
     } catch (error) {
-      toast({ title: "Failed to update serves", variant: "destructive" });
+      toast.error("Failed to update serves");
       throw error;
     }
   };

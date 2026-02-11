@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState } from "react";
 import { Tables } from "@/lib/database.types";
@@ -10,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Check, Pencil, X } from "lucide-react";
 import { updateMealPrice } from "../actions";
-import { useToast } from "@/components/ui/use-toast";
 
 import { MEAL_ORDER } from "@/lib/catering";
 
@@ -117,16 +117,15 @@ function EditablePriceCell({
 }) {
   const [value, setValue] = useState(mealPrice.price.toString());
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateMealPrice(mealPrice.id, { price: parseFloat(value) || 0 });
       onDone();
-      toast({ title: "Meal price updated" });
+      toast.success("Meal price updated");
     } catch (error) {
-      toast({ title: "Error updating meal price", variant: "destructive" });
+      toast.error("Error updating meal price");
     } finally {
       setIsLoading(false);
     }

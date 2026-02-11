@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,7 +7,6 @@ import { CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DietaryDataTable } from "@/components/catering";
-import { useToast } from "@/components/ui/use-toast";
 import type { EnrichedMealJob } from "@/lib/catering";
 import type { DietaryProfile } from "@/lib/queries/bookings";
 import type { Enums } from "@/lib/database.types";
@@ -39,7 +39,6 @@ export function CustomerCateringTab({
   bookingId,
 }: CustomerCateringTabProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const [showPendingOnly, setShowPendingOnly] = useState(false);
 
   const mealsByDate = useMemo(() => {
@@ -129,12 +128,9 @@ export function CustomerCateringTab({
     try {
       await customerCreateDietaryProfile(bookingId, data);
       router.refresh();
-      toast({ title: "Dietary requirement added" });
+      toast.success("Dietary requirement added");
     } catch (error) {
-      toast({
-        title: "Failed to add dietary requirement",
-        variant: "destructive",
-      });
+      toast.error("Failed to add dietary requirement");
       throw error;
     }
   };
@@ -152,12 +148,9 @@ export function CustomerCateringTab({
     try {
       await customerUpdateDietaryProfile(profileId, data);
       router.refresh();
-      toast({ title: "Dietary requirement updated" });
+      toast.success("Dietary requirement updated");
     } catch (error) {
-      toast({
-        title: "Failed to update dietary requirement",
-        variant: "destructive",
-      });
+      toast.error("Failed to update dietary requirement");
       throw error;
     }
   };
@@ -166,12 +159,9 @@ export function CustomerCateringTab({
     try {
       await customerDeleteDietaryProfile(profileId);
       router.refresh();
-      toast({ title: "Dietary requirement removed" });
+      toast.success("Dietary requirement removed");
     } catch (error) {
-      toast({
-        title: "Failed to remove dietary requirement",
-        variant: "destructive",
-      });
+      toast.error("Failed to remove dietary requirement");
       throw error;
     }
   };
@@ -185,7 +175,7 @@ export function CustomerCateringTab({
       await customerUpdateMealAttendance(profileId, mealJobId, attending);
       router.refresh();
     } catch (error) {
-      toast({ title: "Failed to update meal attendance", variant: "destructive" });
+      toast.error("Failed to update meal attendance");
       throw error;
     }
   };

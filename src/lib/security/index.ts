@@ -60,10 +60,8 @@ export {
 
 // CSRF Protection (Server Actions)
 export {
-  setCSRFToken,
   getCSRFToken,
   getOrCreateCSRFToken,
-  rotateCSRFToken,
 } from './csrf-actions';
 
 // CSRF Protection (Utilities)

@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { cache } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 
 import { sbServer } from "@/lib/supabase-server";
@@ -9,7 +10,7 @@ export interface CurrentProfileResult {
   profile: ProfileRecord | null;
 }
 
-export async function getCurrentProfile(
+async function _getCurrentProfile(
   supabaseClient?: SupabaseClient<Database>
 ): Promise<CurrentProfileResult> {
   const supabase = supabaseClient ?? (await sbServer());
@@ -47,3 +48,6 @@ export async function getCurrentProfile(
 
   return { session, profile: profile ?? null };
 }
+
+// Wrap with React cache to deduplicate calls within a single render tree
+export const getCurrentProfile = cache(_getCurrentProfile);

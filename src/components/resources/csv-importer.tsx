@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, Download } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
 import { bulkUpdateResources } from "@/app/(app)/(admin)/admin/resources/actions";
 
 export function CsvImporter() {
@@ -31,7 +31,6 @@ export function CsvImporter() {
   );
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleDownloadTemplate = () => {
     let csvContent = "";
@@ -76,10 +75,10 @@ export function CsvImporter() {
       await bulkUpdateResources(resourceType, data);
       setIsOpen(false);
       setFile(null);
-      toast({ title: "Import successful" });
+      toast.success("Import successful");
     } catch (error) {
       console.error(error);
-      toast({ title: "Import failed", variant: "destructive" });
+      toast.error("Import failed");
     } finally {
       setIsLoading(false);
     }

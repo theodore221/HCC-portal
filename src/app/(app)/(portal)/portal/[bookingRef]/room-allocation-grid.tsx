@@ -1,13 +1,13 @@
 // @ts-nocheck
 "use client";
 
+import { toast } from 'sonner';
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
 import { Bed, BookOpen, ShowerHead, Loader2, UserPen, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoomWithAssignments, RoomAssignmentWithDetails } from "@/lib/queries/bookings";
@@ -260,7 +260,6 @@ function RoomCard({
   room: RoomWithAssignments;
   bookingId: string;
 }) {
-  const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const assignment = getAssignmentForRoom(room);
@@ -366,15 +365,10 @@ function RoomCard({
       }
       setIsDirty(false);
       setIsExpanded(false);
-      toast({
-        title: "Saved",
-        description: "Room details updated.",
-      });
+      toast.success("Saved", { description: "Room details updated." });
     } catch (error) {
-      toast({
-        title: "Failed to save",
+      toast.error("Failed to save", {
         description: error instanceof Error ? error.message : "An error occurred",
-        variant: "destructive",
       });
     } finally {
       setIsSaving(false);

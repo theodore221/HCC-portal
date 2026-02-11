@@ -14,7 +14,9 @@
       "Bash(grep:*)",
       "Bash(cat:*)",
       "Bash(findstr:*)",
-      "Bash(npm info:*)"
+      "Bash(npm info:*)",
+      "Bash(xargs sed:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }

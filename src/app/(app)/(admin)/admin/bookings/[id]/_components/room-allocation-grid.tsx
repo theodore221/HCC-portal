@@ -1,6 +1,7 @@
 // @ts-nocheck
 'use client';
 
+import { toast } from 'sonner';
 import { useState, useTransition, useEffect } from 'react';
 import Link from 'next/link';
 import { RoomWithAssignments, BookingWithMeta } from '@/lib/queries/bookings';
@@ -21,7 +22,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useToast } from '@/components/ui/use-toast';
 import {
   CheckCircle2,
   Ban,
@@ -142,7 +142,6 @@ export function RoomAllocationGrid({
   onAllocatedCountsChange,
 }: RoomAllocationGridProps) {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
   // Optimistic state for allocated room IDs
   const [optimisticAllocations, setOptimisticAllocations] = useState<
@@ -206,8 +205,7 @@ export function RoomAllocationGrid({
     startTransition(async () => {
       try {
         await allocateRoom(booking.id, roomId);
-        toast({
-          title: 'Room allocated',
+        toast.success('Room allocated', {
           description: 'Room has been assigned to this booking.',
         });
       } catch (error) {
@@ -217,11 +215,9 @@ export function RoomAllocationGrid({
           next.delete(roomId);
           return next;
         });
-        toast({
-          title: 'Failed to allocate',
+        toast.error('Failed to allocate', {
           description:
             error instanceof Error ? error.message : 'An error occurred',
-          variant: 'destructive',
         });
       }
     });
@@ -239,18 +235,15 @@ export function RoomAllocationGrid({
     startTransition(async () => {
       try {
         await deallocateRoom(booking.id, roomId);
-        toast({
-          title: 'Room deallocated',
+        toast.success('Room deallocated', {
           description: 'Room has been removed from this booking.',
         });
       } catch (error) {
         // Rollback
         setOptimisticAllocations((prev) => new Set([...prev, roomId]));
-        toast({
-          title: 'Failed to deallocate',
+        toast.error('Failed to deallocate', {
           description:
             error instanceof Error ? error.message : 'An error occurred',
-          variant: 'destructive',
         });
       }
     });
@@ -268,8 +261,7 @@ export function RoomAllocationGrid({
     startTransition(async () => {
       try {
         await allocateRoom(booking.id, roomId);
-        toast({
-          title: 'Room unlocked and allocated',
+        toast.success('Room unlocked and allocated', {
           description: `Room ${
             roomToUnlock.room_number || roomToUnlock.name
           } has been assigned to this booking.`,
@@ -281,11 +273,9 @@ export function RoomAllocationGrid({
           next.delete(roomId);
           return next;
         });
-        toast({
-          title: 'Failed to unlock room',
+        toast.error('Failed to unlock room', {
           description:
             error instanceof Error ? error.message : 'An error occurred',
-          variant: 'destructive',
         });
       }
     });
@@ -579,7 +569,6 @@ function RoomCard({
   onClick: () => void;
   disabled: boolean;
 }) {
-  const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isUnallocateConfirmOpen, setIsUnallocateConfirmOpen] = useState(false);
@@ -678,15 +667,12 @@ function RoomCard({
       }
       setIsDirty(false);
       setIsExpanded(false); // Close the expanded view after saving
-      toast({
-        title: 'Saved',
+      toast.success('Saved', {
         description: 'Room details updated.',
       });
     } catch (error) {
-      toast({
-        title: 'Failed to save',
+      toast.error('Failed to save', {
         description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive',
       });
     } finally {
       setIsSaving(false);

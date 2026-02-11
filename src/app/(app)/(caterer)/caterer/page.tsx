@@ -10,9 +10,10 @@ import { enrichMealJobs } from "@/lib/catering";
 import { getAssignedMealJobs, getBookingsForAdmin } from "@/lib/queries/bookings.server";
 
 export default async function CatererDashboard() {
+  const today = new Date().toISOString().slice(0, 10);
   const [bookings, mealJobsRaw] = await Promise.all([
-    getBookingsForAdmin(),
-    getAssignedMealJobs(),
+    getBookingsForAdmin({ excludeCancelled: true }),
+    getAssignedMealJobs(undefined, { limit: 10, dateFrom: today }),
   ]);
   const upcoming = enrichMealJobs(mealJobsRaw, bookings).slice(0, 3);
 

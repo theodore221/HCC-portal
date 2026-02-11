@@ -65,12 +65,15 @@ const statusBadgeStyles: Partial<Record<BookingStatus, string>> = {
   Cancelled: "border-danger/20 bg-danger/10 text-danger",
 };
 
+// Hoist to module level to avoid creating on every cell render
+const dateFormatter = new Intl.DateTimeFormat("en-AU", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
 function formatDateRangeLabel(arrival: string, departure: string) {
-  const formatter = new Intl.DateTimeFormat("en-AU", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const formatter = dateFormatter;
 
   const parseLocalDate = (value: string) => {
     const [year, month, day] = value.split("-").map(Number);

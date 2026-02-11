@@ -11,7 +11,7 @@ import { MealSlotCard } from "@/components/ui/meal-slot-card";
 import { enrichMealJobs } from "@/lib/catering";
 import { getBookingDisplayName } from "@/lib/queries/bookings";
 import {
-  getBookingsForAdmin,
+  getBookingById,
   getDietaryProfilesForBooking,
   getMealJobsForBooking,
 } from "@/lib/queries/bookings.server";
@@ -21,8 +21,7 @@ export default async function RunSheet({
 }: {
   params: { bookingId: string; date: string };
 }) {
-  const bookings = await getBookingsForAdmin();
-  const booking = bookings.find((b) => b.id === params.bookingId);
+  const booking = await getBookingById(params.bookingId);
   if (!booking) return notFound();
 
   const [mealJobsRaw, dietaryProfiles] = await Promise.all([

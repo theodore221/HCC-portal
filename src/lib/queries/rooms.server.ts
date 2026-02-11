@@ -46,63 +46,53 @@ export async function getRoomStatusForDate(
 
   const nextDayStr = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, "0")}-${String(nextDay.getDate()).padStart(2, "0")}`;
 
-  console.log("=== Room Status Query Debug ===");
-  console.log("Selected date:", date);
-  console.log("Next day:", nextDayStr);
-
-  // Fetch all active rooms with room types
-  const { data: rooms, error: roomsError } = await (
-    supabase.from("rooms") as any
-  )
-    .select(
+  // Parallelize independent queries
+  const [
+    { data: rooms, error: roomsError },
+    { data: assignments, error: assignmentsError },
+    { data: statusLogs, error: logsError },
+  ] = await Promise.all([
+    // Fetch all active rooms with room types
+    (supabase.from("rooms") as any)
+      .select(
+        `
+        *,
+        room_types (*)
       `
-      *,
-      room_types (*)
-    `
-    )
-    .eq("active", true)
-    .order("room_number");
+      )
+      .eq("active", true)
+      .order("room_number"),
+    // Fetch room assignments with booking details
+    (supabase.from("room_assignments") as any).select(`
+        *,
+        bookings (
+          id,
+          arrival_date,
+          departure_date,
+          customer_name,
+          contact_name,
+          status,
+          accommodation_requests
+        )
+      `),
+    // Fetch status logs for this date
+    (supabase.from("room_status_logs") as any)
+      .select("room_id, action_type")
+      .eq("action_date", date),
+  ]);
 
   if (roomsError) {
     throw new Error(`Failed to load rooms: ${roomsError.message}`);
   }
-
-  // Fetch room assignments with booking details
-  // We need: arrivals tomorrow (needs_setup), current stays (in_use), departures today (cleaning_required)
-  const { data: assignments, error: assignmentsError } = await (
-    supabase.from("room_assignments") as any
-  ).select(`
-      *,
-      bookings (
-        id,
-        arrival_date,
-        departure_date,
-        customer_name,
-        contact_name,
-        status,
-        accommodation_requests
-      )
-    `);
 
   if (assignmentsError) {
     console.error("Failed to load assignments:", assignmentsError);
     throw new Error(`Failed to load assignments: ${assignmentsError.message}`);
   }
 
-  // Fetch status logs for this date
-  const { data: statusLogs, error: logsError } = await (
-    supabase.from("room_status_logs") as any
-  )
-    .select("room_id, action_type")
-    .eq("action_date", date);
-
   if (logsError) {
     throw new Error(`Failed to load status logs: ${logsError.message}`);
   }
-
-  console.log("Total assignments found:", assignments?.length ?? 0);
-  console.log("Total rooms found:", rooms?.length ?? 0);
-  console.log("Status logs found:", statusLogs?.length ?? 0);
 
   // Create lookup maps
   const cleanedRooms = new Set(
@@ -142,13 +132,6 @@ export async function getRoomStatusForDate(
       const arrivalDate = booking.arrival_date;
       const departureDate = booking.departure_date;
 
-      // Debug logging for rooms with assignments
-      if (roomAssignments.length > 0 && room.room_number) {
-        console.log(
-          `Room ${room.room_number}: arrival=${arrivalDate}, departure=${departureDate}, date=${date}, nextDay=${nextDayStr}`
-        );
-      }
-
       // Extract BYO linen info from accommodation_requests
       const accommodationRequests = booking.accommodation_requests as Record<
         string,
@@ -173,7 +156,6 @@ export async function getRoomStatusForDate(
         relatedBookingId = booking.id;
         relatedBookingName =
           booking.customer_name || booking.contact_name || "Guest";
-        console.log(`Room ${room.room_number}: Status = IN_USE`);
         break; // in_use takes priority
       }
 
@@ -183,19 +165,12 @@ export async function getRoomStatusForDate(
         relatedBookingId = booking.id;
         relatedBookingName =
           booking.customer_name || booking.contact_name || "Guest";
-        console.log(`Room ${room.room_number}: Status = CLEANING_REQUIRED`);
         // Continue checking - may find a same-day arrival
       }
 
       // Check if needs setup (arrival is tomorrow, and not already marked setup)
       const isArrivalTomorrow = arrivalDate === nextDayStr;
       const isAlreadySetup = setupCompleteRooms.has(room.id);
-
-      if (roomAssignments.length > 0 && room.room_number) {
-        console.log(
-          `Room ${room.room_number}: Checking needs_setup - arrivalDate="${arrivalDate}", nextDayStr="${nextDayStr}", match=${isArrivalTomorrow}, alreadySetup=${isAlreadySetup}, currentStatus="${status}"`
-        );
-      }
 
       if (isArrivalTomorrow) {
         const assignmentGuestNames = (assignment as any).guest_names;
@@ -217,18 +192,10 @@ export async function getRoomStatusForDate(
           // Room is setup and ready for arrival tomorrow
           if (status !== "cleaning_required") {
             status = "setup_complete";
-            console.log(
-              `✓ Room ${room.room_number}: Status = SETUP_COMPLETE (ready for arrival)`
-            );
           }
         } else if (status !== "cleaning_required") {
           // Cleaning takes priority
           status = "needs_setup";
-          console.log(`✓ Room ${room.room_number}: Status = NEEDS_SETUP`);
-        } else {
-          console.log(
-            `✗ Room ${room.room_number}: Would be NEEDS_SETUP but CLEANING_REQUIRED takes priority`
-          );
         }
       }
     }

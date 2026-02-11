@@ -45,7 +45,7 @@ export default async function PortalNewBookingPage() {
 
       <NewBookingForm
         csrfToken={csrfToken}
-        customerEmail={profile.email}
+        customerEmail={profile.email || ""}
         customerName={profile.full_name || ""}
         previousBookings={previousBookings || []}
       />

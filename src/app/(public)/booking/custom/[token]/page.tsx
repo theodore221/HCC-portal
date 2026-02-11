@@ -29,11 +29,11 @@ export default async function CustomBookingPage({ params }: CustomBookingPagePro
   const tokenHash = hashToken(token);
 
   // Fetch booking by token hash
-  const { data: booking, error } = await supabase
+  const { data: booking, error } = (await supabase
     .from('bookings')
     .select('*')
     .eq('custom_pricing_token_hash', tokenHash)
-    .single();
+    .single()) as any;
 
   if (error || !booking) {
     notFound();

@@ -15,7 +15,7 @@ import { ArrowRight } from "lucide-react";
 
 export default async function StaffDashboard() {
   const [bookings, mealJobsRaw] = await Promise.all([
-    getBookingsForAdmin(),
+    getBookingsForAdmin({ excludeCancelled: true }),
     getAssignedMealJobs(),
   ]);
   const mealJobs = enrichMealJobs(mealJobsRaw, bookings);

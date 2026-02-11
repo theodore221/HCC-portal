@@ -32,21 +32,16 @@ export const enquirySchema = z.object({
     .transform((val) => val?.trim() || null),
 
   // Event details
-  event_type: z.enum(
-    [
-      'Retreat',
-      'Conference',
-      'Wedding',
-      'School',
-      'Young Adults',
-      'Training',
-      'Silent Retreat',
-      'Other',
-    ],
-    {
-      required_error: 'Please select an event type',
-    }
-  ),
+  event_type: z.enum([
+    'Retreat',
+    'Conference',
+    'Wedding',
+    'School',
+    'Young Adults',
+    'Training',
+    'Silent Retreat',
+    'Other',
+  ]),
 
   approximate_start_date: z
     .string()

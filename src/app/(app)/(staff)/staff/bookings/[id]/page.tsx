@@ -23,16 +23,14 @@ export default async function StaffBookingDetail({
   const booking = await getBookingById(id);
   if (!booking) return notFound();
 
-  const mealJobsRaw = await getMealJobsForBooking(booking.id);
-  const rooms = await getRoomsForBooking(booking.id);
-  const cateringOptions = await getCateringOptions();
-  const mealJobs = enrichMealJobs(mealJobsRaw, [booking]);
   const displayName = getBookingDisplayName(booking);
-
   const supabase: any = await sbServer();
 
-  // 1. Fetch all necessary data
+  // Parallelize all data fetching after getting the booking
   const [
+    mealJobsRaw,
+    rooms,
+    cateringOptions,
     { data: allSpaces },
     { data: allRooms },
     { data: bookingReservations },
@@ -40,6 +38,9 @@ export default async function StaffBookingDetail({
     { data: roomingGroups },
     { data: roomAssignmentsForOthers },
   ] = await Promise.all([
+    getMealJobsForBooking(booking.id),
+    getRoomsForBooking(booking.id),
+    getCateringOptions(),
     supabase
       .from("spaces")
       .select("id, name, capacity")
@@ -66,6 +67,8 @@ export default async function StaffBookingDetail({
       )
       .neq("booking_id", booking.id),
   ]);
+
+  const mealJobs = enrichMealJobs(mealJobsRaw, [booking]);
 
   // 2. Compute Conflicts in App Layer
   const conflicts: Views<"v_space_conflicts">[] = [];

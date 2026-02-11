@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState, useTransition } from "react";
 import {
@@ -20,7 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/components/ui/use-toast";
 import { updateBookingSpecifics } from "../actions";
 import type { BookingWithMeta } from "@/lib/queries/bookings";
 
@@ -36,7 +36,6 @@ export function EditBookingSpecificsDialog({
   onOpenChange,
 }: EditBookingSpecificsDialogProps) {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
   const [formData, setFormData] = useState({
     booking_type: booking.booking_type as "Group" | "Individual",
     headcount: booking.headcount,
@@ -50,9 +49,7 @@ export function EditBookingSpecificsDialog({
   const handleSubmit = () => {
     // Validate headcount
     if (formData.headcount < 1) {
-      toast({
-        variant: "destructive",
-        title: "Invalid headcount",
+      toast.error("Invalid headcount", {
         description: "Headcount must be at least 1.",
       });
       return;
@@ -62,9 +59,7 @@ export function EditBookingSpecificsDialog({
     const arrival = new Date(formData.arrival_date);
     const departure = new Date(formData.departure_date);
     if (departure < arrival) {
-      toast({
-        variant: "destructive",
-        title: "Invalid dates",
+      toast.error("Invalid dates", {
         description: "Departure date cannot be before arrival date.",
       });
       return;
@@ -77,15 +72,12 @@ export function EditBookingSpecificsDialog({
           arrival_time: formData.arrival_time || null,
           departure_time: formData.departure_time || null,
         });
-        toast({
-          title: "Booking updated",
+        toast.success("Booking updated", {
           description: "Booking details have been updated successfully.",
         });
         onOpenChange(false);
       } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Failed to update booking",
+        toast.error("Failed to update booking", {
           description: error instanceof Error ? error.message : "Unknown error",
         });
       }

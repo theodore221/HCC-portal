@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Pencil, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { updateAccommodationRequests } from '../actions';
@@ -40,7 +40,6 @@ export function AccommodationRequestsCard({
 }: AccommodationRequestsCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
 
   const [requests, setRequests] = useState<AccommodationRequests>(initialRequests);
 
@@ -49,16 +48,13 @@ export function AccommodationRequestsCard({
       try {
         await updateAccommodationRequests(bookingId, requests);
         setIsEditing(false);
-        toast({
-          title: 'Accommodation requests updated',
+        toast.success('Accommodation requests updated', {
           description: 'The accommodation requests have been successfully updated.',
         });
       } catch (error) {
-        toast({
-          title: 'Failed to update',
+        toast.error('Failed to update', {
           description:
             error instanceof Error ? error.message : 'An error occurred',
-          variant: 'destructive',
         });
       }
     });

@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState, useTransition } from "react";
 import {
@@ -12,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { recordDeposit } from "../actions";
 
 interface RecordDepositDialogProps {
@@ -27,23 +27,19 @@ export function RecordDepositDialog({
   onOpenChange,
 }: RecordDepositDialogProps) {
   const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
   const [depositReference, setDepositReference] = useState("");
 
   const handleSubmit = () => {
     startTransition(async () => {
       try {
         await recordDeposit(bookingId, depositReference || undefined);
-        toast({
-          title: "Deposit recorded",
+        toast.success("Deposit recorded", {
           description: "The deposit has been successfully recorded.",
         });
         onOpenChange(false);
         setDepositReference("");
       } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Failed to record deposit",
+        toast.error("Failed to record deposit", {
           description: error instanceof Error ? error.message : "Unknown error",
         });
       }

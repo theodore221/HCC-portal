@@ -1,6 +1,7 @@
 // @ts-nocheck
 "use client";
 
+import { toast } from 'sonner';
 import { useState } from "react";
 import { Tables } from "@/lib/database.types";
 import { ColumnDef } from "@tanstack/react-table";
@@ -18,7 +19,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Check, Pencil, Trash2, X, Plus } from "lucide-react";
 import { updateMenuItem, createMenuItem, deleteMenuItem } from "../actions";
-import { useToast } from "@/components/ui/use-toast";
 import { MEAL_ORDER } from "@/lib/catering";
 
 interface MenuTabProps {
@@ -30,15 +30,14 @@ interface MenuTabProps {
 export function MenuTab({ menuItems, caterers, mealPrices }: MenuTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
-  const { toast } = useToast();
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
     try {
       await deleteMenuItem(id);
-      toast({ title: "Menu item deleted" });
+      toast.success("Menu item deleted");
     } catch (error) {
-      toast({ title: "Error deleting menu item", variant: "destructive" });
+      toast.error("Error deleting menu item");
     }
   };
 
@@ -214,9 +213,9 @@ export function MenuTab({ menuItems, caterers, mealPrices }: MenuTabProps) {
         allergens: "",
       });
       setIsCreating(false);
-      toast({ title: "Menu item created" });
+      toast.success("Menu item created");
     } catch (error) {
-      toast({ title: "Error creating menu item", variant: "destructive" });
+      toast.error("Error creating menu item");
     }
   };
 
@@ -446,16 +445,15 @@ function EditableLabelCell({
 }) {
   const [value, setValue] = useState(item.label);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateMenuItem(item.id, { label: value });
       onDone();
-      toast({ title: "Menu item updated" });
+      toast.success("Menu item updated");
     } catch (error) {
-      toast({ title: "Error updating menu item", variant: "destructive" });
+      toast.error("Error updating menu item");
     } finally {
       setIsLoading(false);
     }
@@ -494,16 +492,15 @@ function EditableMealTypeCell({
 }) {
   const [value, setValue] = useState(item.meal_type || "");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateMenuItem(item.id, { meal_type: value as any });
       onDone();
-      toast({ title: "Menu item updated" });
+      toast.success("Menu item updated");
     } catch (error) {
-      toast({ title: "Error updating menu item", variant: "destructive" });
+      toast.error("Error updating menu item");
     } finally {
       setIsLoading(false);
     }
@@ -555,7 +552,6 @@ function EditableCatererCell({
 }) {
   const [value, setValue] = useState(item.default_caterer_id || "none");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -564,9 +560,9 @@ function EditableCatererCell({
         default_caterer_id: value === "none" ? null : value,
       });
       onDone();
-      toast({ title: "Menu item updated" });
+      toast.success("Menu item updated");
     } catch (error) {
-      toast({ title: "Error updating menu item", variant: "destructive" });
+      toast.error("Error updating menu item");
     } finally {
       setIsLoading(false);
     }
@@ -611,7 +607,6 @@ function EditableAllergensCell({
 }) {
   const [value, setValue] = useState(item.allergens?.join(", ") || "");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -623,9 +618,9 @@ function EditableAllergensCell({
           .filter(Boolean),
       });
       onDone();
-      toast({ title: "Menu item updated" });
+      toast.success("Menu item updated");
     } catch (error) {
-      toast({ title: "Error updating menu item", variant: "destructive" });
+      toast.error("Error updating menu item");
     } finally {
       setIsLoading(false);
     }

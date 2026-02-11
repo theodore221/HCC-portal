@@ -1,10 +1,10 @@
 "use server";
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import type { SupabaseClient as SupabaseJsClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 import type { Database } from "@/lib/database.types";
+import { sbAdmin } from "@/lib/supabase-admin";
 import {
   deriveProfileAttributes,
   extractProfileSeed,
@@ -56,24 +56,7 @@ async function createSupabaseClient() {
   );
 }
 
-function createServiceRoleClient(): ServiceSupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceRoleKey) {
-    throw new ProfileServiceError(
-      "Supabase service role credentials are not configured for profile provisioning.",
-      { status: 500 }
-    );
-  }
-
-  return createClient<Database>(url, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
+// Removed duplicate createServiceRoleClient() - now using shared sbAdmin() from @/lib/supabase-admin
 
 export async function ensureProfileForCurrentUser(): Promise<NormalizedProfile> {
   const supabase = await createSupabaseClient();
@@ -120,7 +103,7 @@ async function ensureProfileWithClient(
 
   let booking: BookingLookup | null = null;
 
-  const serviceSupabase = options?.serviceSupabase ?? createServiceRoleClient();
+  const serviceSupabase = options?.serviceSupabase ?? sbAdmin();
 
   if (metadata.booking_reference) {
     const { data: bookingLookup, error: bookingError } = await serviceSupabase

@@ -12,7 +12,7 @@ export async function updateEnquiryStatus(
   status: string,
   notes?: string
 ) {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   const updateData: any = { status };
   if (notes) updateData.admin_notes = notes;
@@ -33,7 +33,7 @@ export async function setQuotedAmount(
   amount: number,
   notes?: string
 ) {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   const { error } = await supabase
     .from('enquiries')
@@ -54,7 +54,7 @@ export async function markAsLost(
   enquiryId: string,
   reason: string
 ) {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   const { error } = await supabase
     .from('enquiries')

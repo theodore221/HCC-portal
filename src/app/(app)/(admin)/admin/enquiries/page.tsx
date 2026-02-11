@@ -8,7 +8,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default async function EnquiriesPage() {
-  const supabase = await sbServer();
+  const supabase: any = await sbServer();
 
   const { data: enquiries, error } = await supabase
     .from('enquiries')
@@ -22,10 +22,10 @@ export default async function EnquiriesPage() {
   // Calculate stats
   const stats = {
     total: enquiries?.length || 0,
-    new: enquiries?.filter(e => e.status === 'new').length || 0,
-    quoted: enquiries?.filter(e => e.status === 'quoted').length || 0,
-    converted: enquiries?.filter(e => e.status === 'converted_to_booking').length || 0,
-    lost: enquiries?.filter(e => e.status === 'lost').length || 0,
+    new: enquiries?.filter((e: any) => e.status === 'new').length || 0,
+    quoted: enquiries?.filter((e: any) => e.status === 'quoted').length || 0,
+    converted: enquiries?.filter((e: any) => e.status === 'converted_to_booking').length || 0,
+    lost: enquiries?.filter((e: any) => e.status === 'lost').length || 0,
   };
 
   return (
@@ -90,7 +90,7 @@ export default async function EnquiriesPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {enquiries?.map((enquiry) => (
+            {enquiries?.map((enquiry: any) => (
               <tr key={enquiry.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {enquiry.reference_number}

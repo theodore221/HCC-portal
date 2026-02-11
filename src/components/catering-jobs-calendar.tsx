@@ -1,4 +1,7 @@
 "use client";
+import { toast } from 'sonner';
+
+import "@/app/fullcalendar.css"; // Component-level CSS import (~15KB, only loaded when calendar is used)
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
 import { CheckCircle2, AlertCircle, Loader2, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -56,7 +58,6 @@ export function CateringJobsCalendar({
   menuItems,
   readOnly = false,
 }: CateringJobsCalendarProps) {
-  const { toast } = useToast();
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(
     jobs[0]?.date ?? new Date().toISOString().slice(0, 10)
@@ -148,9 +149,9 @@ export function CateringJobsCalendar({
         catererId === "unassigned" ? null : catererId
       );
       router.refresh();
-      toast({ title: "Caterer updated" });
+      toast.success("Caterer updated");
     } catch (error) {
-      toast({ title: "Failed to update caterer", variant: "destructive" });
+      toast.error("Failed to update caterer");
     } finally {
       setLoading(null);
     }
@@ -161,9 +162,9 @@ export function CateringJobsCalendar({
       setLoading(mealJobId);
       await updateMealJobItems(mealJobId, items);
       router.refresh();
-      toast({ title: "Menu updated" });
+      toast.success("Menu updated");
     } catch (error) {
-      toast({ title: "Failed to update menu", variant: "destructive" });
+      toast.error("Failed to update menu");
     } finally {
       setLoading(null);
     }
@@ -177,9 +178,9 @@ export function CateringJobsCalendar({
     try {
       await updateCoffeeRequest(mealJobId, checked, quantity);
       router.refresh();
-      toast({ title: "Coffee request updated" });
+      toast.success("Coffee request updated");
     } catch (error) {
-      toast({ title: "Failed to update coffee", variant: "destructive" });
+      toast.error("Failed to update coffee");
       throw error;
     }
   };
@@ -188,9 +189,9 @@ export function CateringJobsCalendar({
     try {
       await updateMealJobServes(mealJobId, count);
       router.refresh();
-      toast({ title: "Serves updated" });
+      toast.success("Serves updated");
     } catch (error) {
-      toast({ title: "Failed to update serves", variant: "destructive" });
+      toast.error("Failed to update serves");
       throw error;
     }
   };

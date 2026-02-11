@@ -60,8 +60,11 @@ const statusTone: Record<BookingStatus, { label: string; tone: Tone }> = {
 };
 
 export default async function AdminDashboard() {
-  const bookings = await getBookingsForAdmin();
-  const mealJobs = await getAssignedMealJobs();
+  // Parallelize independent queries
+  const [bookings, mealJobs] = await Promise.all([
+    getBookingsForAdmin({ excludeCancelled: true }),
+    getAssignedMealJobs(),
+  ]);
   const enrichedJobs = enrichMealJobs(mealJobs, bookings);
 
   const pending = bookings.filter((b) => b.status === "Pending");

@@ -4,7 +4,11 @@
  */
 
 import { unstable_cache } from "next/cache";
-import { getBookingsForAdminPaginated } from "./queries/bookings.server";
+import {
+  getBookingsForAdminPaginated,
+  getBookingsForAdmin as getBookingsForAdminUncached,
+} from "./queries/bookings.server";
+import { getCateringOptions as getCateringOptionsUncached } from "./queries/catering.server";
 import type { BookingStatus } from "./queries/bookings";
 
 /**
@@ -18,6 +22,7 @@ export const CACHE_TAGS = {
   SPACE_RESERVATIONS: "space-reservations",
   ROOM_ASSIGNMENTS: "room-assignments",
   DIETARY_PROFILES: "dietary-profiles",
+  CATERING_OPTIONS: "catering-options",
 } as const;
 
 /**
@@ -74,7 +79,7 @@ export const getBookingsPaginatedCached = (params: {
  * Helper function to build cache tags for a specific booking
  * Use this when invalidating cache for a specific booking
  */
-export const getBookingCacheTags = (bookingId: string) => {
+export const getBookingCacheTags = (bookingId: string): string[] => {
   return [
     CACHE_TAGS.BOOKINGS,
     CACHE_TAGS.BOOKING_STATUS_COUNTS,
@@ -85,8 +90,8 @@ export const getBookingCacheTags = (bookingId: string) => {
 /**
  * Helper function to get all meal job related tags
  */
-export const getMealJobCacheTags = (bookingId?: string) => {
-  const tags = [CACHE_TAGS.MEAL_JOBS];
+export const getMealJobCacheTags = (bookingId?: string): string[] => {
+  const tags: string[] = [CACHE_TAGS.MEAL_JOBS];
   if (bookingId) {
     tags.push(`${CACHE_TAGS.MEAL_JOBS}:${bookingId}`);
   }
@@ -96,8 +101,8 @@ export const getMealJobCacheTags = (bookingId?: string) => {
 /**
  * Helper function to get all space reservation related tags
  */
-export const getSpaceReservationCacheTags = (bookingId?: string) => {
-  const tags = [CACHE_TAGS.SPACE_RESERVATIONS, CACHE_TAGS.BOOKINGS];
+export const getSpaceReservationCacheTags = (bookingId?: string): string[] => {
+  const tags: string[] = [CACHE_TAGS.SPACE_RESERVATIONS, CACHE_TAGS.BOOKINGS];
   if (bookingId) {
     tags.push(`${CACHE_TAGS.SPACE_RESERVATIONS}:${bookingId}`);
   }
@@ -107,8 +112,8 @@ export const getSpaceReservationCacheTags = (bookingId?: string) => {
 /**
  * Helper function to get all room assignment related tags
  */
-export const getRoomAssignmentCacheTags = (bookingId?: string) => {
-  const tags = [CACHE_TAGS.ROOM_ASSIGNMENTS];
+export const getRoomAssignmentCacheTags = (bookingId?: string): string[] => {
+  const tags: string[] = [CACHE_TAGS.ROOM_ASSIGNMENTS];
   if (bookingId) {
     tags.push(`${CACHE_TAGS.ROOM_ASSIGNMENTS}:${bookingId}`);
   }
@@ -118,10 +123,51 @@ export const getRoomAssignmentCacheTags = (bookingId?: string) => {
 /**
  * Helper function to get all dietary profile related tags
  */
-export const getDietaryProfileCacheTags = (bookingId?: string) => {
-  const tags = [CACHE_TAGS.DIETARY_PROFILES];
+export const getDietaryProfileCacheTags = (bookingId?: string): string[] => {
+  const tags: string[] = [CACHE_TAGS.DIETARY_PROFILES];
   if (bookingId) {
     tags.push(`${CACHE_TAGS.DIETARY_PROFILES}:${bookingId}`);
   }
   return tags;
 };
+
+/**
+ * Get all bookings for admin with caching
+ * Cached for 30 seconds with optional filters
+ */
+export const getBookingsForAdmin = (options?: {
+  excludeCancelled?: boolean;
+  dateFrom?: string;
+}) => {
+  const cacheKey = [
+    "bookings-admin",
+    `cancelled-${options?.excludeCancelled ?? false}`,
+    `from-${options?.dateFrom ?? "none"}`,
+  ];
+
+  return unstable_cache(
+    async () => {
+      return await getBookingsForAdminUncached(options);
+    },
+    cacheKey,
+    {
+      tags: [CACHE_TAGS.BOOKINGS, CACHE_TAGS.SPACE_RESERVATIONS],
+      revalidate: 30, // Revalidate after 30 seconds
+    }
+  )();
+};
+
+/**
+ * Get catering options with caching
+ * Cached for 5 minutes (catering options rarely change)
+ */
+export const getCateringOptions = unstable_cache(
+  async () => {
+    return await getCateringOptionsUncached();
+  },
+  ["catering-options"],
+  {
+    tags: [CACHE_TAGS.CATERING_OPTIONS],
+    revalidate: 300, // Revalidate after 5 minutes
+  }
+);

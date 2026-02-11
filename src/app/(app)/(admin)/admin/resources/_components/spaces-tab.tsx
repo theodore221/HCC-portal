@@ -1,4 +1,5 @@
 "use client";
+import { toast } from 'sonner';
 
 import { useState } from "react";
 import { Tables } from "@/lib/database.types";
@@ -9,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, Pencil, X } from "lucide-react";
 import { updateSpace } from "../actions";
-import { useToast } from "@/components/ui/use-toast";
 
 interface SpacesTabProps {
   spaces: Tables<"spaces">[];
@@ -114,16 +114,15 @@ function EditableCapacityCell({
 }) {
   const [value, setValue] = useState(space.capacity?.toString() || "");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateSpace(space.id, { capacity: parseInt(value) || null });
       onDone();
-      toast({ title: "Space updated" });
+      toast.success("Space updated");
     } catch (error) {
-      toast({ title: "Error updating space", variant: "destructive" });
+      toast.error("Error updating space");
     } finally {
       setIsLoading(false);
     }
@@ -162,16 +161,15 @@ function EditablePriceCell({
 }) {
   const [value, setValue] = useState(space.price?.toString() || "0");
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSave = async () => {
     setIsLoading(true);
     try {
       await updateSpace(space.id, { price: parseFloat(value) || 0 });
       onDone();
-      toast({ title: "Space updated" });
+      toast.success("Space updated");
     } catch (error) {
-      toast({ title: "Error updating space", variant: "destructive" });
+      toast.error("Error updating space");
     } finally {
       setIsLoading(false);
     }

@@ -25,15 +25,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = sbAdmin();
 
-    // Check if user exists in Supabase Auth (not profiles table)
-    // This allows newly created users (e.g., caterers) to receive magic links
-    // before their profile is created on first login
-    const {
-      data: { users },
-      error,
-    } = await supabase.auth.admin.listUsers();
+    // Check profiles table first (O(1) indexed lookup instead of O(n) listUsers)
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", trimmedEmail)
+      .maybeSingle();
 
-    if (error) {
+    if (error && error.code !== "PGRST116") {
       console.error("Error checking email:", error);
       return NextResponse.json(
         { error: "Unable to verify email" },
@@ -41,9 +40,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userExists = users.some(
-      (u) => u.email?.toLowerCase() === trimmedEmail
-    );
+    const userExists = !!profile;
 
     return NextResponse.json({
       data: { exists: userExists },

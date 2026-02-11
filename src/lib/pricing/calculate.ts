@@ -155,17 +155,17 @@ async function fetchCurrentPrices(supabase: any): Promise<PriceTableSnapshot> {
 
   // Convert to lookup maps
   const mealPriceMap: Record<string, number> = {};
-  mealPrices?.forEach((mp) => {
+  mealPrices?.forEach((mp: { meal_type: string; price: number }) => {
     mealPriceMap[mp.meal_type] = mp.price;
   });
 
   const roomTypeMap: Record<string, number> = {};
-  roomTypes?.forEach((rt) => {
+  roomTypes?.forEach((rt: { name: string; price: number }) => {
     roomTypeMap[rt.name] = rt.price;
   });
 
   const spaceMap: Record<string, number> = {};
-  spaces?.forEach((s) => {
+  spaces?.forEach((s: { name: string; price: number | null }) => {
     spaceMap[s.name] = s.price ?? 0;
   });
 
@@ -181,7 +181,7 @@ async function fetchCurrentPrices(supabase: any): Promise<PriceTableSnapshot> {
  * Calculate accommodation pricing line items
  */
 function calculateAccommodationPricing(
-  rooms: BookingSelections['accommodation']['rooms'],
+  rooms: NonNullable<BookingSelections['accommodation']>['rooms'],
   nights: number,
   priceSnapshot: PriceTableSnapshot
 ): PricingLineItem[] {
@@ -215,7 +215,7 @@ function calculateAccommodationPricing(
  * Calculate catering pricing line items
  */
 function calculateCateringPricing(
-  meals: BookingSelections['catering']['meals'],
+  meals: NonNullable<BookingSelections['catering']>['meals'],
   priceSnapshot: PriceTableSnapshot
 ): PricingLineItem[] {
   // Group meals by type and sum headcounts
@@ -259,6 +259,8 @@ function calculateVenuePricing(
   priceSnapshot: PriceTableSnapshot
 ): PricingLineItem[] {
   const items: PricingLineItem[] = [];
+
+  if (!venue) return items;
 
   // Whole centre booking (exclusive use)
   if (venue.whole_centre) {
