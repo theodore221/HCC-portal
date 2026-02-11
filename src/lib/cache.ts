@@ -23,6 +23,7 @@ export const CACHE_TAGS = {
   ROOM_ASSIGNMENTS: "room-assignments",
   DIETARY_PROFILES: "dietary-profiles",
   CATERING_OPTIONS: "catering-options",
+  ENQUIRIES: "enquiries",
 } as const;
 
 /**

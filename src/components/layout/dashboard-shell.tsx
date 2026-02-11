@@ -10,6 +10,7 @@ import {
   Home,
   LayoutDashboard,
   Menu,
+  MessageSquare,
   PanelLeftClose,
   PanelRightOpen,
   Settings,
@@ -181,6 +182,8 @@ function getIconForItem(href: string, label: string) {
   switch (label.toLowerCase()) {
     case "dashboard":
       return LayoutDashboard;
+    case "enquiries":
+      return MessageSquare;
     case "bookings":
       return Calendar;
     case "catering":
