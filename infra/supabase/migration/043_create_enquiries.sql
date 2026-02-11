@@ -79,11 +79,11 @@ CREATE TRIGGER trigger_generate_enquiry_reference
   WHEN (NEW.reference_number IS NULL)
   EXECUTE FUNCTION generate_enquiry_reference();
 
--- Create trigger to auto-update updated_at timestamp
+-- Create trigger to auto-update updated_at timestamp (uses touch_updated_at from 001_booking_schema.sql)
 CREATE TRIGGER trigger_enquiries_updated_at
   BEFORE UPDATE ON public.enquiries
   FOR EACH ROW
-  EXECUTE FUNCTION moddatetime(updated_at);
+  EXECUTE FUNCTION public.touch_updated_at();
 
 -- Add comment to table
 COMMENT ON TABLE public.enquiries IS 'Stores customer enquiries before they become bookings. Tracks the lead conversion pipeline.';

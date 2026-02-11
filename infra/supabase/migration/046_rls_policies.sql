@@ -183,6 +183,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Enable pgcrypto extension for digest function (required for hash_token)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Function to hash custom pricing tokens (for comparison)
 CREATE OR REPLACE FUNCTION public.hash_token(token_value TEXT)
 RETURNS TEXT AS $$

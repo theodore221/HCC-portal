@@ -4,15 +4,15 @@
  * Handles enquiry form submissions with security validation
  */
 
-'use server';
+"use server";
 
-import { sbServer } from '@/lib/supabase-server';
-import { enquirySchema, sanitizeEnquiryData } from '@/lib/validation/enquiry';
+import { sbAdmin } from "@/lib/supabase-admin";
+import { enquirySchema, sanitizeEnquiryData } from "@/lib/validation/enquiry";
 import {
   validateHoneypotFromJSON,
   validateSubmissionTime,
   HONEYPOT_FIELDS,
-} from '@/lib/security';
+} from "@/lib/security";
 
 export interface EnquirySubmissionResult {
   success: boolean;
@@ -28,7 +28,7 @@ export interface EnquirySubmissionResult {
  * @returns Submission result
  */
 export async function submitEnquiry(
-  formData: FormData
+  formData: FormData,
 ): Promise<EnquirySubmissionResult> {
   try {
     // Convert FormData to object
@@ -36,7 +36,10 @@ export async function submitEnquiry(
 
     // Parse estimated_guests as number
     if (rawData.estimated_guests) {
-      rawData.estimated_guests = parseInt(rawData.estimated_guests as string, 10);
+      rawData.estimated_guests = parseInt(
+        rawData.estimated_guests as string,
+        10,
+      );
     }
 
     // 1. Validate honeypot (bot detection)
@@ -44,10 +47,10 @@ export async function submitEnquiry(
     const honeypotResult = validateHoneypotFromJSON(rawData, honeypotField);
 
     if (!honeypotResult.valid) {
-      console.warn('Honeypot triggered on enquiry submission');
+      console.warn("Honeypot triggered on enquiry submission");
       return {
         success: false,
-        error: 'Invalid submission. Please try again.',
+        error: "Invalid submission. Please try again.",
       };
     }
 
@@ -55,10 +58,10 @@ export async function submitEnquiry(
     const timeResult = validateSubmissionTime(rawData._form_time as string);
 
     if (!timeResult.valid) {
-      console.warn('Submission time validation failed:', timeResult.message);
+      console.warn("Submission time validation failed:", timeResult.message);
       return {
         success: false,
-        error: 'Please take a moment to fill out the form completely.',
+        error: "Please take a moment to fill out the form completely.",
       };
     }
 
@@ -69,7 +72,7 @@ export async function submitEnquiry(
       const errors: Record<string, string[]> = {};
 
       validationResult.error.issues.forEach((issue) => {
-        const path = issue.path.join('.');
+        const path = issue.path.join(".");
         if (!errors[path]) {
           errors[path] = [];
         }
@@ -78,7 +81,7 @@ export async function submitEnquiry(
 
       return {
         success: false,
-        error: 'Please correct the errors in the form.',
+        error: "Please correct the errors in the form.",
         errors,
       };
     }
@@ -87,36 +90,40 @@ export async function submitEnquiry(
     const cleanData = sanitizeEnquiryData(validationResult.data);
 
     // 5. Insert into database
-    const supabase = await sbServer();
+    const supabase = sbAdmin();
 
     const { data: enquiry, error: dbError } = await supabase
-      .from('enquiries')
+      .from("enquiries")
       .insert({
         ...cleanData,
-        status: 'new',
+        status: "new",
         submitted_from_ip: null, // Will be populated by trigger/RLS if needed
         submission_duration_seconds: timeResult.elapsed
           ? Math.floor(timeResult.elapsed)
           : null,
       })
-      .select('*')
+      .select("*")
       .single();
 
     if (dbError) {
-      console.error('Database error creating enquiry:', dbError);
+      console.error("Database error creating enquiry:", dbError);
       return {
         success: false,
-        error: 'An error occurred while submitting your enquiry. Please try again.',
+        error:
+          "An error occurred while submitting your enquiry. Please try again.",
       };
     }
 
     // 6. Send confirmation email to customer (don't fail submission if email fails)
     try {
-      const { sendEnquiryReceivedEmail } = await import('@/lib/email/send-enquiry-received');
+      const { sendEnquiryReceivedEmail } =
+        await import("@/lib/email/send-enquiry-received");
       await sendEnquiryReceivedEmail(enquiry);
-      console.log(`Enquiry confirmation email sent for ${enquiry.reference_number}`);
+      console.log(
+        `Enquiry confirmation email sent for ${enquiry.reference_number}`,
+      );
     } catch (emailError) {
-      console.error('Failed to send enquiry confirmation email:', emailError);
+      console.error("Failed to send enquiry confirmation email:", emailError);
       // Continue - email failure shouldn't block enquiry submission
     }
 
@@ -125,10 +132,10 @@ export async function submitEnquiry(
       reference_number: enquiry.reference_number,
     };
   } catch (error) {
-    console.error('Unexpected error in submitEnquiry:', error);
+    console.error("Unexpected error in submitEnquiry:", error);
     return {
       success: false,
-      error: 'An unexpected error occurred. Please try again.',
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
