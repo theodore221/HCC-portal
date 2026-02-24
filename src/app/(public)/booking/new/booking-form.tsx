@@ -1,315 +1,406 @@
 /**
- * Multi-Step Booking Form
+ * Multi-Step Booking Form — 6-step wizard
  */
 
 'use client';
 
-import { useState, useTransition } from 'react';
-import { submitBooking } from './actions';
-import { generateTimeToken, HoneypotField, HONEYPOT_FIELDS } from '@/lib/security/client';
+import { useState, useTransition, useCallback } from 'react';
+import { submitBooking, calculatePricingPreview } from './actions';
+import { HoneypotField, HONEYPOT_FIELDS, generateTimeToken } from '@/lib/security/client';
+import type { PricingResult } from '@/lib/pricing/types';
+
+import { StepIndicator } from './_components/step-indicator';
+import { ContactStep } from './_components/contact-step';
+import { EventStep } from './_components/event-step';
+import { VenueStep } from './_components/venue-step';
+import { AccommodationStep } from './_components/accommodation-step';
+import { CateringStep } from './_components/catering-step';
+import { ReviewStep } from './_components/review-step';
+import { PricingSidebar } from './_components/pricing-sidebar';
+
+// ─── Data types passed from server ───────────────────────────────────────────
+
+export interface SpaceOption {
+  id: string;
+  name: string;
+  capacity: number | null;
+  price: number | null;
+}
+
+export interface RoomTypeOption {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number | null;
+  capacity: number | null;
+  max_qty?: number;
+}
+
+export interface MealPriceOption {
+  meal_type: string;
+  price: number;
+}
+
+// ─── Form state ───────────────────────────────────────────────────────────────
+
+export interface MealEntry {
+  date: string;
+  meal_type: string;
+  headcount: number;
+}
+
+export interface RoomEntry {
+  room_type_id: string;
+  quantity: number;
+}
+
+export interface CoffeeSession {
+  date: string;
+  session: string; // 'Morning Tea' | 'Afternoon Tea'
+  quantity: number;
+}
+
+export interface BookingFormState {
+  // Step 1
+  booking_type?: 'Group' | 'Individual';
+  organization?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
+
+  // Step 2
+  event_type?: string;
+  arrival_date?: string;
+  departure_date?: string;
+  headcount?: number;
+  minors?: boolean;
+
+  // Step 3
+  whole_centre?: boolean;
+  selected_spaces?: string[];
+
+  // Step 4
+  is_overnight?: boolean;
+  rooms?: RoomEntry[];
+  byo_linen?: boolean;
+
+  // Step 5
+  catering_required?: boolean;
+  meals?: MealEntry[];
+  coffee_sessions?: CoffeeSession[];
+
+  // Step 6
+  notes?: string;
+  terms_accepted?: boolean;
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface BookingFormProps {
   csrfToken: string;
+  spaces: SpaceOption[];
+  roomTypes: RoomTypeOption[];
+  mealPrices: MealPriceOption[];
 }
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+// ─── Validation helpers ───────────────────────────────────────────────────────
 
-export function BookingForm({ csrfToken }: BookingFormProps) {
-  const [currentStep, setCurrentStep] = useState<Step>(1);
-  const [isPending, startTransition] = useTransition();
-  const [formData, setFormData] = useState<Record<string, any>>({});
+function validateStep(step: number, state: BookingFormState): string | null {
+  switch (step) {
+    case 1:
+      if (!state.booking_type) return 'Please select a booking type.';
+      if (state.booking_type === 'Group' && !state.organization?.trim()) return 'Organisation name is required.';
+      if (!state.contact_name?.trim() || state.contact_name.length < 2) return 'Contact name must be at least 2 characters.';
+      if (!state.contact_email?.trim() || !state.contact_email.includes('@')) return 'A valid email address is required.';
+      if (!state.contact_phone?.trim() || state.contact_phone.length < 6) return 'A valid phone number is required.';
+      return null;
+
+    case 2:
+      if (state.booking_type === 'Group' && !state.event_type) return 'Please select an event type.';
+      if (!state.arrival_date) return 'Arrival date is required.';
+      if (!state.departure_date) return 'Departure date is required.';
+      if (state.arrival_date && state.departure_date && state.departure_date < state.arrival_date)
+        return 'Departure date must be on or after arrival date.';
+      if (!state.headcount || state.headcount < 1) return 'Please enter the number of guests.';
+      return null;
+
+    case 3:
+      if (!state.whole_centre && (!state.selected_spaces || state.selected_spaces.length === 0))
+        return 'Please select at least one space, or choose exclusive whole-centre use.';
+      return null;
+
+    case 4:
+      if (state.is_overnight === undefined) return 'Please indicate whether you require overnight accommodation.';
+      return null;
+
+    case 5:
+      if (state.catering_required === undefined) return 'Please indicate whether you require catering.';
+      return null;
+
+    case 6:
+      if (!state.terms_accepted) return 'You must accept the Terms & Conditions to submit.';
+      return null;
+
+    default:
+      return null;
+  }
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+const STEPS = [
+  'Contact',
+  'Event & Dates',
+  'Venue',
+  'Accommodation',
+  'Catering',
+  'Review',
+];
+
+// Steps where pricing sidebar is shown (steps 3+)
+const PRICING_STEPS = [3, 4, 5, 6];
+
+export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: BookingFormProps) {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formState, setFormState] = useState<BookingFormState>({
+    booking_type: 'Group',
+    minors: false,
+    whole_centre: false,
+    is_overnight: undefined,
+    catering_required: undefined,
+    rooms: [],
+    meals: [],
+    coffee_sessions: [],
+    selected_spaces: [],
+  });
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [submitResult, setSubmitResult] = useState<{ success: boolean; reference?: string; error?: string } | null>(null);
   const [timeToken] = useState(() => generateTimeToken());
-  const [result, setResult] = useState<any>(null);
+  const [isPending, startTransition] = useTransition();
 
-  const steps = [
-    'Contact Details',
-    'Event Details',
-    'Venue & Spaces',
-    'Accommodation',
-    'Catering',
-    'Additional Services',
-    'Review & Submit',
-  ];
+  // Pricing state
+  const [pricing, setPricing] = useState<PricingResult | null>(null);
+  const [pricingLoading, setPricingLoading] = useState(false);
 
-  const handleNext = (e: React.FormEvent) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const data = new FormData(form);
-    const stepData = Object.fromEntries(data);
+  const updateForm = useCallback((updates: Partial<BookingFormState>) => {
+    setFormState((prev) => ({ ...prev, ...updates }));
+  }, []);
 
-    setFormData(prev => ({ ...prev, ...stepData }));
-
-    if (currentStep < 7) {
-      setCurrentStep((currentStep + 1) as Step);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const refreshPricing = useCallback(async (state: BookingFormState) => {
+    setPricingLoading(true);
+    try {
+      const result = await calculatePricingPreview(state);
+      if (result.success && result.pricing) {
+        setPricing(result.pricing);
+      }
+    } catch {
+      // Silently fail — pricing is display-only
+    } finally {
+      setPricingLoading(false);
     }
+  }, []);
+
+  const handleNext = async () => {
+    const error = validateStep(currentStep, formState);
+    if (error) {
+      setStepError(error);
+      return;
+    }
+    setStepError(null);
+
+    const nextStep = currentStep + 1;
+
+    // Refresh pricing on step transition from step 2 onwards
+    if (nextStep >= 3) {
+      refreshPricing(formState);
+    }
+
+    setCurrentStep(nextStep);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((currentStep - 1) as Step);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    setStepError(null);
+    setCurrentStep((s) => s - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const data = new FormData(form);
-
-    // Merge all form data
-    Object.entries(formData).forEach(([key, value]) => {
-      if (!data.has(key)) {
-        data.append(key, value);
-      }
-    });
+    const error = validateStep(6, formState);
+    if (error) {
+      setStepError(error);
+      return;
+    }
+    setStepError(null);
 
     startTransition(async () => {
-      const submitResult = await submitBooking(data);
-      setResult(submitResult);
+      const result = await submitBooking(formState, csrfToken, timeToken);
+      setSubmitResult(result);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   };
 
-  // Success state
-  if (result?.success) {
+  // Success screen
+  if (submitResult?.success) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-green-900 mb-2">Booking Submitted!</h3>
-          <p className="text-sm text-green-800">
-            Your booking reference is <strong>{result.reference}</strong>.
-            We&apos;ll review your booking and contact you shortly.
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-green-900 mb-2">Booking Submitted!</h2>
+          <p className="text-green-800 mb-4">
+            Your booking reference is{' '}
+            <strong className="font-mono bg-green-100 px-2 py-0.5 rounded">{submitResult.reference}</strong>
+          </p>
+          <p className="text-sm text-green-700">
+            We&apos;ve sent a confirmation to <strong>{formState.contact_email}</strong>.
+            Our team will review your booking and get back to you shortly.
           </p>
         </div>
       </div>
     );
   }
 
+  const showSidebar = PRICING_STEPS.includes(currentStep);
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Progress Bar */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          {steps.map((step, idx) => (
-            <div key={idx} className="flex items-center flex-1">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                idx + 1 === currentStep ? 'bg-blue-600 text-white' :
-                idx + 1 < currentStep ? 'bg-green-600 text-white' :
-                'bg-gray-200 text-gray-600'
-              }`}>
-                {idx + 1}
-              </div>
-              {idx < steps.length - 1 && (
-                <div className={`flex-1 h-1 mx-2 ${
-                  idx + 1 < currentStep ? 'bg-green-600' : 'bg-gray-200'
-                }`} />
-              )}
+    <div className={`max-w-6xl mx-auto ${showSidebar ? 'lg:grid lg:grid-cols-3 lg:gap-6' : ''}`}>
+      {/* Main form area */}
+      <div className={showSidebar ? 'lg:col-span-2' : 'max-w-2xl mx-auto w-full'}>
+        <StepIndicator steps={STEPS} currentStep={currentStep} />
+
+        {/* Global error */}
+        {submitResult?.error && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+            <p className="text-sm text-red-800">{submitResult.error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <HoneypotField name={HONEYPOT_FIELDS.booking} />
+          <input type="hidden" name="_form_time" value={timeToken} />
+          <input type="hidden" name="_csrf" value={csrfToken} />
+
+          {currentStep === 1 && (
+            <ContactStep formState={formState} onChange={updateForm} />
+          )}
+          {currentStep === 2 && (
+            <EventStep formState={formState} onChange={updateForm} />
+          )}
+          {currentStep === 3 && (
+            <VenueStep formState={formState} spaces={spaces} onChange={updateForm} />
+          )}
+          {currentStep === 4 && (
+            <AccommodationStep formState={formState} roomTypes={roomTypes} onChange={updateForm} />
+          )}
+          {currentStep === 5 && (
+            <CateringStep formState={formState} mealPrices={mealPrices} onChange={updateForm} />
+          )}
+          {currentStep === 6 && (
+            <ReviewStep
+              formState={formState}
+              spaces={spaces}
+              roomTypes={roomTypes}
+              mealPrices={mealPrices}
+              pricing={pricing}
+              pricingLoading={pricingLoading}
+              onChange={updateForm}
+            />
+          )}
+
+          {/* Step error */}
+          {stepError && (
+            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+              <p className="text-sm text-red-800">{stepError}</p>
             </div>
-          ))}
-        </div>
-        <p className="text-sm text-gray-600 text-center">
-          Step {currentStep} of 7: {steps[currentStep - 1]}
-        </p>
+          )}
+
+          {/* Navigation */}
+          <div className="flex justify-between items-center mt-8 pt-5 border-t border-gray-100">
+            {currentStep > 1 ? (
+              <button
+                type="button"
+                onClick={handleBack}
+                disabled={isPending}
+                className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {currentStep < STEPS.length ? (
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={isPending}
+                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                Continue
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={isPending}
+                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+              >
+                {isPending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Submitting…
+                  </>
+                ) : (
+                  <>
+                    Submit Booking
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </form>
       </div>
 
-      {/* Error message */}
-      {result?.error && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-sm text-red-800">{result.error}</p>
+      {/* Pricing sidebar (steps 3–6) */}
+      {showSidebar && (
+        <div className="hidden lg:block">
+          <div className="sticky top-6">
+            <PricingSidebar pricing={pricing} loading={pricingLoading} />
+          </div>
         </div>
       )}
 
-      <form onSubmit={currentStep === 7 ? handleSubmit : handleNext} className="bg-white rounded-lg shadow-md p-6">
-        <HoneypotField name={HONEYPOT_FIELDS.booking} />
-        <input type="hidden" name="_form_time" value={timeToken} />
-
-        {/* Step 1: Contact Details */}
-        {currentStep === 1 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-4">Contact Details</h2>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Booking Type *
-              </label>
-              <select name="booking_type" required className="w-full rounded-md border-gray-300 shadow-sm">
-                <option value="">-- Select --</option>
-                <option value="Group">Group</option>
-                <option value="Individual">Individual</option>
-              </select>
+      {/* Mobile pricing summary (steps 3–6, collapsible) */}
+      {showSidebar && (
+        <div className="lg:hidden mt-4">
+          <details className="border border-gray-200 rounded-xl overflow-hidden">
+            <summary className="bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 cursor-pointer">
+              View estimated pricing
+              {pricing && (
+                <span className="ml-2 text-blue-600 font-semibold">
+                  {new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(pricing.total)}
+                </span>
+              )}
+            </summary>
+            <div className="p-4">
+              <PricingSidebar pricing={pricing} loading={pricingLoading} />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Organization / Group Name
-              </label>
-              <input name="organization" type="text" className="w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contact Name *
-              </label>
-              <input name="contact_name" type="text" required className="w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contact Email *
-              </label>
-              <input name="contact_email" type="email" required className="w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contact Phone *
-              </label>
-              <input name="contact_phone" type="tel" required className="w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Event Details */}
-        {currentStep === 2 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-4">Event Details</h2>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Event Type *
-              </label>
-              <select name="event_type" required className="w-full rounded-md border-gray-300 shadow-sm">
-                <option value="">-- Select --</option>
-                <option value="Retreat">Retreat</option>
-                <option value="Conference">Conference</option>
-                <option value="School">School</option>
-                <option value="Wedding">Wedding</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Arrival Date *
-              </label>
-              <input name="arrival_date" type="date" required className="w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Departure Date *
-              </label>
-              <input name="departure_date" type="date" required className="w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Guests *
-              </label>
-              <input name="headcount" type="number" min="1" required className="w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-
-            <div className="flex items-center">
-              <input name="minors" type="checkbox" className="rounded border-gray-300" />
-              <label className="ml-2 text-sm text-gray-700">
-                Group includes children or adults with care requirements
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Venue & Spaces */}
-        {currentStep === 3 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-4">Venue & Spaces</h2>
-
-            <div className="flex items-center">
-              <input name="whole_centre" type="checkbox" className="rounded border-gray-300" />
-              <label className="ml-2 text-sm text-gray-700">
-                Exclusive use of entire centre ($1,500/day)
-              </label>
-            </div>
-
-            <p className="text-sm text-gray-600">
-              Individual space selections will be added in a future update.
-            </p>
-          </div>
-        )}
-
-        {/* Steps 4-6: Simplified placeholders */}
-        {currentStep === 4 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-4">Accommodation</h2>
-            <div className="flex items-center">
-              <input name="is_overnight" type="checkbox" className="rounded border-gray-300" />
-              <label className="ml-2 text-sm text-gray-700">Overnight accommodation required</label>
-            </div>
-            <p className="text-sm text-gray-600">Room selection will be added in a future update.</p>
-          </div>
-        )}
-
-        {currentStep === 5 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-4">Catering</h2>
-            <div className="flex items-center">
-              <input name="catering_required" type="checkbox" className="rounded border-gray-300" />
-              <label className="ml-2 text-sm text-gray-700">Catering required</label>
-            </div>
-            <p className="text-sm text-gray-600">Meal selection will be added in a future update.</p>
-          </div>
-        )}
-
-        {currentStep === 6 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-4">Additional Services</h2>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Special Requests or Notes
-              </label>
-              <textarea name="notes" rows={4} className="w-full rounded-md border-gray-300 shadow-sm" />
-            </div>
-          </div>
-        )}
-
-        {/* Step 7: Review */}
-        {currentStep === 7 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold mb-4">Review & Submit</h2>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="text-sm text-gray-600">Review your booking details above.</p>
-            </div>
-
-            <div className="flex items-start">
-              <input name="terms_accepted" type="checkbox" required className="mt-1 rounded border-gray-300" />
-              <label className="ml-2 text-sm text-gray-700">
-                I have read and agree to the Holy Cross Centre Terms & Conditions *
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-8 pt-6 border-t">
-          {currentStep > 1 && (
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={isPending}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              ← Back
-            </button>
-          )}
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="ml-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isPending ? 'Submitting...' : currentStep === 7 ? 'Submit Booking' : 'Next →'}
-          </button>
+          </details>
         </div>
-      </form>
+      )}
     </div>
   );
 }

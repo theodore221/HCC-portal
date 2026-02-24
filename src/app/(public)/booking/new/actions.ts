@@ -5,105 +5,271 @@
 'use server';
 
 import { sbServer } from '@/lib/supabase-server';
-import { bookingSchema } from '@/lib/validation/booking';
 import { validateBotDetection, HONEYPOT_FIELDS } from '@/lib/security';
 import { calculateBookingPricing, createPriceSnapshot } from '@/lib/pricing';
-import type { BookingSelections } from '@/lib/pricing';
+import type { BookingSelections, PricingResult } from '@/lib/pricing';
+import type { BookingFormState } from './booking-form';
+import { ROOM_NAME_TO_SHORTHAND } from './_constants';
 
 export interface BookingSubmissionResult {
   success: boolean;
   reference?: string;
   booking_id?: string;
   error?: string;
-  errors?: Record<string, string[]>;
 }
 
-export async function submitBooking(formData: FormData): Promise<BookingSubmissionResult> {
-  try {
-    const rawData: any = Object.fromEntries(formData);
+// ─── Pricing preview action ───────────────────────────────────────────────────
 
-    // Bot detection
-    const botCheck = validateBotDetection(rawData, HONEYPOT_FIELDS.booking);
+export async function calculatePricingPreview(
+  formState: BookingFormState
+): Promise<{ success: boolean; pricing?: PricingResult; error?: string }> {
+  try {
+    if (!formState.arrival_date || !formState.departure_date) {
+      return { success: true, pricing: undefined };
+    }
+
+    const supabase = await sbServer();
+    const nights = Math.max(
+      0,
+      Math.round(
+        (new Date(formState.departure_date).getTime() - new Date(formState.arrival_date).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    );
+    const days = nights > 0 ? nights + 1 : 1;
+
+    // Fetch room type names for selected rooms
+    const roomNames: Record<string, string> = {};
+    if (formState.rooms && formState.rooms.length > 0) {
+      const roomTypeIds = formState.rooms.map((r) => r.room_type_id);
+      const { data: rtRows } = await supabase
+        .from('room_types')
+        .select('id, name')
+        .in('id', roomTypeIds);
+      rtRows?.forEach((rt: { id: string; name: string }) => {
+        roomNames[rt.id] = rt.name;
+      });
+    }
+
+    // Fetch space names for selected spaces
+    const spaceNames: Record<string, string> = {};
+    if (formState.selected_spaces && formState.selected_spaces.length > 0) {
+      const { data: spRows } = await supabase
+        .from('spaces')
+        .select('id, name')
+        .in('id', formState.selected_spaces);
+      spRows?.forEach((s: { id: string; name: string }) => {
+        spaceNames[s.id] = s.name;
+      });
+    }
+
+    // Build selections
+    const selections: BookingSelections = {
+      arrival_date: formState.arrival_date,
+      departure_date: formState.departure_date,
+      nights,
+      accommodation:
+        formState.is_overnight && formState.rooms && formState.rooms.length > 0
+          ? {
+              rooms: formState.rooms
+                .filter((r) => r.quantity > 0)
+                .map((r) => ({
+                  room_type_id: r.room_type_id,
+                  room_type_name: roomNames[r.room_type_id] ?? '',
+                  quantity: r.quantity,
+                  byo_linen: formState.byo_linen,
+                })),
+            }
+          : undefined,
+      catering:
+        formState.catering_required && formState.meals && formState.meals.length > 0
+          ? {
+              meals: formState.meals,
+              percolated_coffee:
+                formState.coffee_sessions && formState.coffee_sessions.length > 0
+                  ? {
+                      quantity: formState.coffee_sessions.reduce((s, c) => s + c.quantity, 0),
+                    }
+                  : undefined,
+            }
+          : undefined,
+      venue: {
+        whole_centre: formState.whole_centre,
+        spaces:
+          !formState.whole_centre && formState.selected_spaces && formState.selected_spaces.length > 0
+            ? formState.selected_spaces.map((id) => ({
+                space_id: id,
+                space_name: spaceNames[id] ?? id,
+                days,
+              }))
+            : undefined,
+      },
+    };
+
+    const pricing = await calculateBookingPricing(selections);
+    return { success: true, pricing };
+  } catch (error) {
+    console.error('Pricing preview error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+// ─── Submit booking action ────────────────────────────────────────────────────
+
+export async function submitBooking(
+  formState: BookingFormState,
+  csrfToken: string,
+  timeToken: string
+): Promise<BookingSubmissionResult> {
+  try {
+    // Bot detection using honeypot field name (expect the honeypot to be absent in formState)
+    // FormState is a plain object so we check for the honeypot key explicitly
+    const rawForBotCheck = {
+      [HONEYPOT_FIELDS.booking]: (formState as Record<string, unknown>)[HONEYPOT_FIELDS.booking],
+      _form_time: timeToken,
+    };
+    const botCheck = validateBotDetection(rawForBotCheck, HONEYPOT_FIELDS.booking);
     if (!botCheck.valid) {
       return { success: false, error: 'Invalid submission' };
     }
 
-    // Parse numbers
-    if (rawData.headcount) rawData.headcount = parseInt(rawData.headcount as string, 10);
-
-    // Validate with Zod
-    const validationResult = bookingSchema.safeParse(rawData);
-    if (!validationResult.success) {
-      const errors: Record<string, string[]> = {};
-      validationResult.error.issues.forEach((issue) => {
-        const path = issue.path.join('.');
-        if (!errors[path]) errors[path] = [];
-        errors[path].push(issue.message);
-      });
-      return { success: false, error: 'Validation failed', errors };
+    // Basic validation
+    if (!formState.contact_email || !formState.contact_name || !formState.arrival_date || !formState.departure_date) {
+      return { success: false, error: 'Missing required fields' };
+    }
+    if (!formState.terms_accepted) {
+      return { success: false, error: 'You must accept the Terms & Conditions' };
     }
 
-    const data = validationResult.data;
     const supabase = await sbServer();
 
-    // Calculate arrival/departure times
-    const arrivalDate = new Date(data.arrival_date);
-    const departureDate = new Date(data.departure_date);
-    const nights = Math.ceil((departureDate.getTime() - arrivalDate.getTime()) / (1000 * 60 * 60 * 24));
+    const nights = Math.max(
+      0,
+      Math.round(
+        (new Date(formState.departure_date).getTime() - new Date(formState.arrival_date).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    );
+    const days = nights > 0 ? nights + 1 : 1;
 
-    // Create booking selections for pricing
+    // Fetch room type names
+    const roomNames: Record<string, string> = {};
+    if (formState.rooms && formState.rooms.length > 0) {
+      const roomTypeIds = formState.rooms.map((r) => r.room_type_id);
+      const { data: rtRows } = await supabase
+        .from('room_types')
+        .select('id, name')
+        .in('id', roomTypeIds);
+      rtRows?.forEach((rt: { id: string; name: string }) => {
+        roomNames[rt.id] = rt.name;
+      });
+    }
+
+    // Fetch space names
+    const spaceNames: Record<string, string> = {};
+    if (formState.selected_spaces && formState.selected_spaces.length > 0) {
+      const { data: spRows } = await supabase
+        .from('spaces')
+        .select('id, name')
+        .in('id', formState.selected_spaces);
+      spRows?.forEach((s: { id: string; name: string }) => {
+        spaceNames[s.id] = s.name;
+      });
+    }
+
+    // Build booking selections for pricing
     const selections: BookingSelections = {
-      arrival_date: data.arrival_date,
-      departure_date: data.departure_date,
+      arrival_date: formState.arrival_date,
+      departure_date: formState.departure_date,
       nights,
-      accommodation: data.is_overnight && data.rooms ? {
-        rooms: data.rooms.map(r => ({
-          room_type_id: r.room_type_id,
-          room_type_name: '', // Will be fetched in pricing engine
-          quantity: r.quantity,
-          byo_linen: r.byo_linen,
-        })),
-      } : undefined,
-      catering: data.catering_required && data.meals ? {
-        meals: data.meals,
-        percolated_coffee: data.percolated_coffee_quantity ? {
-          quantity: data.percolated_coffee_quantity,
-        } : undefined,
-      } : undefined,
+      accommodation:
+        formState.is_overnight && formState.rooms && formState.rooms.length > 0
+          ? {
+              rooms: formState.rooms
+                .filter((r) => r.quantity > 0)
+                .map((r) => ({
+                  room_type_id: r.room_type_id,
+                  room_type_name: roomNames[r.room_type_id] ?? '',
+                  quantity: r.quantity,
+                  byo_linen: formState.byo_linen,
+                })),
+            }
+          : undefined,
+      catering:
+        formState.catering_required && formState.meals && formState.meals.length > 0
+          ? {
+              meals: formState.meals,
+              percolated_coffee:
+                formState.coffee_sessions && formState.coffee_sessions.length > 0
+                  ? {
+                      quantity: formState.coffee_sessions.reduce((s, c) => s + c.quantity, 0),
+                    }
+                  : undefined,
+            }
+          : undefined,
       venue: {
-        whole_centre: data.whole_centre,
-        spaces: data.selected_spaces?.map(id => ({
-          space_id: id,
-          space_name: '',
-          days: nights + 1,
-        })),
+        whole_centre: formState.whole_centre,
+        spaces:
+          !formState.whole_centre && formState.selected_spaces && formState.selected_spaces.length > 0
+            ? formState.selected_spaces.map((id) => ({
+                space_id: id,
+                space_name: spaceNames[id] ?? id,
+                days,
+              }))
+            : undefined,
       },
     };
 
     // Calculate pricing
     const pricing = await calculateBookingPricing(selections);
 
+    // Build accommodation_requests JSONB
+    const accommodationRequests: Record<string, number | boolean> = {
+      singleBB: 0,
+      doubleBB: 0,
+      doubleEnsuite: 0,
+      studySuite: 0,
+      byo_linen: formState.byo_linen ?? false,
+    };
+    if (formState.is_overnight && formState.rooms && formState.rooms.length > 0) {
+      for (const r of formState.rooms) {
+        const name = roomNames[r.room_type_id];
+        const key = name ? ROOM_NAME_TO_SHORTHAND[name] : undefined;
+        if (key) {
+          accommodationRequests[key] = r.quantity;
+        }
+      }
+    }
+
+    // Determine event type
+    const eventType =
+      formState.booking_type === 'Individual' ? 'Individual Stay' : (formState.event_type ?? null);
+
     // Insert booking
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      // @ts-ignore - Type compatibility issue
+      // @ts-ignore — type compatibility with generated types
       .insert({
         source: 'portal',
-        booking_type: data.booking_type,
-        customer_name: data.contact_name,
-        customer_email: data.contact_email,
-        contact_name: data.contact_name,
-        contact_phone: data.contact_phone,
-        event_type: data.event_type,
-        arrival_date: data.arrival_date,
-        departure_date: data.departure_date,
-        nights,
-        headcount: data.headcount,
-        minors: data.minors,
-        whole_centre: data.whole_centre,
-        is_overnight: data.is_overnight,
-        catering_required: data.catering_required,
-        notes: data.notes,
+        booking_type: formState.booking_type,
+        customer_name: formState.contact_name,
+        customer_email: formState.contact_email,
+        contact_name: formState.contact_name,
+        contact_phone: formState.contact_phone ?? null,
+        event_type: eventType,
+        arrival_date: formState.arrival_date,
+        departure_date: formState.departure_date,
+        headcount: formState.headcount ?? 0,
+        minors: formState.minors ?? false,
+        whole_centre: formState.whole_centre ?? false,
+        is_overnight: formState.is_overnight ?? false,
+        catering_required: formState.catering_required ?? false,
+        byo_linen: formState.byo_linen ?? false,
+        accommodation_requests: accommodationRequests,
+        notes: formState.notes ?? null,
         status: 'pending_admin_review',
       })
       .select('id, reference, customer_name, customer_email, arrival_date, departure_date, headcount')
@@ -111,20 +277,22 @@ export async function submitBooking(formData: FormData): Promise<BookingSubmissi
 
     if (bookingError || !booking) {
       console.error('Booking insert error:', bookingError);
-      return { success: false, error: 'Failed to create booking' };
+      return { success: false, error: 'Failed to create booking. Please try again.' };
     }
 
     // Create price snapshot
-    await createPriceSnapshot(booking.id, pricing, 'standard');
+    try {
+      await createPriceSnapshot(booking.id, pricing, 'standard');
+    } catch (snapshotError) {
+      console.error('Price snapshot error (non-fatal):', snapshotError);
+    }
 
-    // Send confirmation email (don't fail submission if email fails)
+    // Send confirmation email
     try {
       const { sendBookingSubmittedEmail } = await import('@/lib/email/send-booking-submitted');
       await sendBookingSubmittedEmail(booking);
-      console.log(`Booking submission confirmation email sent for ${booking.reference}`);
     } catch (emailError) {
-      console.error('Failed to send booking submission confirmation email:', emailError);
-      // Continue - email failure shouldn't block booking submission
+      console.error('Confirmation email error (non-fatal):', emailError);
     }
 
     return {
@@ -134,6 +302,6 @@ export async function submitBooking(formData: FormData): Promise<BookingSubmissi
     };
   } catch (error) {
     console.error('Booking submission error:', error);
-    return { success: false, error: 'An unexpected error occurred' };
+    return { success: false, error: 'An unexpected error occurred. Please try again.' };
   }
 }
