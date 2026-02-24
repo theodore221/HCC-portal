@@ -45,7 +45,7 @@ export const EnquiryReceivedEmail = ({
           {/* Main Content */}
           <Text style={text}>Dear {customerName},</Text>
           <Text style={text}>
-            Thank you for your enquiry to Holy Cross Centre. We've received your request and
+            Thank you for your enquiry to Holy Cross Centre. We&apos;ve received your request and
             will get back to you shortly with more information.
           </Text>
 
@@ -80,7 +80,7 @@ export const EnquiryReceivedEmail = ({
           <Section style={nextStepsBox}>
             <Heading as="h2" style={h2}>What Happens Next?</Heading>
             <Text style={text}>
-              Our team will review your enquiry and respond within 1-2 business days. We'll provide:
+              Our team will review your enquiry and respond within 1-2 business days. We&apos;ll provide:
             </Text>
             <ul style={list}>
               <li style={listItem}>Availability for your preferred dates</li>
@@ -93,7 +93,7 @@ export const EnquiryReceivedEmail = ({
           {/* Footer */}
           <Hr style={hr} />
           <Text style={footer}>
-            If you have any urgent questions, please don't hesitate to contact us directly.
+            If you have any urgent questions, please don&apos;t hesitate to contact us directly.
           </Text>
           <Text style={footer}>
             Holy Cross Centre<br />

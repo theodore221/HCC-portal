@@ -77,7 +77,7 @@ export default async function CustomBookingPage({ params }: CustomBookingPagePro
                 Your booking <strong>{booking.reference}</strong> has already been submitted.
               </p>
               <p className="text-sm text-blue-800">
-                We'll review your booking and contact you at <strong>{booking.customer_email}</strong> shortly.
+                We&apos;ll review your booking and contact you at <strong>{booking.customer_email}</strong> shortly.
               </p>
             </div>
           </div>

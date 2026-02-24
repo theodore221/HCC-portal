@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 
@@ -56,11 +56,29 @@ export function EmailOtpCard({
     }
   }, [resendCooldown]);
 
+  const handleVerifyOtp = useCallback(async () => {
+    if (otpCode.length !== 6 || loading) return;
+
+    setLoading(true);
+    setError(null);
+
+    const result = await onVerifyOtp(email, otpCode);
+
+    if (result.success) {
+      onSuccess();
+    } else {
+      setError(result.error ?? "Invalid or expired code. Please try again.");
+      setOtpCode("");
+      setLoading(false);
+    }
+  }, [otpCode, loading, email, onVerifyOtp, onSuccess]);
+
   useEffect(() => {
     if (step === "otp" && otpCode.length === 6) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- handleVerifyOtp is async; setState only runs after await
       void handleVerifyOtp();
     }
-  }, [otpCode, step]);
+  }, [otpCode, step, handleVerifyOtp]);
 
   const handleSendOtp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,23 +102,6 @@ export function EmailOtpCard({
     }
 
     setLoading(false);
-  };
-
-  const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6 || loading) return;
-
-    setLoading(true);
-    setError(null);
-
-    const result = await onVerifyOtp(email, otpCode);
-
-    if (result.success) {
-      onSuccess();
-    } else {
-      setError(result.error ?? "Invalid or expired code. Please try again.");
-      setOtpCode("");
-      setLoading(false);
-    }
   };
 
   const handleResend = async () => {

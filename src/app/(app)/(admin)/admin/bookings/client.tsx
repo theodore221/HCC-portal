@@ -277,6 +277,7 @@ export default function AdminBookingsClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [searchValue, setSearchValue] = useState(initialSearch ?? "");
 
   const updateSearchParams = useCallback(
     (updates: Record<string, string | undefined>) => {
@@ -339,7 +340,6 @@ export default function AdminBookingsClient({
           }}
           renderToolbar={(table) => {
             const activeStatusFilter = new Set(initialStatusFilter ?? []);
-            const [searchValue, setSearchValue] = useState(initialSearch ?? "");
 
             const toggleStatus = (status: BookingStatus, enabled: boolean) => {
               const current = new Set(activeStatusFilter);
@@ -419,7 +419,7 @@ function TableEmptyState() {
           No bookings match your filters
         </h3>
         <p className="text-sm text-text-light text-balance">
-          Try adjusting your search or filters to find what you're looking for.
+          Try adjusting your search or filters to find what you&apos;re looking for.
         </p>
       </div>
     </div>

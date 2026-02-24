@@ -45,7 +45,7 @@ export const BookingSubmittedEmail = ({
           <Text style={text}>Dear {customerName},</Text>
           <Text style={text}>
             Thank you for submitting your booking request to Holy Cross Centre.
-            We've received your request and it's now under review.
+            We&apos;ve received your request and it&apos;s now under review.
           </Text>
 
           {/* Booking Details */}
@@ -82,7 +82,7 @@ export const BookingSubmittedEmail = ({
               <li style={listItem}>Invoice and payment details</li>
             </ul>
             <Text style={text}>
-              We'll send you another email once your booking has been approved or if we need
+              We&apos;ll send you another email once your booking has been approved or if we need
               any additional information.
             </Text>
           </Section>

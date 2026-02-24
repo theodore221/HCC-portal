@@ -79,7 +79,7 @@ export function BookingForm({ csrfToken }: BookingFormProps) {
           <h3 className="text-lg font-medium text-green-900 mb-2">Booking Submitted!</h3>
           <p className="text-sm text-green-800">
             Your booking reference is <strong>{result.reference}</strong>.
-            We'll review your booking and contact you shortly.
+            We&apos;ll review your booking and contact you shortly.
           </p>
         </div>
       </div>

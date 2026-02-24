@@ -133,7 +133,7 @@ export function NewBookingForm({
               Your booking reference is <strong>{result.reference}</strong>.
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              We'll review your booking and contact you at <strong>{customerEmail}</strong> shortly.
+              We&apos;ll review your booking and contact you at <strong>{customerEmail}</strong> shortly.
             </p>
             <div className="flex gap-3">
               <Button onClick={() => router.push('/portal')}>

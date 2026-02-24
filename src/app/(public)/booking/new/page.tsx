@@ -23,7 +23,7 @@ export default async function NewBookingPage() {
             Book Holy Cross Centre
           </h1>
           <p className="text-lg text-gray-600">
-            Complete this form to request your booking. We'll review it and get back to you shortly.
+            Complete this form to request your booking. We&apos;ll review it and get back to you shortly.
           </p>
         </div>
 

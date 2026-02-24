@@ -62,6 +62,10 @@ export function DashboardShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- closing sidebar on navigation is intentional
+    setMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -71,9 +75,6 @@ export function DashboardShell({
     return () => mediaQuery.removeEventListener("change", updateMatch);
   }, []);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
 
   const sidebarWidth = collapsed ? 88 : 250;
   const layoutOffset = isDesktop ? sidebarWidth : 0;

@@ -96,7 +96,7 @@ export function CustomBookingForm({
           <h3 className="text-lg font-medium text-green-900 mb-2">Booking Submitted!</h3>
           <p className="text-sm text-green-800">
             Your booking reference is <strong>{result.reference}</strong>.
-            We'll review your booking and contact you at <strong>{customerEmail}</strong> shortly.
+            We&apos;ll review your booking and contact you at <strong>{customerEmail}</strong> shortly.
           </p>
           {discountPercentage > 0 && (
             <p className="text-sm text-green-700 mt-4 font-medium">

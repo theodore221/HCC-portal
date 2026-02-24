@@ -47,7 +47,7 @@ export const CustomBookingLinkEmail = ({
           {/* Main Content */}
           <Text style={text}>Dear {customerName},</Text>
           <Text style={text}>
-            We've created a personalized booking link for you at Holy Cross Centre.
+            We&apos;ve created a personalized booking link for you at Holy Cross Centre.
             {discountPercentage && discountPercentage > 0 && (
               <> This link includes special pricing just for you.</>
             )}
@@ -111,7 +111,7 @@ export const CustomBookingLinkEmail = ({
           {/* Footer */}
           <Hr style={hr} />
           <Text style={footer}>
-            If you have any questions or need assistance, please don't hesitate to contact us.
+            If you have any questions or need assistance, please don&apos;t hesitate to contact us.
           </Text>
           <Text style={footer}>
             Holy Cross Centre<br />
