@@ -179,7 +179,7 @@ export function AccommodationRequestsCard({
                 {/* Header with label and count */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-olive-800">
+                    <h3 className="text-sm font-semibold text-gray-700">
                       {label}
                     </h3>
                     <p className="text-xs text-muted-foreground">
@@ -199,7 +199,7 @@ export function AccommodationRequestsCard({
                     />
                   ) : (
                     <div className="flex flex-col items-end">
-                      <span className="text-2xl font-bold text-olive-900">
+                      <span className="text-2xl font-bold text-gray-900">
                         {requested}
                       </span>
                       <span className="text-xs text-muted-foreground">
@@ -213,13 +213,13 @@ export function AccommodationRequestsCard({
                 {requested > 0 && (
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs">
-                      <span className="font-medium text-olive-700">
+                      <span className="font-medium text-gray-600">
                         Allocated
                       </span>
                       <span
                         className={cn(
                           'font-semibold',
-                          isComplete ? 'text-olive-600' : 'text-olive-900'
+                          isComplete ? 'text-gray-500' : 'text-gray-900'
                         )}
                       >
                         {allocatedCount} / {requested}
@@ -229,7 +229,7 @@ export function AccommodationRequestsCard({
                       value={percentage}
                       className={cn(
                         'h-2',
-                        isComplete && '[&>div]:bg-olive-500'
+                        isComplete && '[&>div]:bg-primary'
                       )}
                     />
                   </div>

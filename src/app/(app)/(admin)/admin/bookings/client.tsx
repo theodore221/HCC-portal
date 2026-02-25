@@ -9,10 +9,12 @@ import {
   Bed,
   CheckCircle2,
   Filter,
+  Plus,
   Search,
   SlidersHorizontal,
   Sparkles,
   AlertTriangle,
+  X,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -55,16 +57,6 @@ const statusOptions: { label: string; value: BookingStatus }[] = [
   { label: "Cancelled", value: "Cancelled" },
 ];
 
-const statusBadgeStyles: Partial<Record<BookingStatus, string>> = {
-  AwaitingDetails: "border-primary/20 bg-primary/10 text-primary",
-  Pending: "border-warning/20 bg-warning/10 text-warning",
-  Approved: "border-success/20 bg-success/10 text-success",
-  Confirmed: "border-success/20 bg-success/10 text-success",
-  InProgress: "border-primary/20 bg-primary/10 text-primary",
-  Completed: "border-border/60 bg-neutral text-text",
-  Cancelled: "border-danger/20 bg-danger/10 text-danger",
-};
-
 // Hoist to module level to avoid creating on every cell render
 const dateFormatter = new Intl.DateTimeFormat("en-AU", {
   day: "numeric",
@@ -93,8 +85,8 @@ const columns: ColumnDef<BookingWithMeta>[] = [
       <DataTableColumnHeader column={column} title="Dates" />
     ),
     cell: ({ row }) => (
-      <div className="flex flex-col text-sm text-text">
-        <span className="font-medium">
+      <div className="flex flex-col text-sm">
+        <span className="font-semibold text-gray-900">
           {formatDateRangeLabel(
             row.original.arrival_date,
             row.original.departure_date
@@ -114,7 +106,7 @@ const columns: ColumnDef<BookingWithMeta>[] = [
     ),
     cell: ({ row }) => (
       <div className="flex flex-col gap-1.5 text-sm text-text">
-        <span className="font-medium">
+        <span className="font-medium text-gray-900">
           {getBookingDisplayName(row.original)}
         </span>
         {row.original.is_overnight && (
@@ -257,6 +249,13 @@ const columns: ColumnDef<BookingWithMeta>[] = [
   },
 ];
 
+const statCards = [
+  { label: "Pending", key: "Pending", accent: "text-amber-600 bg-amber-50 border-amber-100" },
+  { label: "Approved", key: "Approved", accent: "text-green-700 bg-green-50 border-green-100" },
+  { label: "Confirmed", key: "Confirmed", accent: "text-green-700 bg-green-50 border-green-100" },
+  { label: "In Progress", key: "InProgress", accent: "text-primary bg-primary/5 border-primary/10" },
+] as const;
+
 export default function AdminBookingsClient({
   bookings,
   totalCount,
@@ -308,105 +307,143 @@ export default function AdminBookingsClient({
     [updateSearchParams]
   );
 
-  const toolbarBadges = [
-    { label: "Pending", status: "Pending" as BookingStatus },
-    { label: "Approved", status: "Approved" as BookingStatus },
-  ];
-
   return (
-    <Card className="px-0">
+    <div className="space-y-6">
       {isLoading && <LoadingOverlay />}
-      <CardHeader>
-        <CardTitle className="text-lg text-text">Bookings list</CardTitle>
-        <CardDescription className="text-sm text-text-light">
-          Review new requests and progress them through triage
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTable
-          columns={columns}
-          data={bookings}
-          emptyMessage={<TableEmptyState />}
-          zebra
-          onRowClick={(row) => {
-            setIsLoading(true);
-            router.push(`/admin/bookings/${row.id}`);
-          }}
-          serverPagination={{
-            totalCount,
-            currentPage,
-            pageSize,
-            onPageChange: handlePageChange,
-          }}
-          renderToolbar={(table) => {
-            const activeStatusFilter = new Set(initialStatusFilter ?? []);
 
-            const toggleStatus = (status: BookingStatus, enabled: boolean) => {
-              const current = new Set(activeStatusFilter);
-              if (enabled) {
-                current.add(status);
-              } else {
-                current.delete(status);
-              }
-              const next = Array.from(current);
-              updateSearchParams({
-                status: next.length ? next.join(",") : undefined,
-              });
-            };
+      {/* Page header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage and review all booking requests
+          </p>
+        </div>
+        <Link
+          href="/admin/bookings/create-link"
+          className={buttonVariants({ variant: "default", size: "sm" })}
+        >
+          <Plus className="size-4 mr-1.5" />
+          Create Booking Link
+        </Link>
+      </div>
 
-            return (
-              <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-neutral/60 p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  {statusOptions.map(({ label, value }) => {
-                    const isActive = activeStatusFilter.has(value);
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => toggleStatus(value, !isActive)}
-                        className={cn(
-                          "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-200",
-                          isActive
-                            ? "border-primary bg-primary text-white shadow-sm"
-                            : "border-border/60 bg-white text-text-light hover:border-primary/40 hover:text-text"
-                        )}
-                      >
-                        <span>{label}</span>
-                        <span className="rounded-full bg-neutral px-2 py-0.5 text-[11px] font-semibold text-text">
-                          {statusCounts[value] ?? 0}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="relative w-full max-w-xs">
-                    <Search
-                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-light/70"
-                      aria-hidden="true"
-                    />
-                    <Input
-                      value={searchValue}
-                      onChange={(event) => setSearchValue(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
+      {/* Summary stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map(({ label, key, accent }) => (
+          <div
+            key={key}
+            className={cn(
+              "rounded-2xl border p-4 shadow-soft",
+              accent
+            )}
+          >
+            <p className="text-2xl font-bold">{statusCounts[key] ?? 0}</p>
+            <p className="text-xs uppercase tracking-wide mt-1 opacity-75">{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Table card */}
+      <Card className="px-0">
+        <CardContent>
+          <DataTable
+            columns={columns}
+            data={bookings}
+            emptyMessage={<TableEmptyState />}
+            onRowClick={(row) => {
+              setIsLoading(true);
+              router.push(`/admin/bookings/${row.id}`);
+            }}
+            serverPagination={{
+              totalCount,
+              currentPage,
+              pageSize,
+              onPageChange: handlePageChange,
+            }}
+            renderToolbar={(table) => {
+              const activeStatusFilter = new Set(initialStatusFilter ?? []);
+
+              const toggleStatus = (status: BookingStatus, enabled: boolean) => {
+                const current = new Set(activeStatusFilter);
+                if (enabled) {
+                  current.add(status);
+                } else {
+                  current.delete(status);
+                }
+                const next = Array.from(current);
+                updateSearchParams({
+                  status: next.length ? next.join(",") : undefined,
+                });
+              };
+
+              return (
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {statusOptions.map(({ label, value }) => {
+                      const isActive = activeStatusFilter.has(value);
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => toggleStatus(value, !isActive)}
+                          className={cn(
+                            "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-200",
+                            isActive
+                              ? "border-primary bg-primary text-white shadow-sm"
+                              : "border-border/60 bg-white text-text-light hover:border-primary/40 hover:text-text"
+                          )}
+                        >
+                          <span>{label}</span>
+                          <span className="rounded-full bg-neutral px-2 py-0.5 text-[11px] font-semibold text-text">
+                            {statusCounts[value] ?? 0}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative w-full max-w-xs">
+                      <Search
+                        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-light/70"
+                        aria-hidden="true"
+                      />
+                      <Input
+                        value={searchValue}
+                        onChange={(event) => setSearchValue(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            updateSearchParams({ search: searchValue || undefined });
+                          }
+                        }}
+                        onBlur={() => {
                           updateSearchParams({ search: searchValue || undefined });
-                        }
-                      }}
-                      onBlur={() => {
-                        updateSearchParams({ search: searchValue || undefined });
-                      }}
-                      placeholder="Search by group or reference"
-                      className="rounded-full border-border/70 bg-white pl-9"
-                    />
+                        }}
+                        placeholder="Search by group or reference"
+                        className="rounded-full border-border/70 bg-white pl-9 pr-9"
+                      />
+                      {searchValue && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchValue("");
+                            updateSearchParams({ search: undefined });
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light/70 hover:text-text transition-colors"
+                          aria-label="Clear search"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          }}
-        />
-      </CardContent>
-    </Card>
+              );
+            }}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

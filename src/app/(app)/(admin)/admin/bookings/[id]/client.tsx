@@ -311,10 +311,10 @@ export default function BookingDetailClient({
                     booking.deposit_status === "Paid" ||
                     booking.status !== "Approved"
                   }
-                  className="border-olive-200 hover:bg-olive-50 w-full sm:w-auto"
+                  className="border-gray-200 hover:bg-gray-50 w-full sm:w-auto"
                 >
                   {booking.deposit_status === "Paid" ? (
-                    <span className="flex items-center gap-2 text-olive-700">
+                    <span className="flex items-center gap-2 text-gray-700">
                       <CheckCircle2 className="h-4 w-4" /> Deposit Paid
                     </span>
                   ) : (
@@ -427,7 +427,7 @@ export default function BookingDetailClient({
 
               {/* Tabs - Scrollable on mobile */}
               <div className="w-full overflow-x-auto pb-2 -mx-6 px-6 md:mx-0 md:px-0">
-                <TabsList className="inline-flex items-center gap-2 rounded-full bg-neutral p-1 min-w-min">
+                <TabsList className="inline-flex items-center gap-2 rounded-full bg-gray-100 p-1 min-w-min">
                   {tabConfig.map((tab) => (
                     <TabsTrigger
                       key={tab.value}
@@ -603,30 +603,23 @@ export default function BookingDetailClient({
                   label="Departure Time"
                   value={booking.departure_time || "Not specified"}
                 />
+                <DetailRow
+                  label="Deposit Status"
+                  value={
+                    <Badge
+                      variant={
+                        booking.deposit_status === "Paid"
+                          ? "default"
+                          : "secondary"
+                      }
+                    >
+                      {booking.deposit_status}
+                    </Badge>
+                  }
+                />
               </div>
             </section>
           </div>
-
-          {/* Financial Status */}
-          <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-            <SectionHeading>Financial Status</SectionHeading>
-            <div className="space-y-4">
-              <DetailRow
-                label="Deposit Status"
-                value={
-                  <Badge
-                    variant={
-                      booking.deposit_status === "Paid"
-                        ? "default"
-                        : "secondary"
-                    }
-                  >
-                    {booking.deposit_status}
-                  </Badge>
-                }
-              />
-            </div>
-          </section>
 
           {/* Edit Dialogs */}
           <RecordDepositDialog

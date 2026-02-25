@@ -222,8 +222,8 @@ export function DayMealCard({
 
       {/* Customize Mode Header */}
       {customizeMode && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-olive-200 bg-olive-50/50 px-4 py-3">
-          <span className="text-sm font-medium text-olive-900">
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50/50 px-4 py-3">
+          <span className="text-sm font-medium text-gray-900">
             Individual meal assignment enabled
           </span>
           <div className="flex items-center gap-2">
@@ -235,7 +235,7 @@ export function DayMealCard({
             />
             <Label
               htmlFor={`customize-${date}-active`}
-              className="text-xs font-medium text-olive-900 cursor-pointer"
+              className="text-xs font-medium text-gray-900 cursor-pointer"
             >
               Exit
             </Label>
@@ -284,7 +284,7 @@ export function DayMealCard({
                     {!customizeMode && meal.assignedCatererId && (
                       <Badge
                         variant="outline"
-                        className="mt-1 border-olive-200 bg-olive-50 text-olive-700"
+                        className="mt-1 border-gray-200 bg-gray-50 text-gray-600"
                       >
                         {caterers.find((c) => c.id === meal.assignedCatererId)?.name}
                       </Badge>
@@ -308,7 +308,7 @@ export function DayMealCard({
                       "text-xs",
                       meal.status === "Draft"
                         ? "border-blue-200 bg-blue-50 text-blue-700"
-                        : "border-olive-200 bg-olive-50 text-olive-700"
+                        : "border-gray-200 bg-gray-50 text-gray-600"
                     )}
                   >
                     {meal.status}
@@ -384,10 +384,10 @@ export function DayMealCard({
                   {Object.entries(meal.dietaryCounts).map(([diet, count]) => (
                     <div
                       key={diet}
-                      className="flex items-center gap-2 rounded-lg bg-olive-50 px-3 py-1.5 text-xs"
+                      className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-1.5 text-xs"
                     >
-                      <span className="capitalize text-olive-800">{diet}:</span>
-                      <span className="font-semibold text-olive-900">{count}</span>
+                      <span className="capitalize text-gray-700">{diet}:</span>
+                      <span className="font-semibold text-gray-900">{count}</span>
                     </div>
                   ))}
                 </div>

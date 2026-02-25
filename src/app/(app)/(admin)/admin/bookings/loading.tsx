@@ -8,9 +8,9 @@ export default function Loading() {
       </div>
       {/* Table skeleton */}
       <div className="mt-8 w-full max-w-7xl space-y-4">
-        <div className="h-12 rounded-xl bg-olive-100 animate-pulse" />
+        <div className="h-12 rounded-xl bg-gray-100 animate-pulse" />
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="h-16 rounded-xl bg-olive-100 animate-pulse" />
+          <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse" />
         ))}
       </div>
     </div>

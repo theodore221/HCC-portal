@@ -23,7 +23,7 @@ export function ApprovalChecklist({
     checks.cateringAssignment.passed;
 
   return (
-    <Card className="shadow-soft border-olive-200">
+    <Card className="shadow-soft border-gray-200">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold uppercase tracking-wide text-text-light">

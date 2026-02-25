@@ -36,7 +36,7 @@ export function AdminNotesCard({ bookingId, initialNotes }: AdminNotesCardProps)
   };
 
   return (
-    <Card className="shadow-soft border-olive-200">
+    <Card className="shadow-soft border-gray-200">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm font-semibold uppercase tracking-wide text-text-light flex items-center gap-2">
           <StickyNote className="h-4 w-4" />

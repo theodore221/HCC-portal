@@ -406,7 +406,7 @@ export function RoomAllocationGrid({
                 <span>Available</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="h-4 w-4 rounded border border-olive-300 bg-olive-50" />
+                <div className="h-4 w-4 rounded border border-gray-300 bg-gray-50" />
                 <span>Allocated</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -952,7 +952,7 @@ function RoomCard({
                     'w-28 truncate text-sm leading-tight',
                     isBlank
                       ? 'text-neutral-300 font-medium'
-                      : 'text-olive-900 font-semibold'
+                      : 'text-gray-900 font-semibold'
                   )}
                   title={displayName}
                   aria-label={

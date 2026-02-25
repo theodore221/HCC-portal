@@ -92,7 +92,7 @@ export function SpaceRequestCard({
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-olive-900 text-lg">
+                  <h3 className="font-bold text-gray-900 text-lg">
                     {space?.name}
                   </h3>
                   {hasConflict && (
@@ -108,15 +108,15 @@ export function SpaceRequestCard({
                   {!hasConflict && !isOverCapacity && (
                     <Badge
                       variant="outline"
-                      className="text-olive-600 border-olive-200 bg-olive-50 rounded-full px-2"
+                      className="text-gray-500 border-gray-200 bg-gray-50 rounded-full px-2"
                     >
                       Available
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-olive-600 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   Requested for{" "}
-                  <span className="font-medium text-olive-800">
+                  <span className="font-medium text-gray-700">
                     {reservations.length}{" "}
                     {reservations.length === 1 ? "day" : "days"}
                   </span>
@@ -125,7 +125,7 @@ export function SpaceRequestCard({
 
               {/* Space Switcher */}
               <div className="w-[200px]">
-                <label className="text-[10px] uppercase tracking-wider font-bold text-olive-500 mb-1.5 block">
+                <label className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1.5 block">
                   Switch Space
                 </label>
                 <Select
@@ -159,14 +159,14 @@ export function SpaceRequestCard({
             {/* Capacity Visualization */}
             <div className="mt-6">
               <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="font-medium text-olive-700 flex items-center gap-1.5">
+                <span className="font-medium text-gray-600 flex items-center gap-1.5">
                   <Users className="size-3.5" />
                   Capacity Usage
                 </span>
                 <span
                   className={cn(
                     "font-semibold",
-                    isOverCapacity ? "text-red-600" : "text-olive-900"
+                    isOverCapacity ? "text-red-600" : "text-gray-900"
                   )}
                 >
                   {booking.headcount} / {capacity || "∞"} Guests
@@ -176,7 +176,7 @@ export function SpaceRequestCard({
                 <div
                   className={cn(
                     "h-full rounded-full transition-all duration-500",
-                    isOverCapacity ? "bg-red-500" : "bg-olive-500"
+                    isOverCapacity ? "bg-red-500" : "bg-primary"
                   )}
                   style={{ width: `${capacityPercentage}%` }}
                 />
@@ -212,12 +212,12 @@ export function SpaceRequestCard({
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <p className="font-semibold text-sm text-olive-900">
+                        <p className="font-semibold text-sm text-gray-900">
                           {blocker.customer_name ||
                             blocker.contact_name ||
                             "Unknown Group"}
                         </p>
-                        <p className="text-xs text-olive-500 font-mono">
+                        <p className="text-xs text-gray-500 font-mono">
                           {blocker.reference}
                         </p>
                       </div>
@@ -229,7 +229,7 @@ export function SpaceRequestCard({
                       </Badge>
                     </div>
 
-                    <div className="text-xs text-olive-700 bg-neutral rounded p-2 mb-2">
+                    <div className="text-xs text-gray-600 bg-neutral rounded p-2 mb-2">
                       <p className="flex items-center gap-1.5">
                         <Calendar className="size-3" />
                         {
@@ -245,7 +245,7 @@ export function SpaceRequestCard({
                       asChild
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-between text-xs h-7 hover:bg-olive-50 text-olive-600"
+                      className="w-full justify-between text-xs h-7 hover:bg-gray-50 text-gray-500"
                     >
                       <Link
                         href={`/admin/bookings/${blocker.id}`}
