@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
-import { approveBookingWithNotes, rejectBooking, updateBookingStatus } from '../actions';
+import { approveBookingWithNotes, rejectBooking } from '../actions';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { BookingValidationChecks } from '@/lib/validation/booking-approval';
@@ -31,7 +31,7 @@ export function ReviewActionsCard({
     validationChecks.roomAllocation.passed &&
     validationChecks.cateringAssignment.passed;
 
-  const isPendingReview = bookingStatus === 'pending_admin_review' || bookingStatus === 'Pending';
+  const isPendingReview = bookingStatus === 'Pending';
 
   if (!isPendingReview) {
     return null;
@@ -68,17 +68,6 @@ export function ReviewActionsCard({
         setRejectReason('');
       } catch (error: any) {
         toast.error(error.message || 'Failed to reject booking');
-      }
-    });
-  };
-
-  const handleSendToFinance = () => {
-    startTransition(async () => {
-      try {
-        await updateBookingStatus(bookingId, 'with_finance' as any);
-        toast.success('Booking sent to finance for quote');
-      } catch (error: any) {
-        toast.error(error.message || 'Failed to update status');
       }
     });
   };
@@ -129,15 +118,6 @@ export function ReviewActionsCard({
               >
                 <CheckCircle2 className="h-4 w-4" />
                 {isPending ? 'Approving...' : 'Approve Booking'}
-              </Button>
-
-              <Button
-                onClick={handleSendToFinance}
-                disabled={isPending}
-                variant="outline"
-                className="w-full gap-2"
-              >
-                Send to Finance for Quote
               </Button>
 
               <Button

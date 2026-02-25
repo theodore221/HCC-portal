@@ -506,14 +506,21 @@ export type Database = {
     Enums: {
       assignment_mode: "Auto" | "Manual";
       booking_status:
+        | "AwaitingDetails"
         | "Pending"
-        | "InTriage"
         | "Approved"
         | "Confirmed"
-        | "DepositPending"
         | "InProgress"
         | "Completed"
-        | "Cancelled";
+        | "Cancelled"
+        | "InTriage"
+        | "DepositPending"
+        | "DepositReceived"
+        | "active"
+        | "with_finance"
+        | "quote_sent"
+        | "pending_admin_review"
+        | "awaiting_customer_details";
       meal_job_status:
         | "Draft"
         | "PendingAssignment"

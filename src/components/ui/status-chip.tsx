@@ -5,31 +5,33 @@ import {
   ArrowRightCircle,
   BadgeCheck,
   CheckCircle2,
-  CircleDot,
   Clock3,
-  Wallet,
+  Send,
   XCircle,
 } from "lucide-react";
 
-const statusConfig: Record<
-  BookingStatus,
-  {
-    label: string;
-    className: string;
-    icon: LucideIcon;
-    pulse?: boolean;
-  }
+const statusConfig: Partial<
+  Record<
+    BookingStatus,
+    {
+      label: string;
+      className: string;
+      icon: LucideIcon;
+      pulse?: boolean;
+    }
+  >
 > = {
+  AwaitingDetails: {
+    label: "Awaiting Details",
+    className: "border-primary/20 bg-primary/10 text-primary",
+    icon: Send,
+    pulse: true,
+  },
   Pending: {
     label: "Pending",
     className: "border-warning/20 bg-warning/10 text-warning",
     icon: Clock3,
     pulse: true,
-  },
-  InTriage: {
-    label: "In triage",
-    className: "border-primary/20 bg-primary/10 text-primary",
-    icon: CircleDot,
   },
   Approved: {
     label: "Approved",
@@ -40,11 +42,6 @@ const statusConfig: Record<
     label: "Confirmed",
     className: "border-success/20 bg-success/10 text-success",
     icon: CheckCircle2,
-  },
-  DepositPending: {
-    label: "Deposit pending",
-    className: "border-warning/20 bg-warning/10 text-warning",
-    icon: Wallet,
   },
   InProgress: {
     label: "In progress",
@@ -65,6 +62,7 @@ const statusConfig: Record<
 
 export function StatusChip({ status }: { status: BookingStatus }) {
   const config = statusConfig[status];
+  if (!config) return null;
   const Icon = config.icon;
 
   return (

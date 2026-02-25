@@ -270,7 +270,7 @@ export async function submitBooking(
         byo_linen: formState.byo_linen ?? false,
         accommodation_requests: accommodationRequests,
         notes: formState.notes ?? null,
-        status: 'pending_admin_review',
+        status: 'Pending',
       })
       .select('id, reference, customer_name, customer_email, arrival_date, departure_date, headcount')
       .single() as any;

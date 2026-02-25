@@ -113,16 +113,27 @@ export default async function CustomerPortalPage() {
   );
 }
 
+const statusLabels: Partial<Record<string, string>> = {
+  AwaitingDetails: "Awaiting Details",
+  Pending: "Pending",
+  Approved: "Approved",
+  Confirmed: "Confirmed",
+  InProgress: "In Progress",
+  Completed: "Completed",
+  Cancelled: "Cancelled",
+};
+
 function StatusBadge({ status }: { status: string }) {
   let variant: "default" | "secondary" | "destructive" | "outline" = "outline";
 
   switch (status) {
     case "Approved":
     case "Confirmed":
-      variant = "default"; // or success color if available
+      variant = "default";
       break;
+    case "AwaitingDetails":
     case "Pending":
-    case "InTriage":
+    case "InProgress":
       variant = "secondary";
       break;
     case "Cancelled":
@@ -133,5 +144,5 @@ function StatusBadge({ status }: { status: string }) {
       break;
   }
 
-  return <Badge variant={variant}>{status}</Badge>;
+  return <Badge variant={variant}>{statusLabels[status] ?? status}</Badge>;
 }

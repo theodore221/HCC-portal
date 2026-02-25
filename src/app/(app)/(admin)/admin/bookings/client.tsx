@@ -46,6 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const statusOptions: { label: string; value: BookingStatus }[] = [
+  { label: "Awaiting Details", value: "AwaitingDetails" },
   { label: "Pending", value: "Pending" },
   { label: "Approved", value: "Approved" },
   { label: "Confirmed", value: "Confirmed" },
@@ -55,11 +56,10 @@ const statusOptions: { label: string; value: BookingStatus }[] = [
 ];
 
 const statusBadgeStyles: Partial<Record<BookingStatus, string>> = {
+  AwaitingDetails: "border-primary/20 bg-primary/10 text-primary",
   Pending: "border-warning/20 bg-warning/10 text-warning",
-  InTriage: "border-primary/20 bg-primary/10 text-primary",
   Approved: "border-success/20 bg-success/10 text-success",
   Confirmed: "border-success/20 bg-success/10 text-success",
-  DepositPending: "border-warning/20 bg-warning/10 text-warning",
   InProgress: "border-primary/20 bg-primary/10 text-primary",
   Completed: "border-border/60 bg-neutral text-text",
   Cancelled: "border-danger/20 bg-danger/10 text-danger",

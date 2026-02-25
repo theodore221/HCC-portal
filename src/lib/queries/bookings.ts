@@ -2,6 +2,18 @@ import type { Enums, Tables } from "@/lib/database.types";
 
 export type BookingStatus = Enums<"booking_status">;
 
+export const ACTIVE_STATUSES = [
+  "AwaitingDetails",
+  "Pending",
+  "Approved",
+  "Confirmed",
+  "InProgress",
+  "Completed",
+  "Cancelled",
+] as const;
+
+export type ActiveBookingStatus = (typeof ACTIVE_STATUSES)[number];
+
 export type BookingWithMeta = Tables<"bookings"> & {
   spaces: string[];
   conflicts: string[];

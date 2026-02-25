@@ -125,7 +125,7 @@ export async function submitPortalBooking(formData: FormData): Promise<PortalBoo
         is_overnight: data.is_overnight,
         catering_required: data.catering_required,
         notes: data.notes,
-        status: 'pending_admin_review',
+        status: 'Pending',
       })
       .select('id, reference, customer_name, customer_email, arrival_date, departure_date, headcount')
       .single()) as any;

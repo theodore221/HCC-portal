@@ -48,12 +48,11 @@ type QuickAction = {
   tone: Tone;
 };
 
-const statusTone: Record<BookingStatus, { label: string; tone: Tone }> = {
+const statusTone: Partial<Record<BookingStatus, { label: string; tone: Tone }>> = {
+  AwaitingDetails: { label: "Awaiting Details", tone: "primary" },
   Pending: { label: "Pending", tone: "warning" },
-  InTriage: { label: "In triage", tone: "primary" },
   Approved: { label: "Approved", tone: "primary" },
   Confirmed: { label: "Confirmed", tone: "success" },
-  DepositPending: { label: "Deposit pending", tone: "warning" },
   InProgress: { label: "In progress", tone: "primary" },
   Completed: { label: "Completed", tone: "success" },
   Cancelled: { label: "Cancelled", tone: "danger" },
@@ -68,7 +67,6 @@ export default async function AdminDashboard() {
   const enrichedJobs = enrichMealJobs(mealJobs, bookings);
 
   const pending = bookings.filter((b) => b.status === "Pending");
-  const depositPending = bookings.filter((b) => b.status === "DepositPending");
   const depositReceived = bookings.filter((b) => b.status === "Confirmed");
   const activeCatering = enrichedJobs.length;
   const activeBookings = bookings.filter(
@@ -94,7 +92,7 @@ export default async function AdminDashboard() {
     {
       label: "Deposits received",
       value: depositReceived.length,
-      helper: `${depositPending.length} outstanding`,
+      helper: "Confirmed bookings",
       icon: CheckCircle2,
       tone: "success",
     },

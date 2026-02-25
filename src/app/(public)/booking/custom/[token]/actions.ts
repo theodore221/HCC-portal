@@ -141,7 +141,7 @@ export async function submitCustomBooking(formData: FormData): Promise<CustomBoo
         is_overnight: data.is_overnight,
         catering_required: data.catering_required,
         notes: data.notes,
-        status: 'pending_admin_review',
+        status: 'Pending',
         // Nullify token after use
         custom_pricing_token_hash: null,
         custom_pricing_token_expires_at: null,

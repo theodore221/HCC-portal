@@ -142,7 +142,7 @@ export function validateCustomPricingToken(
   }
 
   // Check booking status
-  if (bookingStatus !== 'awaiting_customer_details') {
+  if (bookingStatus !== 'AwaitingDetails') {
     return {
       valid: false,
       reason: 'already_used',

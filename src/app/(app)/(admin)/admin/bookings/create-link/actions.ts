@@ -29,7 +29,7 @@ export async function createCustomBookingLink(data: {
       customer_name: data.customer_name,
       customer_email: data.customer_email,
       contact_name: data.customer_name,
-      status: 'awaiting_customer_details',
+      status: 'AwaitingDetails',
       custom_pricing_token_hash: hash,
       custom_pricing_token_expires_at: expires_at.toISOString(),
       custom_pricing_applied: !!data.discount_percentage,
