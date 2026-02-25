@@ -6,7 +6,7 @@ export function Stepper({
   currentStep: number;
 }) {
   return (
-    <ol className="flex flex-wrap items-center gap-4 rounded-2xl border border-olive-100 bg-white p-4">
+    <ol className="flex flex-wrap items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4">
       {steps.map((step, index) => {
         const isActive = index === currentStep;
         const isComplete = index < currentStep;
@@ -15,15 +15,15 @@ export function Stepper({
             <span
               className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${
                 isActive
-                  ? "bg-olive-600 text-white"
+                  ? "bg-primary text-white"
                   : isComplete
-                  ? "bg-olive-300 text-olive-900"
-                  : "bg-olive-100 text-olive-700"
+                  ? "bg-primary/40 text-foreground"
+                  : "bg-gray-100 text-gray-600"
               }`}
             >
               {index + 1}
             </span>
-            <span className={isActive ? "font-semibold text-olive-900" : "text-olive-700"}>
+            <span className={isActive ? "font-semibold text-foreground" : "text-gray-600"}>
               {step}
             </span>
           </li>

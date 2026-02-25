@@ -1,5 +1,14 @@
 import { sbServer } from "@/lib/supabase-server";
+import { MEAL_ORDER } from "@/lib/catering";
 import type { Enquiry, EnquiryNote, EnquiryQuote, EnquiryStatus } from "./enquiries";
+
+// Same 4 room types shown in the customer booking form
+const BOOKING_FORM_ROOM_TYPES = [
+  "Single Bed",
+  "Double Bed",
+  "Double Bed + Ensuite",
+  "Double Bed + Ensuite + Priv Study",
+];
 
 /**
  * Get enquiries for admin with optional filtering
@@ -125,6 +134,42 @@ export async function getEnquiryNotes(enquiryId: string) {
   }
 
   return data as EnquiryNote[];
+}
+
+/**
+ * Fetch pricing reference data for the quote builder
+ * Returns room types, active spaces, and meal prices
+ */
+export async function getPricingReferenceData() {
+  const sb: any = await sbServer();
+
+  const [{ data: roomTypes }, { data: spaces }, { data: mealPrices }] = await Promise.all([
+    sb
+      .from("room_types")
+      .select("id, name, price")
+      .in("name", BOOKING_FORM_ROOM_TYPES)
+      .order("price"),
+    sb.from("spaces").select("id, name, price").eq("active", true).order("name"),
+    sb.from("meal_prices").select("meal_type, price"),
+  ]);
+
+  // Sort meals by the canonical MEAL_ORDER (same order as admin resources page)
+  const sortedMealPrices = ((mealPrices || []) as { meal_type: string; price: number }[]).sort(
+    (a, b) => {
+      const ai = MEAL_ORDER.indexOf(a.meal_type);
+      const bi = MEAL_ORDER.indexOf(b.meal_type);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    }
+  );
+
+  return {
+    roomTypes: (roomTypes || []) as { id: string; name: string; price: number }[],
+    spaces: (spaces || []) as { id: string; name: string; price: number }[],
+    mealPrices: sortedMealPrices,
+  };
 }
 
 /**

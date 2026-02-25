@@ -66,20 +66,20 @@ export function Combobox({
         <span className="truncate">
           {selected ? selected.label : placeholder}
         </span>
-        <span aria-hidden className="text-xs text-olive-500">▾</span>
+        <span aria-hidden className="text-xs text-gray-500">▾</span>
       </Button>
       {open ? (
-        <div className="absolute z-30 mt-2 w-full rounded-xl border border-olive-100 bg-white p-3 shadow-soft">
+        <div className="absolute z-30 mt-2 w-full rounded-xl border border-gray-200 bg-white p-3 shadow-soft">
           <input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search..."
-            className="mb-2 w-full rounded-lg border border-olive-200 px-3 py-2 text-sm text-olive-900 placeholder:text-olive-500 focus:outline-none focus:ring-2 focus:ring-olive-500"
+            className="mb-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <div className="max-h-60 space-y-1 overflow-auto">
             {filtered.length === 0 ? (
-              <p className="rounded-lg bg-olive-50 px-3 py-2 text-sm text-olive-600">{emptyState}</p>
+              <p className="rounded-lg bg-gray-50 px-3 py-2 text-sm text-muted-foreground">{emptyState}</p>
             ) : (
               filtered.map((option) => {
                 const isSelected = option.value === value;
@@ -96,13 +96,13 @@ export function Combobox({
                     className={cn(
                       "w-full rounded-lg px-3 py-2 text-left text-sm",
                       isSelected
-                        ? "bg-olive-100 font-semibold text-olive-900"
-                        : "text-olive-700 hover:bg-olive-50"
+                        ? "bg-gray-100 font-semibold text-foreground"
+                        : "text-gray-700 hover:bg-gray-50"
                     )}
                   >
                     <span className="block text-sm">{option.label}</span>
                     {option.description ? (
-                      <span className="block text-xs text-olive-500">{option.description}</span>
+                      <span className="block text-xs text-gray-500">{option.description}</span>
                     ) : null}
                   </button>
                 );

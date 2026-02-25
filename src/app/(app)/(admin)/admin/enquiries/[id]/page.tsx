@@ -9,6 +9,7 @@ import {
   getEnquiryById,
   getEnquiryNotes,
   getEnquiryQuotes,
+  getPricingReferenceData,
 } from "@/lib/queries/enquiries.server";
 import { getCurrentProfile } from "@/lib/auth/server";
 
@@ -26,11 +27,12 @@ export default async function EnquiryDetailPage({ params }: EnquiryDetailPagePro
 
   try {
     // Parallelize all independent queries
-    const [enquiry, notes, quotes, { profile }] = await Promise.all([
+    const [enquiry, notes, quotes, { profile }, pricingData] = await Promise.all([
       getEnquiryById(id),
       getEnquiryNotes(id),
       getEnquiryQuotes(id),
       getCurrentProfile(),
+      getPricingReferenceData(),
     ]);
 
     if (!enquiry) {
@@ -42,6 +44,7 @@ export default async function EnquiryDetailPage({ params }: EnquiryDetailPagePro
         enquiry={enquiry}
         notes={notes}
         quotes={quotes}
+        pricingData={pricingData}
         currentUserName={profile?.full_name || profile?.email || "Unknown"}
       />
     );

@@ -52,7 +52,7 @@ export function ColorPicker({ value, onChange, disabled }: ColorPickerProps) {
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           className={cn(
-            "h-8 w-8 rounded-lg border border-olive-200 shadow-sm transition-transform",
+            "h-8 w-8 rounded-lg border border-gray-200 shadow-sm transition-transform",
             !disabled && "hover:scale-105",
             disabled && "opacity-50 cursor-not-allowed"
           )}
@@ -70,7 +70,7 @@ export function ColorPicker({ value, onChange, disabled }: ColorPickerProps) {
         />
       </div>
       {isOpen && (
-        <div className="absolute top-10 left-0 z-50 grid grid-cols-5 gap-1 rounded-lg border border-olive-200 bg-white p-2 shadow-lg">
+        <div className="absolute top-10 left-0 z-50 grid grid-cols-5 gap-1 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
           {PRESET_COLORS.map((color) => (
             <button
               key={color}
@@ -82,8 +82,8 @@ export function ColorPicker({ value, onChange, disabled }: ColorPickerProps) {
               className={cn(
                 "h-6 w-6 rounded border transition-transform hover:scale-110",
                 value === color
-                  ? "border-olive-900 ring-2 ring-olive-400"
-                  : "border-olive-100"
+                  ? "border-gray-900 ring-2 ring-primary/50"
+                  : "border-gray-200"
               )}
               style={{ backgroundColor: color }}
               aria-label={`Select color ${color}`}

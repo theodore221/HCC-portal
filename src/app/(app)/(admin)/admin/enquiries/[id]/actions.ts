@@ -5,7 +5,9 @@ import { getCurrentProfile } from "@/lib/auth/server";
 import { revalidatePath } from "next/cache";
 import { revalidateTag } from "next/cache";
 import { CACHE_TAGS } from "@/lib/cache";
+import { calculateBookingPricing } from "@/lib/pricing";
 import type { EnquiryStatus, NoteType } from "@/lib/queries/enquiries";
+import type { BookingSelections, DiscountConfig, PricingLineItem, PriceTableSnapshot, PricingResult } from "@/lib/pricing/types";
 
 /**
  * Update enquiry status and log the change
@@ -91,6 +93,26 @@ export async function addEnquiryNote(
 }
 
 /**
+ * Calculate itemized pricing for the quote builder preview
+ * Admin-only; no rate limiting needed
+ */
+export async function calculateQuotePricing(
+  selections: BookingSelections,
+  discountConfig?: DiscountConfig
+): Promise<{ success: boolean; pricing?: PricingResult; error?: string }> {
+  try {
+    const pricing = await calculateBookingPricing(selections, discountConfig);
+    return { success: true, pricing };
+  } catch (error) {
+    console.error("Quote pricing calculation error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Pricing calculation failed",
+    };
+  }
+}
+
+/**
  * Create a new quote for an enquiry
  */
 export async function createEnquiryQuote(
@@ -100,6 +122,10 @@ export async function createEnquiryQuote(
     description?: string;
     notes?: string;
     reasonForChange?: string;
+    selections?: BookingSelections | null;
+    line_items?: PricingLineItem[] | null;
+    discount_config?: DiscountConfig | null;
+    price_snapshot?: PriceTableSnapshot | null;
   }
 ) {
   const sb: any = await sbServer();
@@ -138,6 +164,10 @@ export async function createEnquiryQuote(
       reason_for_change: data.reasonForChange || null,
       created_by: profile.id,
       created_by_name: profile.full_name || profile.email,
+      selections: data.selections || null,
+      line_items: data.line_items || null,
+      discount_config: data.discount_config || null,
+      price_snapshot: data.price_snapshot || null,
     });
 
   if (insertError) {
@@ -307,6 +337,7 @@ export async function markEnquiryAsLost(enquiryId: string, reason: string) {
 
 /**
  * Convert enquiry to booking (delegates to existing create-link action)
+ * If the enquiry has an accepted quote with discount_config, that carries through.
  */
 export async function convertEnquiryToBooking(
   enquiryId: string,
@@ -318,6 +349,22 @@ export async function convertEnquiryToBooking(
     custom_pricing_notes?: string;
   }
 ) {
+  const sb: any = await sbServer();
+
+  // Look up the accepted quote's discount_config to carry through
+  const { data: acceptedQuote } = await sb
+    .from("enquiry_quotes")
+    .select("discount_config")
+    .eq("enquiry_id", enquiryId)
+    .eq("is_accepted", true)
+    .single();
+
+  const discountConfig: DiscountConfig | null = acceptedQuote?.discount_config
+    ? (typeof acceptedQuote.discount_config === "string"
+        ? JSON.parse(acceptedQuote.discount_config)
+        : acceptedQuote.discount_config)
+    : null;
+
   // Import and call the existing createCustomBookingLink action
   const { createCustomBookingLink } = await import(
     "@/app/(app)/(admin)/admin/bookings/create-link/actions"
@@ -326,6 +373,7 @@ export async function convertEnquiryToBooking(
   const result = await createCustomBookingLink({
     ...data,
     enquiry_id: enquiryId,
+    discount_config: discountConfig || undefined,
   });
 
   // The createCustomBookingLink already handles:

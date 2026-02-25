@@ -22,6 +22,7 @@ interface UserMenuProps {
   name?: string | null;
   variant?: "icon" | "sidebar";
   collapsed?: boolean;
+  dark?: boolean;
 }
 
 export function UserMenu({
@@ -29,6 +30,7 @@ export function UserMenu({
   name,
   variant = "icon",
   collapsed = false,
+  dark = false,
 }: UserMenuProps) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
@@ -72,28 +74,38 @@ export function UserMenu({
       <Button
         variant="ghost"
         className={cn(
-          "h-auto w-full max-w-full items-center justify-between gap-3 rounded-xl border border-border bg-neutral px-3 py-3 text-left text-text hover:bg-white",
+          "h-auto w-full max-w-full items-center justify-between gap-3 rounded-xl border px-3 py-3 text-left",
+          dark
+            ? "border-white/15 bg-white/10 text-white hover:bg-white/15"
+            : "border-border bg-neutral text-text hover:bg-white",
           collapsed &&
-            "w-full justify-center border-none bg-transparent px-0 py-0 text-text-light hover:bg-neutral"
+            (dark
+              ? "w-full justify-center border-none bg-transparent px-0 py-0 text-white/70 hover:bg-white/10"
+              : "w-full justify-center border-none bg-transparent px-0 py-0 text-text-light hover:bg-neutral")
         )}
         aria-label={triggerAriaLabel}
         disabled={signingOut}
       >
-        <div className="flex size-10 items-center justify-center rounded-full bg-primary/90 text-sm font-semibold text-white">
+        <div
+          className={cn(
+            "flex size-10 items-center justify-center rounded-full text-sm font-semibold text-white",
+            dark ? "bg-white/20" : "bg-primary/90"
+          )}
+        >
           {signingOut ? <Loader2 className="size-5 animate-spin" /> : initials}
         </div>
         {!collapsed ? (
           <div className="min-w-0 flex-1 text-left">
-            <p className="truncate text-sm font-semibold text-text">
+            <p className={cn("truncate text-sm font-semibold", dark ? "text-white" : "text-text")}>
               {displayName}
             </p>
-            <p className="truncate text-xs text-text-light">{email}</p>
+            <p className={cn("truncate text-xs", dark ? "text-white/70" : "text-text-light")}>{email}</p>
           </div>
         ) : (
           <span className="sr-only">{displayName}</span>
         )}
         {!collapsed ? (
-          <ChevronsUpDown className="size-4 text-text-light" aria-hidden />
+          <ChevronsUpDown className={cn("size-4", dark ? "text-white/50" : "text-text-light")} aria-hidden />
         ) : null}
       </Button>
     );

@@ -5,12 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Phone,
-  Mail,
   User,
-  Building2,
   Calendar,
-  Users,
   FileText,
   DollarSign,
   MessageSquare,
@@ -18,6 +14,9 @@ import {
   XCircle,
   RotateCcw,
   ExternalLink,
+  Copy,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,23 +34,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import type { Enquiry, EnquiryNote, EnquiryQuote } from "@/lib/queries/enquiries";
+import type { BookingSelections, DiscountConfig } from "@/lib/pricing/types";
 import {
   updateEnquiryStatus,
   addEnquiryNote,
-  createEnquiryQuote,
   acceptEnquiryQuote,
   markEnquiryAsLost,
   convertEnquiryToBooking,
 } from "./actions";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { QuoteBuilder, type PricingReferenceData } from "./quote-builder";
 
 interface EnquiryDetailClientProps {
   enquiry: Enquiry;
   notes: EnquiryNote[];
   quotes: EnquiryQuote[];
+  pricingData: PricingReferenceData;
   currentUserName: string;
 }
 
@@ -72,37 +72,140 @@ function formatCurrency(amount: number | null): string {
   }).format(amount);
 }
 
+// ── Itemized line-items display ────────────────────────────────────────────────
+function LineItemsBreakdown({ quote }: { quote: EnquiryQuote }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!quote.line_items?.length) return null;
+
+  const categories: { key: string; label: string }[] = [
+    { key: "accommodation", label: "Accommodation" },
+    { key: "venue", label: "Venue" },
+    { key: "catering", label: "Catering" },
+    { key: "extras", label: "Extras" },
+  ];
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+      >
+        {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        {expanded ? "Hide" : "View"} itemized breakdown
+      </button>
+
+      {expanded && (
+        <div className="mt-3 rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b bg-gray-50 text-gray-500">
+                <th className="text-left px-3 py-2 font-medium">Item</th>
+                <th className="text-right px-3 py-2 font-medium">Qty</th>
+                <th className="text-right px-3 py-2 font-medium">Unit Price</th>
+                <th className="text-right px-3 py-2 font-medium">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map(({ key, label }) => {
+                const items = quote.line_items!.filter((i) => i.category === key);
+                if (!items.length) return null;
+                return (
+                  <>
+                    <tr key={`hdr-${key}`} className="bg-gray-50/50">
+                      <td
+                        colSpan={4}
+                        className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500"
+                      >
+                        {label}
+                      </td>
+                    </tr>
+                    {items.map((item, idx) => {
+                      const hasDiscount =
+                        item.discounted_total !== undefined && item.discounted_total !== item.total;
+                      const displayTotal = item.discounted_total ?? item.total;
+                      return (
+                        <tr key={`${key}-${idx}`} className="border-b border-gray-100 last:border-0">
+                          <td className="px-3 py-2 text-gray-700">{item.item}</td>
+                          <td className="px-3 py-2 text-right text-gray-500">
+                            {item.qty} {item.unit}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {hasDiscount ? (
+                              <span>
+                                <span className="text-gray-400 line-through mr-1">
+                                  {formatCurrency(item.unit_price)}
+                                </span>
+                                <span className="text-emerald-700 font-medium">
+                                  {formatCurrency(item.discounted_unit_price ?? item.unit_price)}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">{formatCurrency(item.unit_price)}</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {hasDiscount ? (
+                              <span>
+                                <span className="text-gray-400 line-through mr-1">
+                                  {formatCurrency(item.total)}
+                                </span>
+                                <span className="text-emerald-700 font-medium">
+                                  {formatCurrency(displayTotal)}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-gray-700">{formatCurrency(displayTotal)}</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function EnquiryDetailClient({
   enquiry,
   notes,
   quotes,
-  currentUserName,
+  pricingData,
 }: EnquiryDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Dialog states
+  // Dialog / sheet states
   const [isLostDialogOpen, setIsLostDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
-  const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
+  const [isQuoteSheetOpen, setIsQuoteSheetOpen] = useState(false);
+  // Increment to remount QuoteBuilder with fresh state each time it opens
+  const [quoteBuilderKey, setQuoteBuilderKey] = useState(0);
+
+  // Duplicate quote state — set when clicking "Duplicate as New"
+  const [duplicateFrom, setDuplicateFrom] = useState<{
+    selections: BookingSelections | null;
+    discountConfig: DiscountConfig | null;
+  } | null>(null);
 
   // Form states
   const [lostReason, setLostReason] = useState("");
   const [lostReasonOther, setLostReasonOther] = useState("");
-  const [quoteData, setQuoteData] = useState({
-    amount: "",
-    description: "",
-    notes: "",
-    reasonForChange: "",
-  });
   const [convertData, setConvertData] = useState({
     customer_name: enquiry.customer_name,
     customer_email: enquiry.customer_email,
     organization: enquiry.organization || "",
-    discount_percentage: "",
     custom_pricing_notes: "",
   });
+
+  const acceptedQuote = quotes.find((q) => q.is_accepted);
 
   // Handle status transitions
   const handleStatusChange = (newStatus: typeof enquiry.status) => {
@@ -118,20 +221,21 @@ export function EnquiryDetailClient({
     router.refresh();
   };
 
-  // Handle create quote
-  const handleCreateQuote = () => {
-    startTransition(async () => {
-      await createEnquiryQuote(enquiry.id, {
-        amount: parseFloat(quoteData.amount),
-        description: quoteData.description || undefined,
-        notes: quoteData.notes || undefined,
-        reasonForChange: quoteData.reasonForChange || undefined,
-      });
-      setIsQuoteDialogOpen(false);
-      setQuoteData({ amount: "", description: "", notes: "", reasonForChange: "" });
-      setActiveTab("quotes");
-      router.refresh();
+  // Open quote builder for a new quote (no pre-fill)
+  const handleOpenQuoteBuilder = () => {
+    setDuplicateFrom(null);
+    setQuoteBuilderKey((k) => k + 1);
+    setIsQuoteSheetOpen(true);
+  };
+
+  // Open quote builder pre-filled with an existing quote's data
+  const handleDuplicateQuote = (quote: EnquiryQuote) => {
+    setDuplicateFrom({
+      selections: quote.selections,
+      discountConfig: quote.discount_config,
     });
+    setQuoteBuilderKey((k) => k + 1);
+    setIsQuoteSheetOpen(true);
   };
 
   // Handle accept quote
@@ -161,9 +265,6 @@ export function EnquiryDetailClient({
         customer_name: convertData.customer_name,
         customer_email: convertData.customer_email,
         organization: convertData.organization || undefined,
-        discount_percentage: convertData.discount_percentage
-          ? parseFloat(convertData.discount_percentage)
-          : undefined,
         custom_pricing_notes: convertData.custom_pricing_notes || undefined,
       });
       setIsConvertDialogOpen(false);
@@ -184,7 +285,7 @@ export function EnquiryDetailClient({
       case "in_discussion":
         return (
           <>
-            <Button onClick={() => setIsQuoteDialogOpen(true)}>
+            <Button onClick={handleOpenQuoteBuilder}>
               <DollarSign className="h-4 w-4 mr-2" />
               Create Quote
             </Button>
@@ -202,7 +303,7 @@ export function EnquiryDetailClient({
               <ExternalLink className="h-4 w-4 mr-2" />
               Convert to Booking
             </Button>
-            <Button variant="outline" onClick={() => setIsQuoteDialogOpen(true)}>
+            <Button variant="outline" onClick={handleOpenQuoteBuilder}>
               Revise Quote
             </Button>
             <Button variant="outline" onClick={() => setIsLostDialogOpen(true)}>
@@ -249,12 +350,12 @@ export function EnquiryDetailClient({
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-olive-900">
+              <h1 className="text-2xl font-bold text-gray-900">
                 {enquiry.reference_number}
               </h1>
               <EnquiryStatusChip status={enquiry.status} />
             </div>
-            <p className="mt-1 text-sm text-olive-600">
+            <p className="mt-1 text-sm text-gray-500">
               {enquiry.customer_name}
               {enquiry.organization && ` • ${enquiry.organization}`}
             </p>
@@ -269,13 +370,13 @@ export function EnquiryDetailClient({
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="notes">
             Notes & Activity
-            <span className="ml-2 rounded-full bg-olive-100 px-2 py-0.5 text-xs">
+            <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs">
               {notes.length}
             </span>
           </TabsTrigger>
           <TabsTrigger value="quotes">
             Quotes
-            <span className="ml-2 rounded-full bg-olive-100 px-2 py-0.5 text-xs">
+            <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs">
               {quotes.length}
             </span>
           </TabsTrigger>
@@ -294,22 +395,22 @@ export function EnquiryDetailClient({
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <Label className="text-xs text-olive-600">Name</Label>
+                  <Label className="text-xs text-gray-500">Name</Label>
                   <p className="text-sm font-medium">{enquiry.customer_name}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-olive-600">Email</Label>
+                  <Label className="text-xs text-gray-500">Email</Label>
                   <p className="text-sm">{enquiry.customer_email}</p>
                 </div>
                 {enquiry.customer_phone && (
                   <div>
-                    <Label className="text-xs text-olive-600">Phone</Label>
+                    <Label className="text-xs text-gray-500">Phone</Label>
                     <p className="text-sm">{enquiry.customer_phone}</p>
                   </div>
                 )}
                 {enquiry.organization && (
                   <div>
-                    <Label className="text-xs text-olive-600">Organization</Label>
+                    <Label className="text-xs text-gray-500">Organization</Label>
                     <p className="text-sm">{enquiry.organization}</p>
                   </div>
                 )}
@@ -326,11 +427,11 @@ export function EnquiryDetailClient({
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <Label className="text-xs text-olive-600">Event Type</Label>
+                  <Label className="text-xs text-gray-500">Event Type</Label>
                   <p className="text-sm font-medium">{enquiry.event_type}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-olive-600">Approximate Dates</Label>
+                  <Label className="text-xs text-gray-500">Approximate Dates</Label>
                   <p className="text-sm">
                     {formatDate(enquiry.approximate_start_date)} →{" "}
                     {formatDate(enquiry.approximate_end_date)}
@@ -338,7 +439,7 @@ export function EnquiryDetailClient({
                 </div>
                 {enquiry.estimated_guests && (
                   <div>
-                    <Label className="text-xs text-olive-600">Estimated Guests</Label>
+                    <Label className="text-xs text-gray-500">Estimated Guests</Label>
                     <p className="text-sm">{enquiry.estimated_guests}</p>
                   </div>
                 )}
@@ -355,7 +456,7 @@ export function EnquiryDetailClient({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-sm text-olive-800">{enquiry.message}</p>
+              <p className="whitespace-pre-wrap text-sm text-gray-700">{enquiry.message}</p>
             </CardContent>
           </Card>
 
@@ -370,30 +471,28 @@ export function EnquiryDetailClient({
             <CardContent className="space-y-3">
               {enquiry.quoted_amount && (
                 <div>
-                  <Label className="text-xs text-olive-600">Quoted Amount</Label>
-                  <p className="text-lg font-semibold text-olive-900">
+                  <Label className="text-xs text-gray-500">Quoted Amount</Label>
+                  <p className="text-lg font-semibold text-gray-900">
                     {formatCurrency(enquiry.quoted_amount)}
                   </p>
                 </div>
               )}
               {enquiry.lost_reason && (
                 <div>
-                  <Label className="text-xs text-olive-600">Lost Reason</Label>
-                  <p className="text-sm text-olive-800">{enquiry.lost_reason}</p>
+                  <Label className="text-xs text-gray-500">Lost Reason</Label>
+                  <p className="text-sm text-gray-700">{enquiry.lost_reason}</p>
                 </div>
               )}
               {enquiry.admin_notes && (
                 <div>
-                  <Label className="text-xs text-olive-600">
-                    Legacy Admin Notes
-                  </Label>
-                  <p className="whitespace-pre-wrap text-sm text-olive-700">
+                  <Label className="text-xs text-gray-500">Legacy Admin Notes</Label>
+                  <p className="whitespace-pre-wrap text-sm text-gray-600">
                     {enquiry.admin_notes}
                   </p>
                 </div>
               )}
               <div>
-                <Label className="text-xs text-olive-600">Created</Label>
+                <Label className="text-xs text-gray-500">Created</Label>
                 <p className="text-sm">{formatDate(enquiry.created_at)}</p>
               </div>
             </CardContent>
@@ -423,12 +522,12 @@ export function EnquiryDetailClient({
         <TabsContent value="quotes" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-lg font-semibold text-olive-900">Quote Revisions</h2>
-              <p className="text-sm text-olive-600">
+              <h2 className="text-lg font-semibold text-gray-900">Quote Revisions</h2>
+              <p className="text-sm text-gray-500">
                 Track pricing evolution and customer acceptance
               </p>
             </div>
-            <Button onClick={() => setIsQuoteDialogOpen(true)}>
+            <Button onClick={handleOpenQuoteBuilder}>
               <DollarSign className="h-4 w-4 mr-2" />
               Create New Quote
             </Button>
@@ -437,7 +536,10 @@ export function EnquiryDetailClient({
           {quotes.length > 0 ? (
             <div className="space-y-3">
               {[...quotes].reverse().map((quote) => (
-                <Card key={quote.id} className={quote.is_accepted ? "border-emerald-300 bg-emerald-50" : ""}>
+                <Card
+                  key={quote.id}
+                  className={quote.is_accepted ? "border-emerald-300 bg-emerald-50" : ""}
+                >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
@@ -448,13 +550,18 @@ export function EnquiryDetailClient({
                               Accepted
                             </span>
                           )}
+                          {quote.line_items && (
+                            <span className="ml-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                              Itemized
+                            </span>
+                          )}
                         </CardTitle>
                         <CardDescription>
                           Created by {quote.created_by_name} on {formatDate(quote.created_at)}
                         </CardDescription>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-olive-900">
+                        <p className="text-2xl font-bold text-gray-900">
                           {formatCurrency(quote.amount)}
                         </p>
                       </div>
@@ -463,32 +570,48 @@ export function EnquiryDetailClient({
                   <CardContent className="space-y-3">
                     {quote.description && (
                       <div>
-                        <Label className="text-xs text-olive-600">Description</Label>
-                        <p className="text-sm text-olive-800">{quote.description}</p>
+                        <Label className="text-xs text-gray-500">Description</Label>
+                        <p className="text-sm text-gray-700">{quote.description}</p>
                       </div>
                     )}
                     {quote.reason_for_change && (
                       <div>
-                        <Label className="text-xs text-olive-600">Reason for Change</Label>
-                        <p className="text-sm text-olive-800">{quote.reason_for_change}</p>
+                        <Label className="text-xs text-gray-500">Reason for Change</Label>
+                        <p className="text-sm text-gray-700">{quote.reason_for_change}</p>
                       </div>
                     )}
                     {quote.notes && (
                       <div>
-                        <Label className="text-xs text-olive-600">Internal Notes</Label>
-                        <p className="text-sm text-olive-700">{quote.notes}</p>
+                        <Label className="text-xs text-gray-500">Internal Notes</Label>
+                        <p className="text-sm text-gray-600">{quote.notes}</p>
                       </div>
                     )}
-                    {!quote.is_accepted && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleAcceptQuote(quote.id)}
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        Mark as Accepted
-                      </Button>
-                    )}
+
+                    {/* Itemized breakdown toggle */}
+                    <LineItemsBreakdown quote={quote} />
+
+                    <div className="flex gap-2 flex-wrap">
+                      {!quote.is_accepted && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAcceptQuote(quote.id)}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          Mark as Accepted
+                        </Button>
+                      )}
+                      {quote.selections && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDuplicateQuote(quote)}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicate as New
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -496,8 +619,8 @@ export function EnquiryDetailClient({
           ) : (
             <Card>
               <CardContent className="py-12 text-center">
-                <DollarSign className="mx-auto h-12 w-12 text-olive-300" />
-                <p className="mt-4 text-sm text-olive-600">
+                <DollarSign className="mx-auto h-12 w-12 text-gray-300" />
+                <p className="mt-4 text-sm text-gray-500">
                   No quotes created yet. Create the first quote to start the pricing conversation.
                 </p>
               </CardContent>
@@ -505,6 +628,22 @@ export function EnquiryDetailClient({
           )}
         </TabsContent>
       </Tabs>
+
+      {/* ── Quote Builder Sheet — keyed so it remounts fresh on each open ── */}
+      <QuoteBuilder
+        key={quoteBuilderKey}
+        open={isQuoteSheetOpen}
+        onOpenChange={setIsQuoteSheetOpen}
+        enquiry={enquiry}
+        pricingData={pricingData}
+        existingQuotesCount={quotes.length}
+        initialSelections={duplicateFrom?.selections}
+        initialDiscountConfig={duplicateFrom?.discountConfig}
+        onQuoteCreated={() => {
+          setActiveTab("quotes");
+          router.refresh();
+        }}
+      />
 
       {/* Mark as Lost Dialog */}
       <Dialog open={isLostDialogOpen} onOpenChange={setIsLostDialogOpen}>
@@ -521,7 +660,7 @@ export function EnquiryDetailClient({
               <select
                 value={lostReason}
                 onChange={(e) => setLostReason(e.target.value)}
-                className="w-full rounded-md border border-olive-200 bg-white px-3 py-2 text-sm focus:border-olive-500 focus:outline-none focus:ring-2 focus:ring-olive-500/20"
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Select a reason...</option>
                 <option value="Too expensive">Too expensive</option>
@@ -557,84 +696,14 @@ export function EnquiryDetailClient({
         </DialogContent>
       </Dialog>
 
-      {/* Create Quote Dialog */}
-      <Dialog open={isQuoteDialogOpen} onOpenChange={setIsQuoteDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {quotes.length === 0 ? "Create Quote" : "Create Revised Quote"}
-            </DialogTitle>
-            <DialogDescription>
-              {quotes.length === 0
-                ? "Create the first quote for this enquiry"
-                : `Creating version ${quotes.length + 1}`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Amount (AUD) *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={quoteData.amount}
-                onChange={(e) => setQuoteData({ ...quoteData, amount: e.target.value })}
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={quoteData.description}
-                onChange={(e) => setQuoteData({ ...quoteData, description: e.target.value })}
-                placeholder="What does this quote cover?"
-                rows={3}
-              />
-            </div>
-            {quotes.length > 0 && (
-              <div>
-                <Label>Reason for Change *</Label>
-                <Textarea
-                  value={quoteData.reasonForChange}
-                  onChange={(e) => setQuoteData({ ...quoteData, reasonForChange: e.target.value })}
-                  placeholder="Why is this quote being revised?"
-                  rows={2}
-                />
-              </div>
-            )}
-            <div>
-              <Label>Internal Notes</Label>
-              <Textarea
-                value={quoteData.notes}
-                onChange={(e) => setQuoteData({ ...quoteData, notes: e.target.value })}
-                placeholder="Notes for staff (not visible to customer)"
-                rows={2}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsQuoteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateQuote}
-              disabled={
-                !quoteData.amount ||
-                (quotes.length > 0 && !quoteData.reasonForChange.trim())
-              }
-            >
-              Create Quote
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Convert to Booking Dialog */}
       <Dialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Convert to Booking</DialogTitle>
             <DialogDescription>
-              Generate a custom booking link for this enquiry. The customer will receive an email with a link to complete their booking.
+              Generate a custom booking link for this enquiry. The customer will receive an email
+              with a link to complete their booking.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -650,7 +719,9 @@ export function EnquiryDetailClient({
               <Input
                 type="email"
                 value={convertData.customer_email}
-                onChange={(e) => setConvertData({ ...convertData, customer_email: e.target.value })}
+                onChange={(e) =>
+                  setConvertData({ ...convertData, customer_email: e.target.value })
+                }
               />
             </div>
             <div>
@@ -660,23 +731,33 @@ export function EnquiryDetailClient({
                 onChange={(e) => setConvertData({ ...convertData, organization: e.target.value })}
               />
             </div>
-            <div>
-              <Label>Discount Percentage (optional)</Label>
-              <Input
-                type="number"
-                step="1"
-                min="0"
-                max="100"
-                value={convertData.discount_percentage}
-                onChange={(e) => setConvertData({ ...convertData, discount_percentage: e.target.value })}
-                placeholder="0"
-              />
-            </div>
+
+            {/* Show discount summary from accepted quote if available */}
+            {acceptedQuote?.discount_config && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                <p className="text-sm font-medium text-emerald-800 mb-2">
+                  Pricing discounts from accepted quote will carry through:
+                </p>
+                {acceptedQuote.discount_config.item_overrides?.map((ov, i) => (
+                  <p key={i} className="text-xs text-emerald-700">
+                    • {ov.item}: overridden to ${ov.new_unit_price}/unit
+                  </p>
+                ))}
+                {acceptedQuote.discount_config.percentage && (
+                  <p className="text-xs text-emerald-700">
+                    • {acceptedQuote.discount_config.percentage}% off all items
+                  </p>
+                )}
+              </div>
+            )}
+
             <div>
               <Label>Custom Pricing Notes (optional)</Label>
               <Textarea
                 value={convertData.custom_pricing_notes}
-                onChange={(e) => setConvertData({ ...convertData, custom_pricing_notes: e.target.value })}
+                onChange={(e) =>
+                  setConvertData({ ...convertData, custom_pricing_notes: e.target.value })
+                }
                 placeholder="Special pricing considerations..."
                 rows={3}
               />

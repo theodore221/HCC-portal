@@ -83,7 +83,7 @@ export function DashboardShell({
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
       <div className="min-h-screen bg-neutral text-text">
         <aside
-          className="fixed inset-y-0 left-0 z-40 hidden h-[100dvh] border-r border-border bg-white shadow-soft transition-[width] duration-300 lg:flex"
+          className="fixed inset-y-0 left-0 z-40 hidden h-[100dvh] bg-primary text-white transition-[width] duration-300 lg:flex"
           style={isDesktop ? { width: sidebarWidth } : undefined}
         >
           <SidebarContent
@@ -99,7 +99,7 @@ export function DashboardShell({
 
         <SheetContent
           side="left"
-          className="w-[250px] !w-[250px] !max-w-[250px] border-r border-border p-0 lg:hidden"
+          className="w-[250px] !w-[250px] !max-w-[250px] bg-primary border-r-0 p-0 lg:hidden"
         >
           <SidebarContent
             navItems={navItems}
@@ -219,10 +219,10 @@ function SidebarContent({
   onToggleCollapse?: () => void;
 }) {
   return (
-    <div className="flex h-full w-full max-w-full flex-col">
+    <div className="flex h-full w-full max-w-full flex-col text-white">
       <div
         className={cn(
-          "flex h-16 items-center border-b border-border",
+          "flex h-16 items-center border-b border-white/15",
           collapsed ? "px-4" : "px-4"
         )}
       >
@@ -235,17 +235,17 @@ function SidebarContent({
         >
           <div className="flex size-14 items-center justify-center rounded-xl">
             <img
-              src="/logo_notext.svg"
+              src="/logo_notext_white.svg"
               alt="HCC Logo"
               className="size-full object-contain"
             />
           </div>
           {!collapsed ? (
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-text">
+              <p className="text-sm font-semibold text-white">
                 Holy Cross Centre
               </p>
-              <p className="text-xs text-text-light">Web Portal</p>
+              <p className="text-xs text-white/70">Web Portal</p>
             </div>
           ) : null}
         </Link>
@@ -253,7 +253,7 @@ function SidebarContent({
           <Button
             variant="ghost"
             size="icon-sm"
-            className="ml-auto rounded-xl text-text-light hover:bg-neutral hover:text-text"
+            className="ml-auto rounded-xl text-white/70 hover:bg-white/10 hover:text-white"
             onClick={onToggleCollapse}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-pressed={collapsed}
@@ -285,8 +285,8 @@ function SidebarContent({
                   className={cn(
                     "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
                     isActive
-                      ? "bg-secondary text-primary"
-                      : "text-text-light hover:bg-neutral hover:text-text",
+                      ? "bg-white/20 text-white font-semibold"
+                      : "text-white hover:bg-white/10",
                     collapsed && "justify-center gap-0 px-0"
                   )}
                   onClick={onNavigate}
@@ -305,7 +305,7 @@ function SidebarContent({
       </ScrollArea>
       <div
         className={cn(
-          "mt-auto border-t border-border py-5",
+          "mt-auto border-t border-white/15 py-5",
           collapsed ? "flex justify-center px-4" : "px-4"
         )}
       >
@@ -315,11 +315,12 @@ function SidebarContent({
             name={user?.name}
             variant="sidebar"
             collapsed={collapsed}
+            dark
           />
         ) : (
           <div className="flex size-10 items-center justify-center rounded-full overflow-hidden">
             <img
-              src="/logo_notext.svg"
+              src="/logo_notext_white.svg"
               alt="HCC"
               className="h-full w-full object-cover"
             />

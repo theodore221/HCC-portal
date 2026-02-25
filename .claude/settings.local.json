@@ -20,7 +20,8 @@
       "Bash(lsof -i :3000 2>&1 | head -5)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/enquiry 2>&1)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/booking/new 2>&1)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/booking/custom/test 2>&1 && curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/admin/enquiries 2>&1)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/booking/custom/test 2>&1 && curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/admin/enquiries 2>&1)",
+      "WebSearch"
     ]
   }
 }

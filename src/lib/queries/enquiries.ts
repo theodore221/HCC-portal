@@ -5,6 +5,7 @@ import {
   ArrowRightCircle,
   XCircle
 } from "lucide-react";
+import type { BookingSelections, PricingLineItem, DiscountConfig, PriceTableSnapshot } from "@/lib/pricing/types";
 
 /**
  * Enquiry status types and configuration
@@ -73,7 +74,14 @@ export interface EnquiryQuote {
   created_by: string;
   created_by_name: string;
   created_at: string;
+  // Itemized quote data (null for legacy flat-amount quotes)
+  selections: BookingSelections | null;
+  line_items: PricingLineItem[] | null;
+  discount_config: DiscountConfig | null;
+  price_snapshot: PriceTableSnapshot | null;
 }
+
+export type { BookingSelections, PricingLineItem, DiscountConfig, PriceTableSnapshot };
 
 /**
  * Status configuration for UI rendering

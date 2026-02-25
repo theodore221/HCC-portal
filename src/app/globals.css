@@ -3,9 +3,9 @@
 :root {
   --background: #f8f9fa;
   --foreground: #1a1a1a;
-  --primary: #2f5233;
-  --primary-light: #4a7c4e;
-  --secondary: #e8f5e9;
+  --primary: #6c8f36;
+  --primary-light: #86ad45;
+  --secondary: #edf6d5;
   --accent: #ff6b35;
   --neutral: #f8f9fa;
   --text: #1a1a1a;
@@ -61,11 +61,13 @@
   --color-card: #ffffff;
   --color-card-foreground: var(--text);
   --color-popover: #ffffff;
-  --color-popover-foreground: var(--olive-800);
-  --color-muted: var(--olive-100);
-  --color-muted-foreground: var(--olive-600);
-  --color-ring: var(--olive-500);
-  --color-input: var(--olive-200);
+  --color-popover-foreground: #374151;  /* gray-700 */
+  --color-muted: #f3f4f6;              /* gray-100 */
+  --color-muted-foreground: #6b7280;   /* gray-500 */
+  --color-ring: #6c8f36;               /* primary green */
+  --color-input: #d1d5db;             /* gray-300 */
+  --color-surface: #f9fafb;            /* gray-50 */
+  --color-surface-foreground: #111827; /* gray-900 */
   --color-destructive: var(--danger);
   --radius: 0.75rem;
 }
@@ -73,7 +75,7 @@
 body {
   background: var(--neutral);
   color: var(--text);
-  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--font-geist-sans), "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 a {

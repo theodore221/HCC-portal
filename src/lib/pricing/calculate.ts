@@ -301,9 +301,12 @@ function calculateVenuePricing(
 /**
  * Apply discount to line items
  *
- * Supports two discount types:
- * 1. Percentage discount - applies to all line items
- * 2. Per-item override - replaces specific unit prices
+ * Processes both fields independently of the `type` discriminator:
+ * 1. Per-item overrides — replace specific unit prices first
+ * 2. Percentage discount — applied on top of any override-adjusted prices
+ *
+ * This allows combined discounts (e.g. quote builder overrides + a flat % on top).
+ * Existing callers that only use one type are unaffected.
  */
 function applyDiscount(
   lineItems: PricingLineItem[],
@@ -312,17 +315,8 @@ function applyDiscount(
   const updatedItems = [...lineItems];
   let totalDiscount = 0;
 
-  if (discountConfig.type === 'percentage' && discountConfig.percentage) {
-    const discountMultiplier = discountConfig.percentage / 100;
-
-    updatedItems.forEach((item) => {
-      const itemDiscount = item.total * discountMultiplier;
-      item.discounted_total = item.total - itemDiscount;
-      totalDiscount += itemDiscount;
-    });
-  }
-
-  if (discountConfig.type === 'per_item_override' && discountConfig.item_overrides) {
+  // Step 1: Per-item price overrides (replace specific unit prices)
+  if (discountConfig.item_overrides?.length) {
     discountConfig.item_overrides.forEach((override) => {
       const matchingItems = updatedItems.filter(
         (item) =>
@@ -335,6 +329,18 @@ function applyDiscount(
         item.discounted_total = item.qty * override.new_unit_price;
         totalDiscount += oldTotal - item.discounted_total;
       });
+    });
+  }
+
+  // Step 2: Percentage discount on top of any already-discounted prices
+  if (discountConfig.percentage) {
+    const multiplier = discountConfig.percentage / 100;
+
+    updatedItems.forEach((item) => {
+      const base = item.discounted_total ?? item.total;
+      const itemDiscount = base * multiplier;
+      item.discounted_total = base - itemDiscount;
+      totalDiscount += itemDiscount;
     });
   }
 

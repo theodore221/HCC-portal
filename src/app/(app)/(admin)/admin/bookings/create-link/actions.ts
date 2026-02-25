@@ -7,12 +7,14 @@
 import { sbServer } from '@/lib/supabase-server';
 import { generateCustomPricingToken } from '@/lib/security';
 import { revalidatePath } from 'next/cache';
+import type { DiscountConfig } from '@/lib/pricing/types';
 
 export async function createCustomBookingLink(data: {
   customer_name: string;
   customer_email: string;
   organization?: string;
   discount_percentage?: number;
+  discount_config?: DiscountConfig;
   custom_pricing_notes?: string;
   enquiry_id?: string;
 }) {
@@ -32,8 +34,9 @@ export async function createCustomBookingLink(data: {
       status: 'AwaitingDetails',
       custom_pricing_token_hash: hash,
       custom_pricing_token_expires_at: expires_at.toISOString(),
-      custom_pricing_applied: !!data.discount_percentage,
+      custom_pricing_applied: !!(data.discount_percentage || data.discount_config),
       discount_percentage: data.discount_percentage || 0,
+      discount_config: data.discount_config || null,
       custom_pricing_notes: data.custom_pricing_notes || null,
       enquiry_id: data.enquiry_id || null,
       // Placeholder values (will be filled by customer)

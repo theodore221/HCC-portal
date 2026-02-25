@@ -8,7 +8,7 @@ import { sbServer } from '@/lib/supabase-server';
 import { bookingSchema } from '@/lib/validation/booking';
 import { validateBotDetection, HONEYPOT_FIELDS, validateCustomPricingToken, hashToken, rateLimitServerAction } from '@/lib/security';
 import { calculateBookingPricing, createPriceSnapshot } from '@/lib/pricing';
-import type { BookingSelections } from '@/lib/pricing';
+import type { BookingSelections, DiscountConfig } from '@/lib/pricing';
 
 export interface CustomBookingSubmissionResult {
   success: boolean;
@@ -123,11 +123,19 @@ export async function submitCustomBooking(formData: FormData): Promise<CustomBoo
       },
     };
 
-    // Calculate pricing with discount
-    const pricing = await calculateBookingPricing(selections, {
-      type: 'percentage',
-      value: booking.discount_percentage || 0,
-    } as any);
+    // Calculate pricing with discount — prefer discount_config (itemized) over flat percentage
+    let discountConfig: DiscountConfig | undefined;
+    if (booking.discount_config) {
+      discountConfig = typeof booking.discount_config === 'string'
+        ? JSON.parse(booking.discount_config)
+        : booking.discount_config;
+    } else if (booking.discount_percentage > 0) {
+      discountConfig = {
+        type: 'percentage',
+        percentage: booking.discount_percentage,
+      };
+    }
+    const pricing = await calculateBookingPricing(selections, discountConfig);
 
     // Update booking with details
     const { error: updateError } = await supabase
