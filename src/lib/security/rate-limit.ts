@@ -14,6 +14,7 @@
  */
 
 import { NextRequest } from 'next/server';
+import { headers } from 'next/headers';
 
 // Rate limit configuration per endpoint type
 export interface RateLimitConfig {
@@ -293,6 +294,60 @@ export async function checkRateLimit(
   }
 
   return null; // Rate limit passed
+}
+
+/**
+ * Get client identifier from Next.js server action context (uses next/headers)
+ */
+export async function getClientIdFromHeaders(): Promise<string> {
+  const headersList = await headers();
+
+  const forwardedFor = headersList.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0].trim();
+  }
+
+  const realIp = headersList.get('x-real-ip');
+  if (realIp) {
+    return realIp;
+  }
+
+  return 'unknown';
+}
+
+/**
+ * Rate limiting for server actions (no NextRequest available)
+ *
+ * Usage in server actions:
+ * ```ts
+ * const rl = await rateLimitServerAction('enquiry');
+ * if (!rl.success) {
+ *   return { success: false, error: 'Too many submissions. Please try again in a few minutes.' };
+ * }
+ * ```
+ */
+export async function rateLimitServerAction(
+  endpointType: string,
+  customConfig?: RateLimitConfig
+): Promise<RateLimitResult> {
+  const config = customConfig || RATE_LIMITS[endpointType];
+
+  if (!config) {
+    throw new Error(`No rate limit config found for endpoint: ${endpointType}`);
+  }
+
+  const clientId = await getClientIdFromHeaders();
+  const identifier = `ratelimit:${endpointType}:${clientId}`;
+
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    try {
+      return await rateLimitWithUpstash(identifier, config);
+    } catch (error) {
+      console.warn('Upstash rate limiting failed, falling back to in-memory:', error);
+    }
+  }
+
+  return await rateLimitInMemory(identifier, config);
 }
 
 /**

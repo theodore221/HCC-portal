@@ -19,7 +19,6 @@ interface StatusCounts {
   new: number;
   in_discussion: number;
   quoted: number;
-  ready_to_book: number;
   converted_to_booking: number;
   lost: number;
   conversionRate: number;
@@ -207,7 +206,7 @@ export function EnquiriesClient({
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-olive-600">Total</CardTitle>
@@ -252,17 +251,6 @@ export function EnquiriesClient({
             <div className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-emerald-600" />
               <span className="text-2xl font-bold text-emerald-900">{statusCounts.quoted}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-olive-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-olive-700">Ready</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-olive-900">{statusCounts.ready_to_book}</span>
             </div>
           </CardContent>
         </Card>
@@ -349,17 +337,6 @@ export function EnquiriesClient({
           )}
         >
           Quoted ({statusCounts.quoted})
-        </button>
-        <button
-          onClick={() => handleStatusFilter("ready_to_book")}
-          className={cn(
-            "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-            activeStatus === "ready_to_book"
-              ? "border-olive-300 bg-olive-100 text-olive-900"
-              : "border-olive-200 bg-white text-olive-600 hover:bg-olive-50"
-          )}
-        >
-          Ready to Book ({statusCounts.ready_to_book})
         </button>
         <button
           onClick={() => handleStatusFilter("converted_to_booking")}

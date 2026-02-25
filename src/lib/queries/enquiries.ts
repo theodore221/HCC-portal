@@ -2,7 +2,6 @@ import {
   Sparkles,
   MessageCircle,
   DollarSign,
-  CheckCircle2,
   ArrowRightCircle,
   XCircle
 } from "lucide-react";
@@ -14,7 +13,6 @@ export type EnquiryStatus =
   | "new"
   | "in_discussion"
   | "quoted"
-  | "ready_to_book"
   | "converted_to_booking"
   | "lost";
 
@@ -102,11 +100,6 @@ export const ENQUIRY_STATUS_CONFIG: Record<
     label: "Quoted",
     className: "bg-emerald-100 text-emerald-800 border-emerald-200",
     icon: DollarSign,
-  },
-  ready_to_book: {
-    label: "Ready to Book",
-    className: "bg-olive-100 text-olive-800 border-olive-200",
-    icon: CheckCircle2,
   },
   converted_to_booking: {
     label: "Converted",

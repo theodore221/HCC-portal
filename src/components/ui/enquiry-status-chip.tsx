@@ -5,7 +5,6 @@ import {
   Sparkles,
   MessageCircle,
   DollarSign,
-  CheckCircle2,
   ArrowRightCircle,
   XCircle,
 } from "lucide-react";
@@ -35,11 +34,6 @@ const statusConfig: Record<
     className: "border-emerald-200 bg-emerald-100 text-emerald-800",
     icon: DollarSign,
   },
-  ready_to_book: {
-    label: "Ready to Book",
-    className: "border-olive-200 bg-olive-100 text-olive-800",
-    icon: CheckCircle2,
-  },
   converted_to_booking: {
     label: "Converted",
     className: "border-purple-200 bg-purple-100 text-purple-800",
@@ -54,6 +48,9 @@ const statusConfig: Record<
 
 export function EnquiryStatusChip({ status }: { status: EnquiryStatus }) {
   const config = statusConfig[status];
+
+  if (!config) return null;
+
   const Icon = config.icon;
 
   return (

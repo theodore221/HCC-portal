@@ -12,6 +12,8 @@ import {
   validateHoneypotFromJSON,
   validateSubmissionTime,
   HONEYPOT_FIELDS,
+  rateLimitServerAction,
+  getClientIdFromHeaders,
 } from "@/lib/security";
 
 export interface EnquirySubmissionResult {
@@ -19,6 +21,7 @@ export interface EnquirySubmissionResult {
   reference_number?: string;
   error?: string;
   errors?: Record<string, string[]>;
+  duplicate_warning?: string;
 }
 
 /**
@@ -31,6 +34,15 @@ export async function submitEnquiry(
   formData: FormData,
 ): Promise<EnquirySubmissionResult> {
   try {
+    // 0. Rate limiting
+    const rl = await rateLimitServerAction('enquiry');
+    if (!rl.success) {
+      return {
+        success: false,
+        error: 'Too many submissions. Please try again in a few minutes.',
+      };
+    }
+
     // Convert FormData to object
     const rawData: any = Object.fromEntries(formData);
 
@@ -89,16 +101,33 @@ export async function submitEnquiry(
     // 4. Sanitize data (remove security fields)
     const cleanData = sanitizeEnquiryData(validationResult.data);
 
-    // 5. Insert into database
+    // 5. Check for duplicate active enquiry (warning only — still insert)
     const supabase = sbAdmin();
+    let duplicateWarning: string | undefined;
 
+    const { data: existing } = await supabase
+      .from('enquiries' as any)
+      .select('reference_number')
+      .eq('customer_email', cleanData.customer_email.toLowerCase())
+      .in('status', ['new', 'in_discussion'])
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      duplicateWarning = `You already have an open enquiry (${(existing as any).reference_number}). We'll still record this new one, but you may want to follow up on the existing one instead.`;
+    }
+
+    // 6. Get client IP
+    const clientIp = await getClientIdFromHeaders();
+
+    // 7. Insert into database
     const { data: enquiry, error: dbError } = await supabase
       .from("enquiries")
       // @ts-ignore - Type compatibility issue
       .insert({
         ...cleanData,
         status: "new",
-        submitted_from_ip: null, // Will be populated by trigger/RLS if needed
+        submitted_from_ip: clientIp !== 'unknown' ? clientIp : null,
         submission_duration_seconds: timeResult.elapsed
           ? Math.floor(timeResult.elapsed)
           : null,
@@ -115,7 +144,7 @@ export async function submitEnquiry(
       };
     }
 
-    // 6. Send confirmation email to customer (don't fail submission if email fails)
+    // 8. Send confirmation email to customer (don't fail submission if email fails)
     try {
       const { sendEnquiryReceivedEmail } =
         await import("@/lib/email/send-enquiry-received");
@@ -125,12 +154,20 @@ export async function submitEnquiry(
       );
     } catch (emailError) {
       console.error("Failed to send enquiry confirmation email:", emailError);
-      // Continue - email failure shouldn't block enquiry submission
+    }
+
+    // 9. Send admin notification (non-blocking)
+    try {
+      const { sendAdminNewEnquiryEmail } = await import('@/lib/email/send-admin-new-enquiry');
+      await sendAdminNewEnquiryEmail(enquiry);
+    } catch (e) {
+      console.error('Admin notification failed:', e);
     }
 
     return {
       success: true,
       reference_number: enquiry.reference_number,
+      duplicate_warning: duplicateWarning,
     };
   } catch (error) {
     console.error("Unexpected error in submitEnquiry:", error);

@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { sbAdmin } from "@/lib/supabase-admin";
+import { checkRateLimit, checkCSRF } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const rateLimitResponse = await checkRateLimit(request, 'enquiry');
+    if (rateLimitResponse) return rateLimitResponse;
+
+    // CSRF protection
+    const csrfResponse = await checkCSRF(request);
+    if (csrfResponse) return csrfResponse;
+
     const body = await request.json();
     const email = body?.email;
 

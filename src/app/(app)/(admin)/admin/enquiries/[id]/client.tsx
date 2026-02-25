@@ -198,26 +198,12 @@ export function EnquiryDetailClient({
       case "quoted":
         return (
           <>
-            <Button onClick={() => handleStatusChange("ready_to_book")}>
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Ready to Book
-            </Button>
-            <Button variant="outline" onClick={() => setIsQuoteDialogOpen(true)}>
-              Revise Quote
-            </Button>
-            <Button variant="outline" onClick={() => setIsLostDialogOpen(true)}>
-              <XCircle className="h-4 w-4 mr-2" />
-              Mark as Lost
-            </Button>
-          </>
-        );
-
-      case "ready_to_book":
-        return (
-          <>
             <Button onClick={() => setIsConvertDialogOpen(true)}>
               <ExternalLink className="h-4 w-4 mr-2" />
               Convert to Booking
+            </Button>
+            <Button variant="outline" onClick={() => setIsQuoteDialogOpen(true)}>
+              Revise Quote
             </Button>
             <Button variant="outline" onClick={() => setIsLostDialogOpen(true)}>
               <XCircle className="h-4 w-4 mr-2" />

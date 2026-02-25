@@ -59,7 +59,6 @@ export async function getEnquiryStatusCounts() {
     new: 0,
     in_discussion: 0,
     quoted: 0,
-    ready_to_book: 0,
     converted_to_booking: 0,
     lost: 0,
   };
@@ -71,7 +70,11 @@ export async function getEnquiryStatusCounts() {
 
   return {
     total: data.length,
-    ...counts,
+    new: counts.new,
+    in_discussion: counts.in_discussion,
+    quoted: counts.quoted,
+    converted_to_booking: counts.converted_to_booking,
+    lost: counts.lost,
     conversionRate: data.length > 0
       ? Math.round((counts.converted_to_booking / data.length) * 100)
       : 0,

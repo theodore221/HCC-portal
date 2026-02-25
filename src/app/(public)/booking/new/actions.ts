@@ -5,7 +5,7 @@
 'use server';
 
 import { sbServer } from '@/lib/supabase-server';
-import { validateBotDetection, HONEYPOT_FIELDS } from '@/lib/security';
+import { validateBotDetection, HONEYPOT_FIELDS, rateLimitServerAction } from '@/lib/security';
 import { calculateBookingPricing, createPriceSnapshot } from '@/lib/pricing';
 import type { BookingSelections, PricingResult } from '@/lib/pricing';
 import type { BookingFormState } from './booking-form';
@@ -24,6 +24,11 @@ export async function calculatePricingPreview(
   formState: BookingFormState
 ): Promise<{ success: boolean; pricing?: PricingResult; error?: string }> {
   try {
+    const rl = await rateLimitServerAction('pricing');
+    if (!rl.success) {
+      return { success: false, error: 'Too many requests. Please slow down.' };
+    }
+
     if (!formState.arrival_date || !formState.departure_date) {
       return { success: true, pricing: undefined };
     }
@@ -125,6 +130,11 @@ export async function submitBooking(
   timeToken: string
 ): Promise<BookingSubmissionResult> {
   try {
+    const rl = await rateLimitServerAction('booking');
+    if (!rl.success) {
+      return { success: false, error: 'Too many submissions. Please try again in a few minutes.' };
+    }
+
     // Bot detection using honeypot field name (expect the honeypot to be absent in formState)
     // FormState is a plain object so we check for the honeypot key explicitly
     const rawForBotCheck = {

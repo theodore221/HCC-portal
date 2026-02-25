@@ -6,7 +6,7 @@
 
 import { sbServer } from '@/lib/supabase-server';
 import { bookingSchema } from '@/lib/validation/booking';
-import { validateBotDetection, HONEYPOT_FIELDS, validateCustomPricingToken, hashToken } from '@/lib/security';
+import { validateBotDetection, HONEYPOT_FIELDS, validateCustomPricingToken, hashToken, rateLimitServerAction } from '@/lib/security';
 import { calculateBookingPricing, createPriceSnapshot } from '@/lib/pricing';
 import type { BookingSelections } from '@/lib/pricing';
 
@@ -20,6 +20,11 @@ export interface CustomBookingSubmissionResult {
 
 export async function submitCustomBooking(formData: FormData): Promise<CustomBookingSubmissionResult> {
   try {
+    const rl = await rateLimitServerAction('custom_booking');
+    if (!rl.success) {
+      return { success: false, error: 'Too many submissions. Please try again in a few minutes.' };
+    }
+
     const rawData: any = Object.fromEntries(formData);
 
     // Extract token and booking ID

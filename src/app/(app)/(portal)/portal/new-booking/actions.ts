@@ -7,7 +7,7 @@
 import { sbServer } from '@/lib/supabase-server';
 import { getCurrentProfile } from '@/lib/auth/server';
 import { bookingSchema } from '@/lib/validation/booking';
-import { validateBotDetection, HONEYPOT_FIELDS } from '@/lib/security';
+import { validateBotDetection, HONEYPOT_FIELDS, rateLimitServerAction } from '@/lib/security';
 import { calculateBookingPricing, createPriceSnapshot } from '@/lib/pricing';
 import type { BookingSelections } from '@/lib/pricing';
 
@@ -21,6 +21,11 @@ export interface PortalBookingSubmissionResult {
 
 export async function submitPortalBooking(formData: FormData): Promise<PortalBookingSubmissionResult> {
   try {
+    const rl = await rateLimitServerAction('portal');
+    if (!rl.success) {
+      return { success: false, error: 'Too many submissions. Please try again in a few minutes.' };
+    }
+
     const supabase = await sbServer();
     const { profile } = await getCurrentProfile(supabase);
 

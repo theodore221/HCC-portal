@@ -39,6 +39,8 @@ export {
   rateLimit,
   checkRateLimit,
   getRateLimitInfo,
+  rateLimitServerAction,
+  getClientIdFromHeaders,
   RATE_LIMITS,
   type RateLimitConfig,
   type RateLimitResult,
