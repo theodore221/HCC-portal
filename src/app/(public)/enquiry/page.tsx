@@ -35,7 +35,7 @@ export default async function EnquiryPage() {
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div className="text-blue-600 mb-2">
+            <div className="text-primary mb-2">
               <svg
                 className="w-8 h-8 mx-auto"
                 fill="none"
@@ -57,7 +57,7 @@ export default async function EnquiryPage() {
           </div>
 
           <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div className="text-blue-600 mb-2">
+            <div className="text-primary mb-2">
               <svg
                 className="w-8 h-8 mx-auto"
                 fill="none"
@@ -79,7 +79,7 @@ export default async function EnquiryPage() {
           </div>
 
           <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-            <div className="text-blue-600 mb-2">
+            <div className="text-primary mb-2">
               <svg
                 className="w-8 h-8 mx-auto"
                 fill="none"

@@ -45,7 +45,7 @@ export default function BookingFormLoading() {
             {/* Navigation skeleton */}
             <div className="flex justify-between pt-5 border-t border-gray-100 mt-4">
               <div className="h-10 w-20 bg-gray-100 rounded-lg animate-pulse" />
-              <div className="h-10 w-28 bg-blue-100 rounded-lg animate-pulse" />
+              <div className="h-10 w-28 bg-primary/10 rounded-lg animate-pulse" />
             </div>
           </div>
         </div>

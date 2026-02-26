@@ -114,7 +114,7 @@ export function CateringStep({ formState, mealPrices, onChange }: CateringStepPr
             onClick={() => onChange({ catering_required: val, meals: val ? meals : [], coffee_sessions: val ? coffeeSessions : [] })}
             className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition-colors ${
               formState.catering_required === val
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                ? 'border-primary bg-primary/5 text-primary'
                 : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -126,7 +126,7 @@ export function CateringStep({ formState, mealPrices, onChange }: CateringStepPr
       {formState.catering_required && (
         <>
           {/* Info callout */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm text-primary">
             <p className="font-medium mb-1">Meal times</p>
             <ul className="text-xs space-y-0.5">
               <li>• Breakfast: 6:00 AM &nbsp;|&nbsp; Morning Tea: 10:00 AM</li>
@@ -134,7 +134,7 @@ export function CateringStep({ formState, mealPrices, onChange }: CateringStepPr
               <li>• Dinner: 6:00–8:00 PM &nbsp;|&nbsp; Dessert: with dinner</li>
             </ul>
             {formState.is_overnight && (
-              <p className="text-xs mt-1 text-blue-700">
+              <p className="text-xs mt-1 text-primary/80">
                 Note: Continental breakfast is complimentary for overnight guests — only enter breakfast serves if you want a catered breakfast.
               </p>
             )}
@@ -158,7 +158,7 @@ export function CateringStep({ formState, mealPrices, onChange }: CateringStepPr
                           <button
                             type="button"
                             onClick={() => prefillDate(date)}
-                            className="text-xs text-blue-600 hover:underline"
+                            className="text-xs text-primary hover:underline"
                           >
                             Fill all ({defaultHeadcount})
                           </button>
@@ -214,7 +214,7 @@ export function CateringStep({ formState, mealPrices, onChange }: CateringStepPr
                                     value={qty === 0 ? '' : qty}
                                     onChange={(e) => setMealQty(date, mealType, Math.max(0, parseInt(e.target.value, 10) || 0))}
                                     placeholder="0"
-                                    className="w-14 text-center text-sm border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-14 text-center text-sm border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30"
                                     aria-label={`${mealType} serves on ${date}`}
                                   />
                                   <button
@@ -227,7 +227,7 @@ export function CateringStep({ formState, mealPrices, onChange }: CateringStepPr
                                   </button>
                                 </div>
                                 {qty > 0 && (
-                                  <span className="text-xs text-blue-600 font-medium w-16 text-right hidden sm:block">
+                                  <span className="text-xs text-primary font-medium w-16 text-right hidden sm:block">
                                     {formatCurrency(qty * price)}
                                   </span>
                                 )}
@@ -257,7 +257,7 @@ export function CateringStep({ formState, mealPrices, onChange }: CateringStepPr
                                       value={coffeeQty === 0 ? '' : coffeeQty}
                                       onChange={(e) => setCoffeeQty(date, mealType, Math.max(0, parseInt(e.target.value, 10) || 0))}
                                       placeholder="0"
-                                      className="w-12 text-center text-xs border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                      className="w-12 text-center text-xs border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary/30"
                                     />
                                     <button
                                       type="button"

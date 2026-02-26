@@ -38,11 +38,11 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
   if (result?.success) {
     return (
       <div className="max-w-2xl mx-auto p-6 space-y-4">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+        <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
           <div className="flex items-start">
             <div className="flex-shrink-0">
               <svg
-                className="h-6 w-6 text-green-600"
+                className="h-6 w-6 text-primary"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -56,10 +56,10 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-lg font-medium text-green-900">
+              <h3 className="text-lg font-medium text-gray-900">
                 Enquiry Submitted Successfully
               </h3>
-              <div className="mt-2 text-sm text-green-800">
+              <div className="mt-2 text-sm text-gray-700">
                 <p>
                   Thank you for your enquiry! Your reference number is{' '}
                   <strong>{result.reference_number}</strong>.
@@ -76,7 +76,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
                     setResult(null);
                     window.location.reload();
                   }}
-                  className="text-sm font-medium text-green-900 hover:text-green-700"
+                  className="text-sm font-medium text-primary hover:text-primary/80"
                 >
                   Submit Another Enquiry →
                 </button>
@@ -156,7 +156,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
             name="customer_name"
             required
             disabled={isPending}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           {result?.errors?.customer_name && (
             <p className="mt-1 text-sm text-red-600">{result.errors.customer_name[0]}</p>
@@ -174,7 +174,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
             name="customer_email"
             required
             disabled={isPending}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           {result?.errors?.customer_email && (
             <p className="mt-1 text-sm text-red-600">{result.errors.customer_email[0]}</p>
@@ -191,7 +191,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
             id="customer_phone"
             name="customer_phone"
             disabled={isPending}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -206,7 +206,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
             name="organization"
             disabled={isPending}
             placeholder="e.g., St Mary's Parish, Smith Family"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -220,7 +220,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
             name="event_type"
             required
             disabled={isPending}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
             <option value="">-- Select Event Type --</option>
             <option value="Retreat">Retreat</option>
@@ -251,7 +251,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
               id="approximate_start_date"
               name="approximate_start_date"
               disabled={isPending}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -267,7 +267,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
               id="approximate_end_date"
               name="approximate_end_date"
               disabled={isPending}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -284,7 +284,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
             min="1"
             max="200"
             disabled={isPending}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
         </div>
 
@@ -302,7 +302,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
             rows={6}
             required
             disabled={isPending}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           {result?.errors?.message && (
             <p className="mt-1 text-sm text-red-600">{result.errors.message[0]}</p>
@@ -314,7 +314,7 @@ export function EnquiryForm({ csrfToken }: EnquiryFormProps) {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full flex justify-center py-3 px-4 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="w-full flex justify-center py-3 px-4 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-light focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             {isPending ? 'Submitting...' : 'Submit Enquiry'}
           </button>

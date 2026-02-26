@@ -28,7 +28,7 @@ export function ContactStep({ formState, onChange }: ContactStepProps) {
               onClick={() => onChange({ booking_type: type })}
               className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition-colors ${
                 formState.booking_type === type
-                  ? 'border-blue-600 bg-blue-50 text-blue-700'
+                  ? 'border-primary bg-primary/5 text-primary'
                   : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -50,7 +50,7 @@ export function ContactStep({ formState, onChange }: ContactStepProps) {
             value={formState.organization ?? ''}
             onChange={(e) => onChange({ organization: e.target.value })}
             placeholder="e.g. St Mary's Parish"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
       )}
@@ -66,7 +66,7 @@ export function ContactStep({ formState, onChange }: ContactStepProps) {
           value={formState.contact_name ?? ''}
           onChange={(e) => onChange({ contact_name: e.target.value })}
           placeholder="Full name"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
 
@@ -81,7 +81,7 @@ export function ContactStep({ formState, onChange }: ContactStepProps) {
           value={formState.contact_email ?? ''}
           onChange={(e) => onChange({ contact_email: e.target.value })}
           placeholder="you@example.com"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
 
@@ -96,7 +96,7 @@ export function ContactStep({ formState, onChange }: ContactStepProps) {
           value={formState.contact_phone ?? ''}
           onChange={(e) => onChange({ contact_phone: e.target.value })}
           placeholder="04xx xxx xxx"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
       </div>
     </div>

@@ -84,7 +84,7 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
             onClick={() => onChange({ is_overnight: val, rooms: val ? rooms : [] })}
             className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition-colors ${
               formState.is_overnight === val
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                ? 'border-primary bg-primary/5 text-primary'
                 : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -96,7 +96,7 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
       {formState.is_overnight && (
         <>
           {/* Info callout */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-sm text-primary">
             <p className="font-medium mb-1">Accommodation info</p>
             <ul className="space-y-0.5 text-xs">
               <li>• Check-in: 2:30 PM &nbsp;|&nbsp; Check-out: 9:00 AM</li>
@@ -122,7 +122,7 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
                     isBlocked
                       ? 'border-gray-200 bg-gray-50 opacity-60'
                       : qty > 0
-                        ? 'border-blue-600 bg-blue-50'
+                        ? 'border-primary bg-primary/5'
                         : 'border-gray-200 bg-white'
                   }`}
                 >
@@ -147,7 +147,7 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
                         <p className="text-sm font-medium text-gray-700 mt-1">
                           {formatCurrency(rt.price ?? 0)}/bed/night
                           {byoLinen && (
-                            <span className="text-green-600 ml-1">→ {formatCurrency(linedPrice)} (BYO)</span>
+                            <span className="text-primary ml-1">→ {formatCurrency(linedPrice)} (BYO)</span>
                           )}
                         </p>
                       )}
@@ -178,11 +178,11 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
                   </div>
 
                   {qty > 0 && nights > 0 && (
-                    <div className="mt-2 pt-2 border-t border-blue-200 flex justify-between items-center">
+                    <div className="mt-2 pt-2 border-t border-primary/20 flex justify-between items-center">
                       <span className="text-xs text-gray-500">
                         {qty} room{qty !== 1 ? 's' : ''} × {nights} night{nights !== 1 ? 's' : ''}
                       </span>
-                      <span className="text-sm font-semibold text-blue-700">{formatCurrency(subtotal)}</span>
+                      <span className="text-sm font-semibold text-primary">{formatCurrency(subtotal)}</span>
                     </div>
                   )}
                 </div>
@@ -193,7 +193,7 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
           {/* BYO Linen toggle */}
           <div
             className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-              byoLinen ? 'border-green-400 bg-green-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+              byoLinen ? 'border-primary/40 bg-primary/5' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
             }`}
             onClick={() => onChange({ byo_linen: !byoLinen })}
           >
@@ -202,7 +202,7 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
               type="checkbox"
               checked={byoLinen}
               onChange={(e) => onChange({ byo_linen: e.target.checked })}
-              className="mt-0.5 rounded border-gray-300 text-green-600"
+              className="mt-0.5 rounded border-gray-300 text-primary"
               onClick={(e) => e.stopPropagation()}
             />
             <div>
@@ -210,7 +210,7 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
                 We will bring our own linen (−$25/bed discount)
               </label>
               {byoLinen && totalRooms > 0 && nights > 0 && (
-                <p className="text-xs text-green-700 mt-0.5">
+                <p className="text-xs text-primary mt-0.5">
                   Saving: {formatCurrency(25 * totalBedsNights)} on this booking
                 </p>
               )}

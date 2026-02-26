@@ -245,18 +245,18 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
   if (submitResult?.success) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-8 text-center">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-green-900 mb-2">Booking Submitted!</h2>
-          <p className="text-green-800 mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Submitted!</h2>
+          <p className="text-gray-700 mb-4">
             Your booking reference is{' '}
-            <strong className="font-mono bg-green-100 px-2 py-0.5 rounded">{submitResult.reference}</strong>
+            <strong className="font-mono bg-primary/10 px-2 py-0.5 rounded">{submitResult.reference}</strong>
           </p>
-          <p className="text-sm text-green-700">
+          <p className="text-sm text-gray-600">
             We&apos;ve sent a confirmation to <strong>{formState.contact_email}</strong>.
             Our team will review your booking and get back to you shortly.
           </p>
@@ -342,7 +342,7 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
                 type="button"
                 onClick={handleNext}
                 disabled={isPending}
-                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-light disabled:opacity-50 transition-colors"
               >
                 Continue
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -353,7 +353,7 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
               <button
                 type="submit"
                 disabled={isPending}
-                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-light disabled:opacity-50 transition-colors"
               >
                 {isPending ? (
                   <>
@@ -390,7 +390,7 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
             <summary className="bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 cursor-pointer">
               View estimated pricing
               {pricing && (
-                <span className="ml-2 text-blue-600 font-semibold">
+                <span className="ml-2 text-primary font-semibold">
                   {new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(pricing.total)}
                 </span>
               )}

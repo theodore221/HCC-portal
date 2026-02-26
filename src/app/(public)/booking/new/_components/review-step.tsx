@@ -174,7 +174,7 @@ export function ReviewStep({
         <div className="px-4 py-3">
           {pricingLoading ? (
             <div className="flex items-center gap-2 text-sm text-gray-400">
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
               Calculating...
             </div>
           ) : pricing && grouped ? (
@@ -200,7 +200,7 @@ export function ReviewStep({
               })}
               <div className="border-t-2 border-gray-200 pt-2 mt-2 flex justify-between font-bold">
                 <span>Estimated Total</span>
-                <span className="text-blue-700">{formatCurrency(pricing.total)}</span>
+                <span className="text-primary">{formatCurrency(pricing.total)}</span>
               </div>
               <p className="text-xs text-gray-400">
                 This is an estimate only. Final pricing will be confirmed by Holy Cross Centre.
@@ -223,7 +223,7 @@ export function ReviewStep({
           value={formState.notes ?? ''}
           onChange={(e) => onChange({ notes: e.target.value })}
           placeholder="Any special requirements, dietary needs, accessibility requests, etc."
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
           maxLength={2000}
         />
         <p className="text-xs text-gray-400 text-right mt-0.5">{(formState.notes ?? '').length}/2000</p>
@@ -253,7 +253,7 @@ export function ReviewStep({
 
       <div
         className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-          formState.terms_accepted ? 'border-blue-400 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+          formState.terms_accepted ? 'border-primary/40 bg-primary/5' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
         }`}
         onClick={() => onChange({ terms_accepted: !formState.terms_accepted })}
       >
@@ -262,7 +262,7 @@ export function ReviewStep({
           type="checkbox"
           checked={formState.terms_accepted ?? false}
           onChange={(e) => onChange({ terms_accepted: e.target.checked })}
-          className="mt-0.5 rounded border-gray-300 text-blue-600"
+          className="mt-0.5 rounded border-gray-300 text-primary"
           onClick={(e) => e.stopPropagation()}
           required
         />

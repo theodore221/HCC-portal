@@ -42,7 +42,7 @@ export function VenueStep({ formState, spaces, onChange }: VenueStepProps) {
       <div
         className={`rounded-xl border-2 p-4 cursor-pointer transition-all ${
           formState.whole_centre
-            ? 'border-blue-600 bg-blue-50'
+            ? 'border-primary bg-primary/5'
             : 'border-gray-200 bg-white hover:border-gray-300'
         }`}
         onClick={() => onChange({ whole_centre: !formState.whole_centre, selected_spaces: [] })}
@@ -51,7 +51,7 @@ export function VenueStep({ formState, spaces, onChange }: VenueStepProps) {
           <div className="flex items-start gap-3">
             <div
               className={`w-5 h-5 rounded border-2 mt-0.5 flex items-center justify-center shrink-0 ${
-                formState.whole_centre ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                formState.whole_centre ? 'border-primary bg-primary' : 'border-gray-300'
               }`}
             >
               {formState.whole_centre && (
@@ -70,7 +70,7 @@ export function VenueStep({ formState, spaces, onChange }: VenueStepProps) {
           <div className="text-right shrink-0">
             <p className="font-semibold text-gray-900">$1,500<span className="text-sm font-normal text-gray-500">/day</span></p>
             {days > 0 && (
-              <p className="text-sm text-blue-600 font-medium">{formatCurrency(wholeCentreTotal)} est.</p>
+              <p className="text-sm text-primary font-medium">{formatCurrency(wholeCentreTotal)} est.</p>
             )}
           </div>
         </div>
@@ -90,7 +90,7 @@ export function VenueStep({ formState, spaces, onChange }: VenueStepProps) {
                   key={space.id}
                   className={`rounded-xl border-2 p-3.5 cursor-pointer transition-all ${
                     isSelected
-                      ? 'border-blue-600 bg-blue-50'
+                      ? 'border-primary bg-primary/5'
                       : 'border-gray-200 bg-white hover:border-gray-300'
                   }`}
                   onClick={() => toggleSpace(space.id)}
@@ -99,7 +99,7 @@ export function VenueStep({ formState, spaces, onChange }: VenueStepProps) {
                     <div className="flex items-start gap-2">
                       <div
                         className={`w-4 h-4 rounded border-2 mt-0.5 flex items-center justify-center shrink-0 ${
-                          isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                          isSelected ? 'border-primary bg-primary' : 'border-gray-300'
                         }`}
                       >
                         {isSelected && (
@@ -122,11 +122,11 @@ export function VenueStep({ formState, spaces, onChange }: VenueStepProps) {
                             {formatCurrency(space.price)}<span className="text-xs font-normal text-gray-500">/day</span>
                           </p>
                           {days > 1 && (
-                            <p className="text-xs text-blue-600">{formatCurrency(spaceTotal)}</p>
+                            <p className="text-xs text-primary">{formatCurrency(spaceTotal)}</p>
                           )}
                         </>
                       ) : (
-                        <p className="text-sm font-medium text-green-600">Free</p>
+                        <p className="text-sm font-medium text-primary">Free</p>
                       )}
                     </div>
                   </div>

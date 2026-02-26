@@ -74,7 +74,7 @@ const columns: ColumnDef<Enquiry>[] = [
       <DataTableColumnHeader column={column} title="Reference" />
     ),
     cell: ({ row }) => (
-      <span className="font-mono text-sm font-medium text-olive-900">
+      <span className="font-mono text-sm font-medium text-gray-900">
         {row.original.reference_number}
       </span>
     ),
@@ -86,10 +86,10 @@ const columns: ColumnDef<Enquiry>[] = [
     ),
     cell: ({ row }) => (
       <div className="flex flex-col text-sm">
-        <span className="font-medium text-olive-900">{row.original.customer_name}</span>
-        <span className="text-xs text-olive-600">{row.original.customer_email}</span>
+        <span className="font-medium text-gray-900">{row.original.customer_name}</span>
+        <span className="text-xs text-gray-500">{row.original.customer_email}</span>
         {row.original.organization && (
-          <span className="text-xs text-olive-500">{row.original.organization}</span>
+          <span className="text-xs text-gray-400">{row.original.organization}</span>
         )}
       </div>
     ),
@@ -100,7 +100,7 @@ const columns: ColumnDef<Enquiry>[] = [
       <DataTableColumnHeader column={column} title="Event Type" />
     ),
     cell: ({ row }) => (
-      <span className="text-sm text-olive-800">{row.original.event_type}</span>
+      <span className="text-sm text-gray-700">{row.original.event_type}</span>
     ),
     meta: "hidden md:table-cell",
   },
@@ -110,7 +110,7 @@ const columns: ColumnDef<Enquiry>[] = [
       <DataTableColumnHeader column={column} title="Event Dates" />
     ),
     cell: ({ row }) => (
-      <span className="text-sm text-olive-800">
+      <span className="text-sm text-gray-700">
         {formatEventDates(row.original.approximate_start_date, row.original.approximate_end_date)}
       </span>
     ),
@@ -122,7 +122,7 @@ const columns: ColumnDef<Enquiry>[] = [
       <DataTableColumnHeader column={column} title="Guests" className="justify-center" />
     ),
     cell: ({ row }) => (
-      <div className="text-center text-sm font-semibold text-olive-900">
+      <div className="text-center text-sm font-semibold text-gray-900">
         {row.original.estimated_guests || "—"}
       </div>
     ),
@@ -141,7 +141,7 @@ const columns: ColumnDef<Enquiry>[] = [
       <DataTableColumnHeader column={column} title="Created" />
     ),
     cell: ({ row }) => (
-      <span className="text-sm text-olive-600">{formatDate(row.original.created_at)}</span>
+      <span className="text-sm text-gray-500">{formatDate(row.original.created_at)}</span>
     ),
     meta: "hidden xl:table-cell",
   },
@@ -199,8 +199,8 @@ export function EnquiriesClient({
 
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-olive-900">Enquiries</h1>
-        <p className="mt-2 text-sm text-olive-600">
+        <h1 className="text-2xl font-bold text-gray-900">Enquiries</h1>
+        <p className="mt-0.5 text-sm text-gray-500">
           Manage customer enquiries and track conversion pipeline
         </p>
       </div>
@@ -209,12 +209,12 @@ export function EnquiriesClient({
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-7">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-olive-600">Total</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500">Total</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-olive-500" />
-              <span className="text-2xl font-bold text-olive-900">{statusCounts.total}</span>
+              <Users className="h-4 w-4 text-gray-400" />
+              <span className="text-2xl font-bold text-gray-900">{statusCounts.total}</span>
             </div>
           </CardContent>
         </Card>
@@ -279,14 +279,14 @@ export function EnquiriesClient({
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-olive-50 to-olive-100">
+        <Card className="bg-primary/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-olive-700">Conv. Rate</CardTitle>
+            <CardTitle className="text-sm font-medium text-primary">Conv. Rate</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-olive-600" />
-              <span className="text-2xl font-bold text-olive-900">{statusCounts.conversionRate}%</span>
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span className="text-2xl font-bold text-primary">{statusCounts.conversionRate}%</span>
             </div>
           </CardContent>
         </Card>

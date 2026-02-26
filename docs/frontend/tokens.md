@@ -41,7 +41,7 @@ These CSS custom properties are defined in `globals.css` and available as Tailwi
 | `status-ochre` | #c49910 | Needs attention | Pending, In Discussion |
 | `status-forest` | #169e66 | Positive outcome | Approved, Confirmed, Quoted |
 | `status-clay` | #d63d2e | Negative/terminated | Cancelled |
-| `status-slate` | #1d7ec8 | Fresh/incoming | New (enquiry) |
+| `status-slate` | #2a8a7a | Fresh/incoming | New (enquiry) |
 | `status-plum` | #8840c4 | Special/transformed | Converted (enquiry) |
 | `status-stone` | #6b7280 | Terminal/neutral | Completed, Lost |
 

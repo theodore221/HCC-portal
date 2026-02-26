@@ -23,15 +23,15 @@ export function PricingSidebar({ pricing, loading }: PricingSidebarProps) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3">
+      <div className="bg-gradient-to-r from-primary to-primary-light px-4 py-3">
         <h3 className="text-sm font-semibold text-white">Estimated Price</h3>
-        <p className="text-xs text-blue-100 mt-0.5">Updates as you fill in the form</p>
+        <p className="text-xs text-white/70 mt-0.5">Updates as you fill in the form</p>
       </div>
 
       <div className="p-4">
         {loading ? (
           <div className="flex items-center justify-center py-6 gap-2 text-sm text-gray-400">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
             Calculating...
           </div>
         ) : !hasItems ? (
@@ -66,14 +66,14 @@ export function PricingSidebar({ pricing, loading }: PricingSidebarProps) {
             {pricing && (
               <div className="border-t-2 border-gray-200 pt-3 mt-1">
                 {pricing.discount_amount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600 mb-1">
+                  <div className="flex justify-between text-sm text-primary mb-1">
                     <span>Discount</span>
                     <span>−{formatCurrency(pricing.discount_amount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-base">
                   <span>Total</span>
-                  <span className="text-blue-700">{formatCurrency(pricing.total)}</span>
+                  <span className="text-primary">{formatCurrency(pricing.total)}</span>
                 </div>
               </div>
             )}
