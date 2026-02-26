@@ -20,28 +20,28 @@ const statusConfig: Record<
 > = {
   new: {
     label: "New",
-    className: "border-blue-200 bg-blue-100 text-blue-800",
+    className: "border-status-slate/20 bg-status-slate/10 text-status-slate",
     icon: Sparkles,
     pulse: true,
   },
   in_discussion: {
     label: "In Discussion",
-    className: "border-amber-200 bg-amber-100 text-amber-800",
+    className: "border-status-ochre/20 bg-status-ochre/10 text-status-ochre",
     icon: MessageCircle,
   },
   quoted: {
     label: "Quoted",
-    className: "border-emerald-200 bg-emerald-100 text-emerald-800",
+    className: "border-status-forest/20 bg-status-forest/10 text-status-forest",
     icon: DollarSign,
   },
   converted_to_booking: {
     label: "Converted",
-    className: "border-purple-200 bg-purple-100 text-purple-800",
+    className: "border-status-plum/20 bg-status-plum/10 text-status-plum",
     icon: ArrowRightCircle,
   },
   lost: {
     label: "Lost",
-    className: "border-neutral-200 bg-neutral-100 text-neutral-600",
+    className: "border-status-stone/20 bg-status-stone/10 text-status-stone",
     icon: XCircle,
   },
 };

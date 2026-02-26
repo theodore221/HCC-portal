@@ -219,62 +219,62 @@ export function EnquiriesClient({
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-50">
+        <Card className="bg-status-slate/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700">New</CardTitle>
+            <CardTitle className="text-sm font-medium text-status-slate">New</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-blue-600" />
-              <span className="text-2xl font-bold text-blue-900">{statusCounts.new}</span>
+              <Sparkles className="h-4 w-4 text-status-slate" />
+              <span className="text-2xl font-bold text-status-slate">{statusCounts.new}</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-amber-50">
+        <Card className="bg-status-ochre/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-amber-700">In Discussion</CardTitle>
+            <CardTitle className="text-sm font-medium text-status-ochre">In Discussion</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-amber-600" />
-              <span className="text-2xl font-bold text-amber-900">{statusCounts.in_discussion}</span>
+              <MessageCircle className="h-4 w-4 text-status-ochre" />
+              <span className="text-2xl font-bold text-status-ochre">{statusCounts.in_discussion}</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-emerald-50">
+        <Card className="bg-status-forest/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-emerald-700">Quoted</CardTitle>
+            <CardTitle className="text-sm font-medium text-status-forest">Quoted</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-emerald-600" />
-              <span className="text-2xl font-bold text-emerald-900">{statusCounts.quoted}</span>
+              <DollarSign className="h-4 w-4 text-status-forest" />
+              <span className="text-2xl font-bold text-status-forest">{statusCounts.quoted}</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-purple-50">
+        <Card className="bg-status-plum/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-purple-700">Converted</CardTitle>
+            <CardTitle className="text-sm font-medium text-status-plum">Converted</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <ArrowRightCircle className="h-4 w-4 text-purple-600" />
-              <span className="text-2xl font-bold text-purple-900">{statusCounts.converted_to_booking}</span>
+              <ArrowRightCircle className="h-4 w-4 text-status-plum" />
+              <span className="text-2xl font-bold text-status-plum">{statusCounts.converted_to_booking}</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-neutral-50">
+        <Card className="bg-status-stone/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-neutral-600">Lost</CardTitle>
+            <CardTitle className="text-sm font-medium text-status-stone">Lost</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-neutral-500" />
-              <span className="text-2xl font-bold text-neutral-700">{statusCounts.lost}</span>
+              <XCircle className="h-4 w-4 text-status-stone" />
+              <span className="text-2xl font-bold text-status-stone">{statusCounts.lost}</span>
             </div>
           </CardContent>
         </Card>
@@ -299,8 +299,8 @@ export function EnquiriesClient({
           className={cn(
             "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
             !activeStatus
-              ? "border-olive-300 bg-olive-100 text-olive-900"
-              : "border-olive-200 bg-white text-olive-600 hover:bg-olive-50"
+              ? "border-gray-300 bg-gray-100 text-gray-900"
+              : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
           )}
         >
           All ({statusCounts.total})
@@ -310,8 +310,8 @@ export function EnquiriesClient({
           className={cn(
             "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
             activeStatus === "new"
-              ? "border-blue-300 bg-blue-100 text-blue-900"
-              : "border-blue-200 bg-white text-blue-600 hover:bg-blue-50"
+              ? "border-status-slate/30 bg-status-slate/10 text-status-slate"
+              : "border-status-slate/20 bg-white text-status-slate hover:bg-status-slate/5"
           )}
         >
           New ({statusCounts.new})
@@ -321,8 +321,8 @@ export function EnquiriesClient({
           className={cn(
             "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
             activeStatus === "in_discussion"
-              ? "border-amber-300 bg-amber-100 text-amber-900"
-              : "border-amber-200 bg-white text-amber-600 hover:bg-amber-50"
+              ? "border-status-ochre/30 bg-status-ochre/10 text-status-ochre"
+              : "border-status-ochre/20 bg-white text-status-ochre hover:bg-status-ochre/5"
           )}
         >
           In Discussion ({statusCounts.in_discussion})
@@ -332,8 +332,8 @@ export function EnquiriesClient({
           className={cn(
             "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
             activeStatus === "quoted"
-              ? "border-emerald-300 bg-emerald-100 text-emerald-900"
-              : "border-emerald-200 bg-white text-emerald-600 hover:bg-emerald-50"
+              ? "border-status-forest/30 bg-status-forest/10 text-status-forest"
+              : "border-status-forest/20 bg-white text-status-forest hover:bg-status-forest/5"
           )}
         >
           Quoted ({statusCounts.quoted})
@@ -343,8 +343,8 @@ export function EnquiriesClient({
           className={cn(
             "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
             activeStatus === "converted_to_booking"
-              ? "border-purple-300 bg-purple-100 text-purple-900"
-              : "border-purple-200 bg-white text-purple-600 hover:bg-purple-50"
+              ? "border-status-plum/30 bg-status-plum/10 text-status-plum"
+              : "border-status-plum/20 bg-white text-status-plum hover:bg-status-plum/5"
           )}
         >
           Converted ({statusCounts.converted_to_booking})
@@ -354,8 +354,8 @@ export function EnquiriesClient({
           className={cn(
             "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
             activeStatus === "lost"
-              ? "border-neutral-300 bg-neutral-100 text-neutral-900"
-              : "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
+              ? "border-status-stone/30 bg-status-stone/10 text-status-stone"
+              : "border-status-stone/20 bg-white text-status-stone hover:bg-status-stone/5"
           )}
         >
           Lost ({statusCounts.lost})

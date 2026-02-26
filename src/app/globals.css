@@ -24,6 +24,14 @@
   --olive-700: #545D44;
   --olive-800: #3D4333;
   --olive-900: #2F3729;
+  /* Earth-toned status palette */
+  --status-sage: #72a83c;
+  --status-ochre: #c49910;
+  --status-forest: #169e66;
+  --status-clay: #d63d2e;
+  --status-slate: #1d7ec8;
+  --status-plum: #8840c4;
+  --status-stone: #6b7280;
 }
 
 @theme inline {
@@ -54,6 +62,13 @@
   --color-olive-700: var(--olive-700);
   --color-olive-800: var(--olive-800);
   --color-olive-900: var(--olive-900);
+  --color-status-sage: var(--status-sage);
+  --color-status-ochre: var(--status-ochre);
+  --color-status-forest: var(--status-forest);
+  --color-status-clay: var(--status-clay);
+  --color-status-slate: var(--status-slate);
+  --color-status-plum: var(--status-plum);
+  --color-status-stone: var(--status-stone);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 

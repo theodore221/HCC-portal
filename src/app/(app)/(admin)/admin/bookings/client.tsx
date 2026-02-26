@@ -250,10 +250,10 @@ const columns: ColumnDef<BookingWithMeta>[] = [
 ];
 
 const statCards = [
-  { label: "Pending", key: "Pending", accent: "text-amber-600 bg-amber-50 border-amber-100" },
-  { label: "Approved", key: "Approved", accent: "text-green-700 bg-green-50 border-green-100" },
-  { label: "Confirmed", key: "Confirmed", accent: "text-green-700 bg-green-50 border-green-100" },
-  { label: "In Progress", key: "InProgress", accent: "text-primary bg-primary/5 border-primary/10" },
+  { label: "Pending", key: "Pending", accent: "text-status-ochre bg-status-ochre/5 border-status-ochre/10" },
+  { label: "Approved", key: "Approved", accent: "text-status-forest bg-status-forest/5 border-status-forest/10" },
+  { label: "Confirmed", key: "Confirmed", accent: "text-status-forest bg-status-forest/5 border-status-forest/10" },
+  { label: "In Progress", key: "InProgress", accent: "text-status-sage bg-status-sage/5 border-status-sage/10" },
 ] as const;
 
 export default function AdminBookingsClient({

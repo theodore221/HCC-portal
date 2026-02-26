@@ -27,7 +27,7 @@ HCC Portal is a role-aware booking management system for the Holy Cross Centre. 
 - Log privileged operations in audit trail
 
 ### 3. Usability & Accessibility
-- Mobile-first responsive design (see `docs/responsive-design.md`)
+- Mobile-first responsive design (see `docs/frontend/responsive.md`)
 - Clear error messages with actionable guidance
 - Keyboard navigation + ARIA labels
 - Touch targets 44px+ on mobile
@@ -165,7 +165,7 @@ PUBLIC_SITE_URL=                  # Magic link target (http://localhost:3000 loc
 Read these before making changes in the relevant area:
 
 - **`docs/patterns.md`** — Code patterns with full examples (data fetching, mutations, RPCs, caching, components)
-- **`docs/responsive-design.md`** — Responsive design guidelines, breakpoints, and testing checklist (read before UI changes)
+- **`docs/frontend/`** — Frontend design system: tokens, components, patterns, states, responsive guidelines, migration reference (read before UI changes)
 - **`docs/supabase-integration.md`** — Database schema, RLS policies, GAS integration, deployment sequence
 
 ## Common Tasks
