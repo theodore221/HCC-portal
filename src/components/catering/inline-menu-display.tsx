@@ -67,7 +67,7 @@ export function InlineMenuDisplay({
         >
           <SelectItem
             value="none"
-            className="rounded-md py-2 leading-snug focus:bg-olive-100 focus:text-olive-900 data-[highlighted]:bg-olive-100 data-[highlighted]:text-olive-900 data-[state=checked]:bg-olive-50 data-[state=checked]:text-olive-900 data-[state=checked]:font-semibold"
+            className="rounded-md py-2 leading-snug focus:bg-gray-100 focus:text-gray-900 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 data-[state=checked]:bg-gray-50 data-[state=checked]:text-gray-900 data-[state=checked]:font-semibold"
           >
             None
           </SelectItem>
@@ -76,7 +76,7 @@ export function InlineMenuDisplay({
               <SelectItem
                 key={item.id}
                 value={item.id}
-                className="whitespace-normal rounded-md py-2 leading-snug focus:bg-olive-100 focus:text-olive-900 data-[highlighted]:bg-olive-100 data-[highlighted]:text-olive-900 data-[state=checked]:bg-olive-50 data-[state=checked]:text-olive-900 data-[state=checked]:font-semibold"
+                className="whitespace-normal rounded-md py-2 leading-snug focus:bg-gray-100 focus:text-gray-900 data-[highlighted]:bg-gray-100 data-[highlighted]:text-gray-900 data-[state=checked]:bg-gray-50 data-[state=checked]:text-gray-900 data-[state=checked]:font-semibold"
               >
                 {item.label}
               </SelectItem>
@@ -96,14 +96,14 @@ export function InlineMenuDisplay({
       onClick={() => !disabled && setIsEditing(true)}
       className={cn(
         "flex w-full items-center gap-2 rounded-md border border-border/60 bg-white/90 px-3 py-2 shadow-soft transition-colors",
-        !disabled && "cursor-pointer hover:border-olive-200"
+        !disabled && "cursor-pointer hover:border-gray-300"
       )}
     >
       <span
         className={cn(
           "truncate text-sm",
           selectedLabel
-            ? "text-olive-900 font-semibold"
+            ? "text-gray-900 font-semibold"
             : "text-neutral-300 font-medium"
         )}
       >

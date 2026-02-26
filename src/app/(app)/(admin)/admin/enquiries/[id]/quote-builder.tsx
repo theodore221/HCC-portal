@@ -66,7 +66,7 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border border-gray-200 rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -198,7 +198,7 @@ function PricingPreview({
         );
       })}
 
-      <div className="border-t pt-3 space-y-1">
+      <div className="border-t border-gray-200 pt-3 space-y-1">
         <div className="flex justify-between text-gray-500">
           <span>Subtotal</span>
           <span>{fmtCurrency(pricing.subtotal)}</span>
@@ -209,7 +209,7 @@ function PricingPreview({
             <span>−{fmtCurrency(pricing.discount_amount)}</span>
           </div>
         )}
-        <div className="flex justify-between text-base font-bold text-gray-900 border-t pt-2">
+        <div className="flex justify-between text-base font-bold text-gray-900 border-t border-gray-200 pt-2">
           <span>Total</span>
           <span>{fmtCurrency(pricing.total)}</span>
         </div>
@@ -560,7 +560,7 @@ export function QuoteBuilder({
         <div className="flex-1 overflow-y-auto">
           <div className="grid md:grid-cols-[1fr_320px]">
             {/* ── Left: Selections ── */}
-            <div className="p-6 space-y-4 border-r">
+            <div className="p-6 space-y-4 border-r border-gray-200">
               {/* Dates */}
               <Section title="Dates" defaultOpen>
                 <div className="grid grid-cols-2 gap-3">
@@ -852,7 +852,7 @@ export function QuoteBuilder({
                     );
                   })}
 
-                  <div className="flex items-center gap-3 border-t pt-3 flex-wrap">
+                  <div className="flex items-center gap-3 border-t border-gray-200 pt-3 flex-wrap">
                     <span className="text-sm text-gray-700 flex-1">Percolated Coffee</span>
                     <span className="text-xs text-gray-500">$3/serve</span>
                     <QtySpinner value={coffeeQuantity} onChange={setCoffeeQuantity} max={9999} />
@@ -908,7 +908,7 @@ export function QuoteBuilder({
         </div>
 
         {/* Footer */}
-        <SheetFooter className="px-6 py-4 border-t shrink-0">
+        <SheetFooter className="px-6 py-4 border-t border-gray-200 shrink-0">
           <div className="flex w-full items-center justify-between gap-4">
             {pricing && (
               <p className="text-base font-bold text-gray-900">

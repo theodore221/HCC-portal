@@ -59,7 +59,7 @@ export function MultiSelect({
   return (
     <div ref={containerRef} className={cn("relative", className)}>
       <div
-        className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-pointer"
+        className="min-h-10 w-full rounded-lg border border-gray-200 bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-primary/20 focus-within:ring-offset-2 cursor-pointer"
         onClick={() => setOpen(!open)}
       >
         <div className="flex flex-wrap gap-1">
