@@ -2,9 +2,9 @@
 
 import { useCallback, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Loader2 } from "lucide-react";
 
 import { EmailOtpCard } from "@/components/auth/EmailOtpCard";
+import { AuthLoadingState } from "@/components/auth/AuthLoadingState";
 import { sbBrowser } from "@/lib/supabase-browser";
 import { getHomePathForRole } from "@/lib/auth/paths";
 import type { ProfileRecord } from "@/lib/database.types";
@@ -119,18 +119,10 @@ export function MagicLinkClient({ csrfToken }: { csrfToken: string }) {
 
   if (signedIn) {
     return (
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-olive-100 bg-white p-8 shadow-soft">
-        <div className="space-y-4 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-          </div>
-          <h1 className="text-2xl font-semibold text-olive-900">Signed in</h1>
-          <p className="text-sm text-olive-700">Loading your workspace...</p>
-          <div className="flex justify-center pt-2">
-            <Loader2 className="h-5 w-5 animate-spin text-olive-600" />
-          </div>
-        </div>
-      </div>
+      <AuthLoadingState
+        title="Signed in"
+        subtitle="Loading your workspace..."
+      />
     );
   }
 

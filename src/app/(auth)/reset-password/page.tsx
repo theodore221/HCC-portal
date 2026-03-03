@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AuthLoadingState } from "@/components/auth/AuthLoadingState";
 import { sbBrowser } from "@/lib/supabase-browser";
 
 export default function ResetPasswordPage() {
@@ -87,22 +88,18 @@ export default function ResetPasswordPage() {
   };
 
   if (initializing) {
-    return (
-      <div className="mx-auto flex min-h-[60vh] w-full max-w-lg items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-olive-700" />
-      </div>
-    );
+    return <AuthLoadingState title="Checking session..." />;
   }
 
   if (success) {
     return (
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-olive-100 bg-white p-8 shadow-soft">
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-border/70 bg-white p-8 shadow-soft">
         <div className="space-y-4 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <CheckCircle2 className="h-6 w-6 text-primary" />
           </div>
-          <h1 className="text-2xl font-semibold text-olive-900">Password updated</h1>
-          <p className="text-sm text-olive-700">
+          <h1 className="text-2xl font-semibold text-gray-900">Password updated</h1>
+          <p className="text-sm text-gray-600">
             Your password has been successfully reset. You can now sign in with your new password.
           </p>
         </div>
@@ -115,10 +112,10 @@ export default function ResetPasswordPage() {
 
   if (!hasValidSession) {
     return (
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-olive-100 bg-white p-8 shadow-soft">
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-border/70 bg-white p-8 shadow-soft">
         <div className="space-y-4 text-center">
-          <h1 className="text-2xl font-semibold text-olive-900">Link expired</h1>
-          <p className="text-sm text-olive-700">
+          <h1 className="text-2xl font-semibold text-gray-900">Link expired</h1>
+          <p className="text-sm text-gray-600">
             {error ?? "This password reset link has expired or is invalid."}
           </p>
         </div>
@@ -127,7 +124,7 @@ export default function ResetPasswordPage() {
         </Button>
         <Link
           href="/login"
-          className="flex items-center justify-center gap-2 text-sm font-medium text-olive-600 hover:text-olive-800"
+          className="flex items-center justify-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to sign in
@@ -137,16 +134,16 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-olive-100 bg-white p-8 shadow-soft">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-border/70 bg-white p-8 shadow-soft">
       <header className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold text-olive-900">Reset your password</h1>
-        <p className="text-sm text-olive-700">
+        <h1 className="text-2xl font-semibold text-gray-900">Reset your password</h1>
+        <p className="text-sm text-gray-600">
           Enter a new password for your Holy Cross Centre account.
         </p>
       </header>
       <form autoComplete="off" className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-olive-800" htmlFor="password">
+          <label className="text-sm font-medium text-gray-700" htmlFor="password">
             New password
           </label>
           <Input
@@ -160,7 +157,7 @@ export default function ResetPasswordPage() {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-olive-800" htmlFor="confirm-password">
+          <label className="text-sm font-medium text-gray-700" htmlFor="confirm-password">
             Confirm password
           </label>
           <Input
@@ -191,7 +188,7 @@ export default function ResetPasswordPage() {
       </form>
       <Link
         href="/login"
-        className="flex items-center justify-center gap-2 text-sm font-medium text-olive-600 hover:text-olive-800"
+        className="flex items-center justify-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to sign in

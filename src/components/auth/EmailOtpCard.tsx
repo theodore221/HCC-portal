@@ -131,14 +131,14 @@ export function EmailOtpCard({
 
   if (step === "email") {
     return (
-      <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-olive-100 bg-white p-8 shadow-soft">
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-border/70 bg-white p-8 shadow-soft">
         <header className="space-y-2 text-center">
-          <h1 className="text-2xl font-semibold text-olive-900">{title}</h1>
-          <p className="text-sm text-olive-700">{description}</p>
+          <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
+          <p className="text-sm text-gray-600">{description}</p>
         </header>
         <form autoComplete="off" className="space-y-4" onSubmit={handleSendOtp}>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-olive-800" htmlFor="email">
+            <label className="text-sm font-medium text-gray-700" htmlFor="email">
               Email
             </label>
             <Input
@@ -174,7 +174,7 @@ export function EmailOtpCard({
         </form>
         <Link
           href={backHref}
-          className="flex items-center justify-center gap-2 text-sm font-medium text-olive-600 hover:text-olive-800"
+          className="flex items-center justify-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700"
         >
           <ArrowLeft className="h-4 w-4" />
           {backLabel}
@@ -184,19 +184,19 @@ export function EmailOtpCard({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-olive-100 bg-white p-8 shadow-soft">
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 rounded-2xl border border-border/70 bg-white p-8 shadow-soft">
       <header className="space-y-2 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
           <Mail className="h-6 w-6 text-primary" />
         </div>
-        <h1 className="text-2xl font-semibold text-olive-900">{otpTitle}</h1>
-        <p className="text-sm text-olive-700">{otpDescription}</p>
-        <p className="text-xs text-olive-600 font-medium">{email}</p>
+        <h1 className="text-2xl font-semibold text-gray-900">{otpTitle}</h1>
+        <p className="text-sm text-gray-600">{otpDescription}</p>
+        <p className="text-xs text-gray-500 font-medium">{email}</p>
       </header>
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-olive-800 text-center block">
+          <label className="text-sm font-medium text-gray-700 text-center block">
             Verification Code
           </label>
           <OtpInput
@@ -215,13 +215,13 @@ export function EmailOtpCard({
 
         {loading && (
           <div className="flex justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-olive-600" />
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
           </div>
         )}
 
         <div className="flex flex-col gap-2 text-center">
           {resendCooldown > 0 ? (
-            <p className="text-xs text-olive-600">
+            <p className="text-xs text-gray-500">
               Resend code in {resendCooldown}s
             </p>
           ) : (
@@ -231,7 +231,7 @@ export function EmailOtpCard({
               size="sm"
               onClick={handleResend}
               disabled={loading}
-              className="text-olive-600 hover:text-olive-800"
+              className="text-gray-500 hover:text-gray-700"
             >
               Resend code
             </Button>
@@ -242,7 +242,7 @@ export function EmailOtpCard({
             size="sm"
             onClick={handleChangeEmail}
             disabled={loading}
-            className="text-olive-600 hover:text-olive-800"
+            className="text-gray-500 hover:text-gray-700"
           >
             Change email
           </Button>
@@ -251,7 +251,7 @@ export function EmailOtpCard({
 
       <Link
         href={backHref}
-        className="flex items-center justify-center gap-2 text-sm font-medium text-olive-600 hover:text-olive-800"
+        className="flex items-center justify-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700"
       >
         <ArrowLeft className="h-4 w-4" />
         {backLabel}
