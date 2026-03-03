@@ -1,8 +1,67 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { BookingFormState, RoomTypeOption } from '../booking-form';
 import { formatCurrency } from '@/lib/pricing/utils';
 import { ROOM_DISPLAY_NAMES, ROOM_DISPLAY_DESCRIPTIONS } from '../_constants';
+
+interface QuantityStepperProps {
+  value: number;
+  max: number;
+  disabled: boolean;
+  ariaLabel: string;
+  onChange: (val: number) => void;
+}
+
+function QuantityStepper({ value, max, disabled, ariaLabel, onChange }: QuantityStepperProps) {
+  const [inputText, setInputText] = useState(String(value));
+
+  useEffect(() => {
+    setInputText(String(value));
+  }, [value]);
+
+  const commit = (raw: string) => {
+    const parsed = parseInt(raw, 10);
+    const clamped = isNaN(parsed) ? 0 : Math.min(max, Math.max(0, parsed));
+    onChange(clamped);
+    setInputText(String(clamped));
+  };
+
+  return (
+    <div className="flex items-center gap-2 shrink-0">
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(0, value - 1))}
+        disabled={disabled || value === 0}
+        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+        aria-label={`Decrease ${ariaLabel}`}
+      >
+        −
+      </button>
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={inputText}
+        disabled={disabled}
+        onChange={(e) => setInputText(e.target.value)}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit(inputText); } }}
+        className="w-12 text-center text-sm font-semibold text-gray-900 border border-gray-300 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-30"
+        aria-label={ariaLabel}
+      />
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(max, value + 1))}
+        disabled={disabled || value >= max}
+        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+        aria-label={`Increase ${ariaLabel}`}
+      >
+        +
+      </button>
+    </div>
+  );
+}
 
 interface AccommodationStepProps {
   formState: BookingFormState;
@@ -154,27 +213,13 @@ export function AccommodationStep({ formState, roomTypes, onChange }: Accommodat
                     </div>
 
                     {/* Quantity stepper */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setRoomQty(rt.id, Math.max(0, qty - 1))}
-                        disabled={isBlocked || qty === 0}
-                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label={`Decrease ${ROOM_DISPLAY_NAMES[rt.name] ?? rt.name}`}
-                      >
-                        −
-                      </button>
-                      <span className="w-8 text-center text-sm font-semibold text-gray-900">{qty}</span>
-                      <button
-                        type="button"
-                        onClick={() => setRoomQty(rt.id, Math.min(effectiveMax, qty + 1))}
-                        disabled={isBlocked || qty >= effectiveMax}
-                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label={`Increase ${ROOM_DISPLAY_NAMES[rt.name] ?? rt.name}`}
-                      >
-                        +
-                      </button>
-                    </div>
+                    <QuantityStepper
+                      value={qty}
+                      max={effectiveMax}
+                      disabled={isBlocked}
+                      ariaLabel={ROOM_DISPLAY_NAMES[rt.name] ?? rt.name}
+                      onChange={(val) => setRoomQty(rt.id, val)}
+                    />
                   </div>
 
                   {qty > 0 && nights > 0 && (

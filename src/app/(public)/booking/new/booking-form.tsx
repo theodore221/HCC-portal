@@ -72,6 +72,8 @@ export interface BookingFormState {
   event_type?: string;
   arrival_date?: string;
   departure_date?: string;
+  arrival_time?: string;
+  departure_time?: string;
   headcount?: number;
   minors?: boolean;
 

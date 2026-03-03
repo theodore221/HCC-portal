@@ -64,31 +64,59 @@ export function EventStep({ formState, onChange }: EventStepProps) {
 
       {/* Dates */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="arrival_date" className="block text-sm font-medium text-gray-700 mb-1">
-            Arrival Date *
-          </label>
-          <input
-            id="arrival_date"
-            type="date"
-            min={today}
-            value={formState.arrival_date ?? ''}
-            onChange={(e) => onChange({ arrival_date: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="arrival_date" className="block text-sm font-medium text-gray-700 mb-1">
+              Arrival Date *
+            </label>
+            <input
+              id="arrival_date"
+              type="date"
+              min={today}
+              value={formState.arrival_date ?? ''}
+              onChange={(e) => onChange({ arrival_date: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <label htmlFor="arrival_time" className="block text-sm font-medium text-gray-700 mb-1">
+              Arrival Time
+            </label>
+            <input
+              id="arrival_time"
+              type="time"
+              value={formState.arrival_time ?? ''}
+              onChange={(e) => onChange({ arrival_time: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
         </div>
-        <div>
-          <label htmlFor="departure_date" className="block text-sm font-medium text-gray-700 mb-1">
-            Departure Date *
-          </label>
-          <input
-            id="departure_date"
-            type="date"
-            min={formState.arrival_date ?? today}
-            value={formState.departure_date ?? ''}
-            onChange={(e) => onChange({ departure_date: e.target.value })}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="departure_date" className="block text-sm font-medium text-gray-700 mb-1">
+              Departure Date *
+            </label>
+            <input
+              id="departure_date"
+              type="date"
+              min={formState.arrival_date ?? today}
+              value={formState.departure_date ?? ''}
+              onChange={(e) => onChange({ departure_date: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <label htmlFor="departure_time" className="block text-sm font-medium text-gray-700 mb-1">
+              Departure Time
+            </label>
+            <input
+              id="departure_time"
+              type="time"
+              value={formState.departure_time ?? ''}
+              onChange={(e) => onChange({ departure_time: e.target.value })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
         </div>
       </div>
 

@@ -105,7 +105,7 @@ npm run email:dev        # Preview email templates
 
 ### Available RPCs
 **Reads**: `get_booking_detail`, `get_room_status`, `get_dietary_meal_attendance`
-**Mutations**: `delete_booking_cascade`, `update_meal_job_items`, `allocate_room`, `upsert_booking_snapshot`
+**Mutations**: `delete_booking_cascade`, `update_meal_job_items`, `allocate_room`
 
 ### Cache Tags
 Defined in `src/lib/cache.ts`: `BOOKINGS`, `MEAL_JOBS`, `SPACE_RESERVATIONS`, `ROOM_ASSIGNMENTS`, `DIETARY_PROFILES`, `CATERERS`, `MENU_ITEMS`, `PROFILES`, `ROOMS`, `SPACES`

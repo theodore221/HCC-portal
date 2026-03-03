@@ -10,6 +10,7 @@ import { bookingSchema } from '@/lib/validation/booking';
 import { validateBotDetection, HONEYPOT_FIELDS, rateLimitServerAction } from '@/lib/security';
 import { calculateBookingPricing, createPriceSnapshot } from '@/lib/pricing';
 import type { BookingSelections } from '@/lib/pricing';
+import { insertSpaceReservations, insertMealJobs } from '@/lib/booking-child-records';
 
 export interface PortalBookingSubmissionResult {
   success: boolean;
@@ -114,7 +115,9 @@ export async function submitPortalBooking(formData: FormData): Promise<PortalBoo
       .insert({
         source: 'portal',
         booking_type: data.booking_type,
-        customer_name: profile.full_name || profile.email,
+        customer_name: data.booking_type === 'Group' && data.organization
+          ? data.organization
+          : (profile.full_name || profile.email),
         customer_email: profile.email,
         customer_user_id: profile.id,
         contact_name: profile.full_name || profile.email,
@@ -142,6 +145,17 @@ export async function submitPortalBooking(formData: FormData): Promise<PortalBoo
 
     // Create price snapshot
     await createPriceSnapshot(booking.id, pricing, 'standard');
+
+    // Insert space reservations
+    await insertSpaceReservations(supabase, booking.id, {
+      arrival_date: data.arrival_date,
+      departure_date: data.departure_date,
+      whole_centre: data.whole_centre,
+      selected_spaces: data.selected_spaces,
+    });
+
+    // Insert meal jobs
+    await insertMealJobs(supabase, booking.id, { meals: data.meals });
 
     // Send confirmation email (don't fail submission if email fails)
     try {

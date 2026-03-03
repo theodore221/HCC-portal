@@ -143,7 +143,6 @@ $$;
 - `delete_booking_cascade(p_booking_id)` — Atomic deletion of booking + all related records
 - `update_meal_job_items(p_meal_job_id, p_menu_item_ids)` — Atomic delete-then-insert for meal items
 - `allocate_room(p_booking_id, p_room_id, ...)` — Conflict check + insert with row-level locking
-- `upsert_booking_snapshot(snap)` — Google Apps Script integration for form submissions
 
 ### Row-Level Locking
 

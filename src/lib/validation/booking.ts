@@ -19,6 +19,8 @@ export const eventDetailsSchema = z.object({
   event_name: z.string().optional().nullable(),
   arrival_date: z.string().min(1),
   departure_date: z.string().min(1),
+  arrival_time: z.string().optional().nullable(),
+  departure_time: z.string().optional().nullable(),
   headcount: z.number().int().min(1).max(200),
   minors: z.boolean(),
 });

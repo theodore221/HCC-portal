@@ -65,6 +65,13 @@ function formatDateDisplay(isoDate: string): string {
   });
 }
 
+function formatTimeDisplay(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const period = h < 12 ? 'AM' : 'PM';
+  const hour = h % 12 === 0 ? 12 : h % 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${period}`;
+}
+
 export function ReviewStep({
   formState, spaces, roomTypes, pricing, pricingLoading, onChange,
 }: ReviewStepProps) {
@@ -101,8 +108,18 @@ export function ReviewStep({
       {/* Event */}
       <SectionCard title="Event Details">
         {formState.event_type && <ReviewRow label="Event Type" value={formState.event_type} />}
-        <ReviewRow label="Arrival" value={formState.arrival_date ? formatDateDisplay(formState.arrival_date) : '—'} />
-        <ReviewRow label="Departure" value={formState.departure_date ? formatDateDisplay(formState.departure_date) : '—'} />
+        <ReviewRow
+          label="Arrival"
+          value={formState.arrival_date
+            ? formatDateDisplay(formState.arrival_date) + (formState.arrival_time ? ` at ${formatTimeDisplay(formState.arrival_time)}` : '')
+            : '—'}
+        />
+        <ReviewRow
+          label="Departure"
+          value={formState.departure_date
+            ? formatDateDisplay(formState.departure_date) + (formState.departure_time ? ` at ${formatTimeDisplay(formState.departure_time)}` : '')
+            : '—'}
+        />
         <ReviewRow label="Duration" value={nights > 0 ? `${nights} night${nights !== 1 ? 's' : ''}` : 'Same day'} />
         <ReviewRow label="Guests" value={formState.headcount} />
         {formState.minors && <ReviewRow label="Minors" value="Includes children / care requirements" />}

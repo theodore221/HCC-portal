@@ -10,6 +10,7 @@ import { calculateBookingPricing, createPriceSnapshot } from '@/lib/pricing';
 import type { BookingSelections, PricingResult } from '@/lib/pricing';
 import type { BookingFormState } from './booking-form';
 import { ROOM_NAME_TO_SHORTHAND } from './_constants';
+import { insertSpaceReservations, insertMealJobs } from '@/lib/booking-child-records';
 
 export interface BookingSubmissionResult {
   success: boolean;
@@ -265,13 +266,17 @@ export async function submitBooking(
       .insert({
         source: 'portal',
         booking_type: formState.booking_type,
-        customer_name: formState.contact_name,
+        customer_name: formState.booking_type === 'Group' && formState.organization
+          ? formState.organization
+          : formState.contact_name,
         customer_email: formState.contact_email,
         contact_name: formState.contact_name,
         contact_phone: formState.contact_phone ?? null,
         event_type: eventType,
         arrival_date: formState.arrival_date,
         departure_date: formState.departure_date,
+        arrival_time: formState.arrival_time || null,
+        departure_time: formState.departure_time || null,
         headcount: formState.headcount ?? 0,
         minors: formState.minors ?? false,
         whole_centre: formState.whole_centre ?? false,
@@ -296,6 +301,29 @@ export async function submitBooking(
     } catch (snapshotError) {
       console.error('Price snapshot error (non-fatal):', snapshotError);
     }
+
+    // Insert space reservations
+    await insertSpaceReservations(supabase, booking.id, {
+      arrival_date: formState.arrival_date,
+      departure_date: formState.departure_date,
+      whole_centre: formState.whole_centre,
+      selected_spaces: formState.selected_spaces,
+    });
+
+    // Build per-session coffee overlay from coffee_sessions
+    const coffeeOverlay = new Map<string, number>();
+    if (formState.coffee_sessions) {
+      for (const cs of formState.coffee_sessions) {
+        const key = `${cs.date}|${cs.session}`;
+        coffeeOverlay.set(key, (coffeeOverlay.get(key) ?? 0) + cs.quantity);
+      }
+    }
+
+    // Insert meal jobs
+    await insertMealJobs(supabase, booking.id, {
+      meals: formState.meals,
+      coffeeOverlay: coffeeOverlay.size > 0 ? coffeeOverlay : undefined,
+    });
 
     // Send confirmation email
     try {

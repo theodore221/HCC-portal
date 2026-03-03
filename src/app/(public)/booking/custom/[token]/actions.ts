@@ -9,6 +9,7 @@ import { bookingSchema } from '@/lib/validation/booking';
 import { validateBotDetection, HONEYPOT_FIELDS, validateCustomPricingToken, hashToken, rateLimitServerAction } from '@/lib/security';
 import { calculateBookingPricing, createPriceSnapshot } from '@/lib/pricing';
 import type { BookingSelections, DiscountConfig } from '@/lib/pricing';
+import { insertSpaceReservations, insertMealJobs } from '@/lib/booking-child-records';
 
 export interface CustomBookingSubmissionResult {
   success: boolean;
@@ -168,6 +169,17 @@ export async function submitCustomBooking(formData: FormData): Promise<CustomBoo
 
     // Create price snapshot
     await createPriceSnapshot(bookingId, pricing, 'custom_link');
+
+    // Insert space reservations
+    await insertSpaceReservations(supabase, bookingId, {
+      arrival_date: data.arrival_date,
+      departure_date: data.departure_date,
+      whole_centre: data.whole_centre,
+      selected_spaces: data.selected_spaces,
+    });
+
+    // Insert meal jobs
+    await insertMealJobs(supabase, bookingId, { meals: data.meals });
 
     return {
       success: true,

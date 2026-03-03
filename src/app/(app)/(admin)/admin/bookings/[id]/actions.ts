@@ -130,61 +130,54 @@ export async function updateBookingStatus(
   if (error)
     throw new Error(`Failed to update booking status: ${error.message}`);
 
+  if (status === 'Cancelled') {
+    // Delete space reservations (no Cancelled status available; frees slots)
+    await supabase
+      .from('space_reservations')
+      .delete()
+      .eq('booking_id', bookingId);
+
+    // Cancel meal jobs (preserves audit trail; Cancelled status exists)
+    await supabase
+      .from('meal_jobs')
+      .update({ status: 'Cancelled' })
+      .eq('booking_id', bookingId);
+
+    // Delete room assignments (no status field; frees rooms for reuse)
+    await supabase
+      .from('room_assignments')
+      .delete()
+      .eq('booking_id', bookingId);
+  }
+
   revalidatePath(`/admin/bookings/${bookingId}`);
   // Invalidate caches
   getBookingCacheTags(bookingId).forEach(tag => revalidateTag(tag, {}));
+  if (status === 'Cancelled') {
+    revalidateTag(CACHE_TAGS.MEAL_JOBS, {});
+    revalidateTag(CACHE_TAGS.SPACE_RESERVATIONS, {});
+    revalidateTag(CACHE_TAGS.ROOM_ASSIGNMENTS, {});
+  }
 }
 
 export async function deleteBooking(bookingId: string) {
   const supabase: any = await sbServer();
 
-  // Attempt to delete the booking.
-  // If cascade is set up correctly in DB, this will delete everything.
-  // If not, we might need manual deletion, but user confirmed cascade is desired/expected.
-  // We'll try a direct delete first.
-  // We'll try a direct delete first.
-  const { error, count } = await supabase
-    .from("bookings")
-    .delete({ count: "exact" })
-    .eq("id", bookingId);
+  const { error } = await supabase.rpc('delete_booking_cascade', {
+    p_booking_id: bookingId,
+  });
 
-  if (error || (count !== null && count === 0)) {
-    const errorMessage =
-      error?.message || "Delete failed: Access denied or record not found";
-    // Fallback: Manual deletion of related records if cascade fails or isn't set up
-    console.error("Delete failed, attempting manual cleanup:", errorMessage);
-
-    // Delete related records manually (reverse order of dependencies)
-    await supabase.from("meal_jobs").delete().eq("booking_id", bookingId);
-    await supabase
-      .from("space_reservations")
-      .delete()
-      .eq("booking_id", bookingId);
-    await supabase
-      .from("room_assignments")
-      .delete()
-      .eq("booking_id", bookingId);
-    await supabase.from("rooming_groups").delete().eq("booking_id", bookingId);
-    await supabase
-      .from("dietary_profiles")
-      .delete()
-      .eq("booking_id", bookingId);
-
-    // Retry booking deletion
-    const { error: retryError } = await supabase
-      .from("bookings")
-      .delete()
-      .eq("id", bookingId);
-
-    if (retryError) {
-      throw new Error(`Failed to delete booking: ${retryError.message}`);
-    }
+  if (error) {
+    throw new Error(`Failed to delete booking: ${error.message}`);
   }
 
   revalidatePath("/admin/bookings");
-  // Invalidate all booking-related caches
   revalidateTag(CACHE_TAGS.BOOKINGS, {});
   revalidateTag(CACHE_TAGS.BOOKING_STATUS_COUNTS, {});
+  revalidateTag(CACHE_TAGS.MEAL_JOBS, {});
+  revalidateTag(CACHE_TAGS.SPACE_RESERVATIONS, {});
+  revalidateTag(CACHE_TAGS.ROOM_ASSIGNMENTS, {});
+  revalidateTag(CACHE_TAGS.DIETARY_PROFILES, {});
   redirect("/admin/bookings");
 }
 
