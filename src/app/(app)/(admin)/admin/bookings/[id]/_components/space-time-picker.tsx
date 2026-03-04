@@ -46,7 +46,7 @@ export function SpaceTimePicker({
   if (isEditing) {
     return (
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <Clock className="size-3.5 text-gray-400 flex-shrink-0" />
+        <Clock className="size-3.5 text-primary flex-shrink-0" />
         <Input
           type="time"
           value={localStart}
@@ -102,13 +102,13 @@ export function SpaceTimePicker({
 
   return (
     <div className="flex items-center gap-2 text-sm">
-      <Clock className="size-3.5 text-gray-400" />
-      <span className="text-gray-600">{timeLabel}</span>
+      <Clock className="size-3.5 text-primary" />
+      <span className="text-gray-700">{timeLabel}</span>
       {reservedDates.length > 0 && (
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="h-6 text-xs px-2 text-gray-400 hover:text-gray-600"
+          className="h-6 text-xs px-2 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
           onClick={() => setIsEditing(true)}
           disabled={isPending}
         >

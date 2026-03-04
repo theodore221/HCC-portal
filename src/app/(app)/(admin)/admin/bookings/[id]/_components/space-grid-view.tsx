@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { AlertTriangle, Plus } from "lucide-react";
+import { AlertTriangle, Check, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toggleReservationDays } from "../actions";
@@ -103,12 +103,12 @@ export function SpaceGridView({
               const conflictDates = conflictMap.get(space.id) ?? new Set<string>();
 
               return (
-                <tr key={space.id} className="hover:bg-gray-50/50">
+                <tr key={space.id} className="group hover:bg-gray-50/50">
                   <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/50 px-4 py-2.5 font-medium text-gray-900 border-r border-gray-100">
                     <div className="flex items-center gap-2">
                       <span>{space.name}</span>
                       {conflictDates.size > 0 && (
-                        <AlertTriangle className="size-3.5 text-[var(--status-clay)] flex-shrink-0" />
+                        <AlertTriangle className="size-3.5 text-status-clay flex-shrink-0" />
                       )}
                     </div>
                   </td>
@@ -122,18 +122,18 @@ export function SpaceGridView({
                           disabled={isPending}
                           onClick={() => handleToggle(space.id, date, !isReserved)}
                           className={cn(
-                            "mx-auto flex items-center justify-center rounded-md border transition-all text-xs font-bold",
-                            "w-8 h-8 disabled:opacity-50 disabled:cursor-not-allowed",
+                            "mx-auto flex items-center justify-center rounded-lg border transition-all",
+                            "w-9 h-9 disabled:opacity-50 disabled:cursor-not-allowed",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                             isReserved && hasConflict
-                              ? "bg-[color-mix(in_srgb,var(--status-clay)_10%,transparent)] border-[color-mix(in_srgb,var(--status-clay)_30%,transparent)] text-[var(--status-clay)]"
+                              ? "bg-status-clay border-status-clay text-white hover:opacity-90"
                               : isReserved
-                              ? "bg-primary/10 border-primary/30 text-primary"
-                              : "bg-gray-50 border-gray-200 text-gray-300 hover:border-gray-300 hover:bg-gray-100"
+                              ? "bg-primary border-primary text-white hover:opacity-90"
+                              : "bg-white border-gray-200 text-transparent hover:border-primary/30 hover:bg-primary/5"
                           )}
                           title={`${date} — ${isReserved ? "Click to remove" : "Click to add"}${hasConflict ? " (Conflict)" : ""}`}
                         >
-                          {isReserved ? "■" : "□"}
+                          {isReserved && <Check className="size-3.5" strokeWidth={3} />}
                         </button>
                       </td>
                     );
@@ -146,9 +146,9 @@ export function SpaceGridView({
       </div>
 
       {totalConflicts > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)] bg-[color-mix(in_srgb,var(--status-clay)_5%,transparent)] px-4 py-2.5 text-sm">
-          <AlertTriangle className="size-4 text-[var(--status-clay)] flex-shrink-0" />
-          <span className="text-[var(--status-clay)] font-medium">
+        <div className="flex items-center gap-2 rounded-lg border border-status-clay/20 bg-status-clay/5 px-4 py-2.5 text-sm">
+          <AlertTriangle className="size-4 text-status-clay flex-shrink-0" />
+          <span className="text-status-clay font-medium">
             {totalConflicts} conflict{totalConflicts !== 1 ? "s" : ""} detected — switch to card view for per-space resolution
           </span>
         </div>
@@ -156,9 +156,8 @@ export function SpaceGridView({
 
       <div className="flex justify-end">
         <Button
-          variant="outline"
           size="sm"
-          className="gap-2 border-dashed"
+          className="gap-2 bg-primary text-white hover:bg-primary/90"
           onClick={onAddSpace}
           disabled={isPending}
         >

@@ -124,15 +124,15 @@ export function SpaceRequestCard({
     <>
       <Card
         className={cn(
-          "border rounded-2xl shadow-soft overflow-hidden",
+          "border rounded-2xl shadow-sm overflow-hidden",
           hasConflict
-            ? "border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)]"
+            ? "border-status-clay/20"
             : isOverCapacity
-            ? "border-amber-200"
-            : "border-border/70 bg-white/90"
+            ? "border-status-ochre/20"
+            : "border-gray-200 bg-white"
         )}
       >
-        <CardContent className="p-5 space-y-4">
+        <CardContent className="p-4 space-y-3">
           {/* Header row */}
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -140,11 +140,11 @@ export function SpaceRequestCard({
                 {space?.name ?? "Unknown Space"}
               </h3>
               {hasConflict ? (
-                <Badge className="bg-[color-mix(in_srgb,var(--status-clay)_10%,transparent)] text-[var(--status-clay)] border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)] rounded-full px-2 text-xs flex-shrink-0">
+                <Badge className="bg-status-clay/10 text-status-clay border-status-clay/20 rounded-full px-2 text-xs flex-shrink-0">
                   Conflict
                 </Badge>
               ) : isOverCapacity ? (
-                <Badge className="bg-amber-50 text-amber-700 border-amber-200 rounded-full px-2 text-xs flex-shrink-0">
+                <Badge className="bg-status-ochre/10 text-status-ochre border-status-ochre/20 rounded-full px-2 text-xs flex-shrink-0">
                   Over Capacity
                 </Badge>
               ) : (
@@ -159,7 +159,7 @@ export function SpaceRequestCard({
                 <span
                   className={cn(
                     "text-xs flex items-center gap-0.5 flex-shrink-0",
-                    isOverCapacity ? "text-amber-600 font-medium" : "text-gray-400"
+                    isOverCapacity ? "text-status-ochre font-medium" : "text-gray-400"
                   )}
                 >
                   <Users className="size-3" />
@@ -169,7 +169,8 @@ export function SpaceRequestCard({
             </div>
 
             {/* Space switcher */}
-            <div className="w-[170px] flex-shrink-0">
+            <div className="flex-shrink-0">
+              <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1">Switch Space</p>
               <Select
                 disabled={isPending}
                 value={spaceId}
@@ -177,7 +178,7 @@ export function SpaceRequestCard({
                   reservations.forEach((res) => onSpaceChange(res.id, newSpaceId));
                 }}
               >
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-8 w-[170px] text-xs bg-white text-gray-900 border-primary/40 hover:border-primary focus:ring-primary/20 [&_svg]:text-gray-500">
                   <SelectValue placeholder="Switch space" />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
@@ -224,8 +225,8 @@ export function SpaceRequestCard({
 
           {/* Conflict list */}
           {hasConflict && (
-            <div className="space-y-2 rounded-lg border border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)] bg-[color-mix(in_srgb,var(--status-clay)_5%,transparent)] p-3">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--status-clay)]">
+            <div className="space-y-2 rounded-lg border border-status-clay/20 bg-status-clay/5 p-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-status-clay">
                 <AlertTriangle className="size-3.5" />
                 {conflictsByBooking.size} conflict
                 {conflictsByBooking.size !== 1 ? "s" : ""}
@@ -256,7 +257,7 @@ export function SpaceRequestCard({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-6 text-xs px-2 border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)] text-[var(--status-clay)] hover:bg-[color-mix(in_srgb,var(--status-clay)_5%,transparent)] flex-shrink-0"
+                        className="h-6 text-xs px-2 border-status-clay/20 text-status-clay hover:bg-status-clay/5 flex-shrink-0"
                         onClick={() =>
                           setResolveInfo({ conflictingBookingId: conflictBookingId, dates })
                         }
@@ -273,9 +274,9 @@ export function SpaceRequestCard({
           {/* Remove button */}
           <div className="flex justify-end">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="h-7 text-xs text-gray-400 hover:text-red-600 hover:bg-red-50 gap-1"
+              className="h-7 text-xs border-status-clay/20 text-status-clay hover:bg-status-clay/5 gap-1"
               onClick={onRemove}
               disabled={isPending}
             >

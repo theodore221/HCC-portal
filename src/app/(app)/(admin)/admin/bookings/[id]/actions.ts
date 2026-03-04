@@ -280,6 +280,69 @@ export async function toggleReservationDays(
   getSpaceReservationCacheTags(bookingId).forEach((tag) => revalidateTag(tag, {}));
 }
 
+export async function toggleWholeCentre(bookingId: string, newValue: boolean) {
+  const supabase: any = await sbServer();
+
+  // Update whole_centre flag and get date range
+  const { data: booking, error: updateError } = await supabase
+    .from("bookings")
+    .update({ whole_centre: newValue })
+    .eq("id", bookingId)
+    .select("arrival_date, departure_date")
+    .single();
+
+  if (updateError || !booking) throw new Error(`Failed to update whole_centre: ${updateError?.message}`);
+
+  // Delete all existing space reservations
+  const { error: deleteError } = await supabase
+    .from("space_reservations")
+    .delete()
+    .eq("booking_id", bookingId);
+
+  if (deleteError) throw new Error(`Failed to clear reservations: ${deleteError.message}`);
+
+  // If enabling whole centre, add all active spaces for every date
+  if (newValue) {
+    const { data: allSpaces, error: spacesError } = await supabase
+      .from("spaces")
+      .select("id")
+      .eq("is_active", true);
+
+    if (spacesError || !allSpaces) throw new Error(`Failed to fetch spaces: ${spacesError?.message}`);
+
+    const dates: string[] = [];
+    const [ay, am, ad] = booking.arrival_date.split("-").map(Number);
+    const [dy, dm, dd] = booking.departure_date.split("-").map(Number);
+    const end = new Date(dy!, dm! - 1, dd!);
+    for (const d = new Date(ay!, am! - 1, ad!); d <= end; d.setDate(d.getDate() + 1)) {
+      const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+      dates.push(`${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
+    }
+
+    const rows = (allSpaces as { id: string }[]).flatMap((space) =>
+      dates.map((date) => ({
+        booking_id: bookingId,
+        space_id: space.id,
+        service_date: date,
+        start_time: null,
+        end_time: null,
+        status: "Held" as const,
+      }))
+    );
+
+    if (rows.length > 0) {
+      const { error: upsertError } = await supabase
+        .from("space_reservations")
+        .upsert(rows, { onConflict: "booking_id,space_id,service_date" });
+      if (upsertError) throw new Error(`Failed to add reservations: ${upsertError.message}`);
+    }
+  }
+
+  revalidatePath("/admin/bookings/[id]", "page");
+  getBookingCacheTags(bookingId).forEach((tag) => revalidateTag(tag, {}));
+  getSpaceReservationCacheTags(bookingId).forEach((tag) => revalidateTag(tag, {}));
+}
+
 export async function updateReservationTimes(
   bookingId: string,
   spaceId: string,

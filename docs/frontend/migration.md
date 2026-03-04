@@ -1,5 +1,26 @@
 # Migration Reference
 
+## Legacy Semantic Token Mapping
+
+Quick reference when removing old semantic CSS tokens:
+
+```
+text-text            → text-gray-900
+text-text-light      → text-gray-500
+border-border/70     → border-gray-200
+border-border/50     → border-gray-100
+bg-white/90          → bg-white
+bg-neutral           → bg-gray-100
+bg-secondary         → bg-primary/10
+shadow-soft (cards)  → shadow-sm
+text-neutral-400     → text-gray-400
+color-mix(in_srgb,var(--status-X)_20%,transparent) → border-status-X/20
+color-mix(in_srgb,var(--status-X)_10%,transparent) → bg-status-X/10
+color-mix(in_srgb,var(--status-X)_5%,transparent)  → bg-status-X/5
+bg-[var(--status-X)]   → bg-status-X
+text-[var(--status-X)] → text-status-X
+```
+
 ## Olive → Gray Mapping
 
 Quick reference when updating existing pages from the old olive palette:
@@ -48,8 +69,13 @@ text-green-700 bg-green-50 border-green-100   → text-status-forest bg-status-f
 - `src/app/(app)/(admin)/admin/enquiries/[id]/quote-builder.tsx`
 - `src/app/(app)/(admin)/admin/enquiries/client.tsx`
 - `src/app/(app)/(admin)/admin/bookings/client.tsx`
-- `src/app/(app)/(admin)/admin/bookings/[id]/client.tsx`
-- `src/app/(app)/(admin)/admin/bookings/[id]/space-request-card.tsx`
+- `src/app/(app)/(admin)/admin/bookings/[id]/client.tsx` ✓ (fully migrated 2026-03-04)
+- `src/app/(app)/(admin)/admin/bookings/[id]/space-request-card.tsx` ✓ (fully migrated 2026-03-04)
+- `src/app/(app)/(admin)/admin/bookings/[id]/spaces-tab.tsx`
+- `src/app/(app)/(admin)/admin/bookings/[id]/_components/space-context-banner.tsx`
+- `src/app/(app)/(admin)/admin/bookings/[id]/_components/space-day-grid.tsx`
+- `src/app/(app)/(admin)/admin/bookings/[id]/_components/space-grid-view.tsx`
+- `src/app/(app)/(admin)/admin/bookings/[id]/_components/space-time-picker.tsx`
 - `src/app/(app)/(admin)/admin/bookings/[id]/day-meal-card.tsx`
 - `src/app/(app)/(admin)/admin/bookings/[id]/_components/accommodation-requests-card.tsx`
 - `src/app/(app)/(admin)/admin/bookings/[id]/_components/approval-checklist.tsx`

@@ -12,7 +12,7 @@ Card sections use `CardHeader` / `CardContent` from `@/components/ui/card`. Neve
 
 | Variant | Classes |
 |---------|---------|
-| Primary | `bg-primary text-white rounded-lg hover:bg-primary-light` |
+| Primary | `bg-primary text-white rounded-lg hover:bg-primary/90` |
 | Outline | `border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50` |
 | Ghost | `text-gray-600 hover:bg-gray-100 rounded-lg` |
 | Destructive | `bg-danger text-white rounded-lg hover:bg-danger/90` |
@@ -163,13 +163,13 @@ bg-gray-100 rounded-full [&>div]:bg-primary
 
 ```jsx
 <div className="relative w-full max-w-xs">
-  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-light/70" />
-  <Input value={searchValue} className="rounded-full border-border/70 bg-white pl-9 pr-9" />
+  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+  <Input value={searchValue} className="rounded-full border-gray-200 bg-white pl-9 pr-9" />
   {searchValue && (
     <button
       type="button"
       onClick={handleClear}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-light/70 hover:text-text transition-colors"
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
     >
       <X className="size-4" />
     </button>
@@ -186,7 +186,7 @@ border-primary bg-primary text-white shadow-sm
 
 Inactive:
 ```
-border-border/60 bg-white text-text-light hover:border-primary/40 hover:text-text
+border-gray-200/60 bg-white text-gray-500 hover:border-primary/40 hover:text-gray-700
 ```
 
 ## Collapsible Sections
@@ -208,3 +208,71 @@ Use `@/components/ui/stepper`. Steps: `bg-primary text-white` (active), `bg-gray
 ## Audit Timeline
 
 Use `@/components/ui/audit-timeline`. Dot: `bg-primary`. Line: `bg-gray-200`. Text: `text-gray-700` / `text-gray-400`.
+
+## Context Banner
+
+Full-width banner pinned to top of a tab section. Uses `bg-primary` background with white text:
+
+```jsx
+<div className="rounded-xl bg-primary px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+  <div className="flex items-center gap-2 flex-wrap">
+    <span className="inline-flex items-center rounded-full bg-white/20 border border-white/15 px-2.5 py-1 text-xs font-semibold text-white">
+      Label
+    </span>
+    <span className="text-sm text-white/80">Supporting text</span>
+  </div>
+  <div className="flex flex-wrap items-center gap-3 text-sm text-white/80">
+    <span>Meta info</span>
+    {warning && (
+      <span className="inline-flex items-center gap-1 text-xs font-medium bg-white/20 rounded px-1.5 py-0.5 text-white">
+        <AlertTriangle className="size-3" />
+        Warning text
+      </span>
+    )}
+  </div>
+</div>
+```
+
+## Day Toggle Grid
+
+Compact day-toggle button grid for space reservations. Buttons: `w-9 h-9 sm:w-10 sm:h-10`, show day letter at `text-[10px]` above the date number at `text-xs`:
+
+```jsx
+<div className="flex flex-wrap gap-1.5 md:gap-2">
+  <button className={cn(
+    "flex flex-col items-center justify-center rounded-lg border text-xs font-medium transition-all select-none",
+    "w-9 h-9 sm:w-10 sm:h-10",
+    isReserved && hasConflict ? "bg-status-clay border-status-clay text-white hover:opacity-90"
+    : isReserved ? "bg-primary border-primary text-white hover:opacity-90"
+    : "bg-gray-100 border-gray-200 text-gray-400 hover:border-primary hover:bg-primary/10 hover:text-primary"
+  )}>
+    <span className="text-[10px] leading-none opacity-80">{dayLetter}</span>
+    <span className="leading-none text-xs">{dateNum}</span>
+  </button>
+</div>
+```
+
+## Inline Time Picker
+
+Compact time range editor that collapses to a single display line:
+
+```jsx
+// Display mode
+<div className="flex items-center gap-2 text-sm">
+  <Clock className="size-3.5 text-primary" />
+  <span className="text-gray-700">{timeLabel}</span>
+  <Button variant="outline" size="sm" className="h-6 text-xs px-2 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+    Set Times
+  </Button>
+</div>
+
+// Edit mode — inline inputs
+<div className="flex flex-wrap items-center gap-2 text-sm">
+  <Clock className="size-3.5 text-primary flex-shrink-0" />
+  <Input type="time" className="h-7 w-[110px] text-xs" />
+  <span className="text-gray-400 text-xs">–</span>
+  <Input type="time" className="h-7 w-[110px] text-xs" />
+  <Button size="sm" className="h-7 text-xs px-3">Save</Button>
+  <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-gray-500">Cancel</Button>
+</div>
+```

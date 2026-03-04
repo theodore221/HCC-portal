@@ -221,20 +221,20 @@ export default function BookingDetailClient({
   return (
     <TooltipProvider>
       <Tabs defaultValue="overview" className="space-y-6">
-        <Card className="shadow-soft p-0 gap-0">
+        <Card className="shadow-sm p-0 gap-0">
           <CardHeader className="flex flex-col md:flex-row justify-between items-start gap-4 p-6 pb-2">
             <div className="space-y-1">
-              <CardTitle className="text-xl font-semibold text-text">
+              <CardTitle className="text-2xl font-bold text-gray-900">
                 {displayName}
               </CardTitle>
               <div className="flex flex-col gap-1">
-                <span className="text-2xl font-bold text-text">
+                <span className="text-xl font-semibold text-gray-900">
                   {formatDateRange(
                     booking.arrival_date,
                     booking.departure_date,
                   )}
                 </span>
-                <span className="text-sm text-text-light">
+                <span className="text-sm text-gray-500">
                   {booking.headcount} guests
                 </span>
               </div>
@@ -331,7 +331,7 @@ export default function BookingDetailClient({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800 w-full sm:w-auto"
+                      className="border-status-clay/20 text-status-clay hover:bg-status-clay/5 w-full sm:w-auto"
                       disabled={booking.status === "Cancelled"}
                     >
                       <XCircle className="mr-2 h-4 w-4" />
@@ -393,14 +393,14 @@ export default function BookingDetailClient({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-neutral-400 hover:text-red-600 hover:bg-red-50"
+                      className="text-gray-400 hover:text-status-clay hover:bg-status-clay/5"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle className="text-red-600 flex items-center gap-2">
+                      <DialogTitle className="text-status-clay flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5" />
                         Delete Booking
                       </DialogTitle>
@@ -436,7 +436,7 @@ export default function BookingDetailClient({
                     <TabsTrigger
                       key={tab.value}
                       value={tab.value}
-                      className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-text-light transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-text data-[state=active]:shadow-sm"
+                      className="whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-gray-500 transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
                     >
                       {tab.label}
                     </TabsTrigger>
@@ -449,17 +449,17 @@ export default function BookingDetailClient({
 
         <TabsContent value="overview" className="space-y-6">
           {/* Status Timeline */}
-          <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <SectionHeading>Status timeline</SectionHeading>
             <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
               <div
-                className={`rounded-2xl border p-4 text-sm shadow-soft ${
+                className={`rounded-2xl border p-4 text-sm ${
                   booking.status === "Approved" ||
                   booking.status === "Confirmed" ||
                   booking.status === "InProgress" ||
                   booking.status === "Completed"
-                    ? "bg-secondary border-secondary text-secondary-foreground"
-                    : "bg-white border-border/70 text-text"
+                    ? "bg-primary/10 border-primary/20 text-gray-900"
+                    : "bg-white border-gray-200 text-gray-900"
                 }`}
               >
                 <p className="font-semibold">Approved</p>
@@ -473,12 +473,12 @@ export default function BookingDetailClient({
                 </p>
               </div>
               <div
-                className={`rounded-2xl border p-4 text-sm shadow-soft ${
+                className={`rounded-2xl border p-4 text-sm ${
                   booking.status === "Confirmed" ||
                   booking.status === "InProgress" ||
                   booking.status === "Completed"
-                    ? "bg-secondary border-secondary text-secondary-foreground"
-                    : "bg-white border-border/70 text-text"
+                    ? "bg-primary/10 border-primary/20 text-gray-900"
+                    : "bg-white border-gray-200 text-gray-900"
                 }`}
               >
                 <p className="font-semibold">Confirmed</p>
@@ -494,18 +494,18 @@ export default function BookingDetailClient({
                     : "Pending"}
                 </p>
                 {booking.deposit_reference && (
-                  <p className="mt-2 text-xs font-semibold text-green-700">
+                  <p className="mt-2 text-xs font-semibold text-status-forest">
                     Deposit Reference: {booking.deposit_reference}
                   </p>
                 )}
               </div>
               <div
-                className={`rounded-2xl border p-4 text-sm shadow-soft ${
+                className={`rounded-2xl border p-4 text-sm ${
                   !booking.is_overnight
-                    ? "bg-neutral text-text-light opacity-50 border-dashed border-border/70"
+                    ? "bg-gray-100 text-gray-400 opacity-50 border-dashed border-gray-200"
                     : rooms.length > 0
-                      ? "bg-secondary border-secondary text-secondary-foreground"
-                      : "bg-white border-border/70 text-text"
+                      ? "bg-primary/10 border-primary/20 text-gray-900"
+                      : "bg-white border-gray-200 text-gray-900"
                 }`}
               >
                 <p className="font-semibold">Room List received</p>
@@ -518,12 +518,12 @@ export default function BookingDetailClient({
                 </p>
               </div>
               <div
-                className={`rounded-2xl border p-4 text-sm shadow-soft ${
+                className={`rounded-2xl border p-4 text-sm ${
                   !booking.catering_required
-                    ? "bg-neutral text-text-light opacity-50 border-dashed border-border/70"
+                    ? "bg-gray-100 text-gray-400 opacity-50 border-dashed border-gray-200"
                     : mealJobs.length > 0
-                      ? "bg-secondary border-secondary text-secondary-foreground"
-                      : "bg-white border-border/70 text-text"
+                      ? "bg-primary/10 border-primary/20 text-gray-900"
+                      : "bg-white border-gray-200 text-gray-900"
                 }`}
               >
                 <p className="font-semibold">Catering Selections received</p>
@@ -549,7 +549,7 @@ export default function BookingDetailClient({
 
           <div className="grid gap-6 md:grid-cols-2">
             {/* Primary Contact */}
-            <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
               <SectionHeading
                 onEdit={
                   booking.status !== "Completed" &&
@@ -571,7 +571,7 @@ export default function BookingDetailClient({
             </section>
 
             {/* Booking Specifics */}
-            <section className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
               <SectionHeading
                 onEdit={
                   booking.status !== "Completed" &&
@@ -687,7 +687,7 @@ export default function BookingDetailClient({
               Export to PDF
             </Button>
           </div>
-          <div className="rounded-2xl border border-border/70 bg-gray-50/50 p-8 shadow-soft overflow-auto">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-8 shadow-sm overflow-auto">
             <div className="mx-auto max-w-[210mm] bg-white shadow-sm">
               <BookingSummary
                 ref={componentRef}
@@ -715,7 +715,7 @@ function SectionHeading({
 }) {
   return (
     <div className="mb-4 flex items-center justify-between">
-      <h3 className="text-sm font-semibold uppercase tracking-wide text-text-light">
+      <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
         {children}
       </h3>
       {onEdit && (
@@ -735,9 +735,9 @@ function SectionHeading({
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-border/50 pb-2 last:border-0 last:pb-0">
-      <span className="text-sm text-text-light">{label}</span>
-      <span className="text-sm font-medium text-text">{value}</span>
+    <div className="flex items-center justify-between border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-sm font-medium text-gray-900">{value}</span>
     </div>
   );
 }

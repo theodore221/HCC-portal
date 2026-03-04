@@ -128,8 +128,8 @@ export function SpacesTab({
 
       {/* Grid view — whole-centre or 5+ spaces */}
       {useGridView && reservedSpaceIds.size > 0 && (
-        <div className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-text-light">
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
             Manage Spaces
           </h3>
           <SpaceGridView
@@ -144,7 +144,7 @@ export function SpacesTab({
 
       {/* Card view — individual spaces (1–4) */}
       {!useGridView && reservedSpaceIds.size > 0 && (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {Array.from(reservationsBySpace.entries()).map(([spaceId, resList]) => {
             const currentSpace = spaces.find((s) => s.id === spaceId);
             const spaceConflicts = conflicts.filter((c) => c.space_id === spaceId);
@@ -175,7 +175,7 @@ export function SpacesTab({
           <Button
             variant="outline"
             size="sm"
-            className="gap-2 border-dashed w-full"
+            className="gap-2 border-2 border-dashed border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 lg:col-span-2"
             onClick={() => setIsAddSpaceOpen(true)}
             disabled={isPending}
           >
