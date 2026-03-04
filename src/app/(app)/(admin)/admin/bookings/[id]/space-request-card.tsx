@@ -1,14 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import {
-  AlertTriangle,
-  Users,
-  Calendar,
-  ExternalLink,
-  Ban,
-} from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -16,14 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type {
-  BookingWithMeta,
-  Space,
-  SpaceReservation,
-} from "@/lib/queries/bookings";
+import { SpaceDayGrid } from "./_components/space-day-grid";
+import { SpaceTimePicker } from "./_components/space-time-picker";
+import { ResolveConflictDialog } from "./_components/resolve-conflict-dialog";
+import type { BookingWithMeta, Space, SpaceReservation } from "@/lib/queries/bookings";
 import type { Views } from "@/lib/database.types";
 
 interface ConflictingBooking {
@@ -32,6 +25,7 @@ interface ConflictingBooking {
   status: string;
   contact_name: string | null;
   customer_name: string | null;
+  headcount: number;
 }
 
 interface SpaceRequestCardProps {
@@ -39,11 +33,40 @@ interface SpaceRequestCardProps {
   reservations: SpaceReservation[];
   space: Space | undefined;
   allSpaces: Space[];
+  booking: BookingWithMeta;
   conflicts: Views<"v_space_conflicts">[];
   conflictingBookings: ConflictingBooking[];
-  booking: BookingWithMeta;
   isPending: boolean;
   onSpaceChange: (reservationId: string, newSpaceId: string) => void;
+  onToggleDay: (date: string, isAdding: boolean) => void;
+  onRemove: () => void;
+  onUpdateTimes: (
+    dates: string[],
+    startTime: string | null,
+    endTime: string | null
+  ) => void;
+}
+
+function generateDates(arrival: string, departure: string): string[] {
+  const dates: string[] = [];
+  const [ay, am, ad] = arrival.split("-").map(Number);
+  const [dy, dm, dd] = departure.split("-").map(Number);
+  const end = new Date(dy!, dm! - 1, dd!);
+  for (const d = new Date(ay!, am! - 1, ad!); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+    dates.push(`${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
+  }
+  return dates;
+}
+
+function formatConflictDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y!, m! - 1, d!);
+  return date.toLocaleDateString("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 }
 
 export function SpaceRequestCard({
@@ -51,216 +74,232 @@ export function SpaceRequestCard({
   reservations,
   space,
   allSpaces,
+  booking,
   conflicts,
   conflictingBookings,
-  booking,
   isPending,
   onSpaceChange,
+  onToggleDay,
+  onRemove,
+  onUpdateTimes,
 }: SpaceRequestCardProps) {
-  // Conflict Logic
-  const spaceConflicts = conflicts.filter((c) => c.space_id === spaceId);
-  const hasConflict = spaceConflicts.length > 0;
+  const [resolveInfo, setResolveInfo] = useState<{
+    conflictingBookingId: string;
+    dates: string[];
+  } | null>(null);
 
-  // Identify the specific conflicting bookings
-  const blockers = conflictingBookings.filter((cb) =>
-    spaceConflicts.some((c) => c.conflicts_with === cb.id)
+  const allDates = generateDates(booking.arrival_date, booking.departure_date);
+  const reservedDates = new Set(reservations.map((r) => r.service_date));
+
+  // Group conflicts by conflicting booking ID
+  const conflictsByBooking = new Map<string, string[]>();
+  for (const c of conflicts) {
+    if (!c.conflicts_with || !c.service_date) continue;
+    if (!conflictsByBooking.has(c.conflicts_with)) {
+      conflictsByBooking.set(c.conflicts_with, []);
+    }
+    conflictsByBooking.get(c.conflicts_with)!.push(c.service_date);
+  }
+
+  const conflictDates = new Set(
+    conflicts.map((c) => c.service_date).filter(Boolean) as string[]
   );
+  const hasConflict = conflictsByBooking.size > 0;
 
-  // Capacity Logic
-  const capacity = space?.capacity || 0;
+  // Capacity
+  const capacity = space?.capacity ?? 0;
   const isOverCapacity = capacity > 0 && booking.headcount > capacity;
-  const capacityPercentage = Math.min(
-    100,
-    Math.round((booking.headcount / capacity) * 100)
-  );
+
+  // Time display from first reservation
+  const firstRes = reservations[0];
+  const startTime = firstRes?.start_time ?? null;
+  const endTime = firstRes?.end_time ?? null;
+
+  // Find conflicting booking details for the resolve dialog
+  const resolveConflict = resolveInfo
+    ? conflictingBookings.find((cb) => cb.id === resolveInfo.conflictingBookingId)
+    : null;
 
   return (
-    <Card
-      className={cn(
-        "overflow-hidden border transition-all duration-200 rounded-2xl shadow-soft",
-        hasConflict
-          ? "border-red-200 bg-red-50/30"
-          : isOverCapacity
-          ? "border-amber-200 bg-amber-50/30"
-          : "border-border/70 bg-white/90"
-      )}
-    >
-      <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row">
-          {/* Left: The Request Details */}
-          <div className="flex-1 p-6">
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-gray-900 text-lg">
-                    {space?.name}
-                  </h3>
-                  {hasConflict && (
-                    <Badge variant="destructive" className="rounded-full px-2">
-                      Conflict
-                    </Badge>
-                  )}
-                  {!hasConflict && isOverCapacity && (
-                    <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200 rounded-full px-2">
-                      Over Capacity
-                    </Badge>
-                  )}
-                  {!hasConflict && !isOverCapacity && (
-                    <Badge
-                      variant="outline"
-                      className="text-gray-500 border-gray-200 bg-gray-50 rounded-full px-2"
-                    >
-                      Available
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  Requested for{" "}
-                  <span className="font-medium text-gray-700">
-                    {reservations.length}{" "}
-                    {reservations.length === 1 ? "day" : "days"}
-                  </span>
-                </p>
-              </div>
-
-              {/* Space Switcher */}
-              <div className="w-[200px]">
-                <label className="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-1.5 block">
-                  Switch Space
-                </label>
-                <Select
-                  disabled={isPending}
-                  value={spaceId}
-                  onValueChange={(newSpaceId) => {
-                    reservations.forEach((res) =>
-                      onSpaceChange(res.id, newSpaceId)
-                    );
-                  }}
+    <>
+      <Card
+        className={cn(
+          "border rounded-2xl shadow-soft overflow-hidden",
+          hasConflict
+            ? "border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)]"
+            : isOverCapacity
+            ? "border-amber-200"
+            : "border-border/70 bg-white/90"
+        )}
+      >
+        <CardContent className="p-5 space-y-4">
+          {/* Header row */}
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <h3 className="font-bold text-gray-900 text-base truncate">
+                {space?.name ?? "Unknown Space"}
+              </h3>
+              {hasConflict ? (
+                <Badge className="bg-[color-mix(in_srgb,var(--status-clay)_10%,transparent)] text-[var(--status-clay)] border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)] rounded-full px-2 text-xs flex-shrink-0">
+                  Conflict
+                </Badge>
+              ) : isOverCapacity ? (
+                <Badge className="bg-amber-50 text-amber-700 border-amber-200 rounded-full px-2 text-xs flex-shrink-0">
+                  Over Capacity
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="text-gray-500 border-gray-200 bg-gray-50 rounded-full px-2 text-xs flex-shrink-0"
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select space" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white">
-                    {allSpaces.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                        {s.capacity && (
-                          <span className="ml-2 text-muted-foreground">
-                            (Cap: {s.capacity})
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Capacity Visualization */}
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="font-medium text-gray-600 flex items-center gap-1.5">
-                  <Users className="size-3.5" />
-                  Capacity Usage
-                </span>
+                  Available
+                </Badge>
+              )}
+              {capacity > 0 && (
                 <span
                   className={cn(
-                    "font-semibold",
-                    isOverCapacity ? "text-red-600" : "text-gray-900"
+                    "text-xs flex items-center gap-0.5 flex-shrink-0",
+                    isOverCapacity ? "text-amber-600 font-medium" : "text-gray-400"
                   )}
                 >
-                  {booking.headcount} / {capacity || "∞"} Guests
+                  <Users className="size-3" />
+                  {booking.headcount}/{capacity}
                 </span>
-              </div>
-              <div className="h-2 w-full bg-neutral rounded-full overflow-hidden border border-black/5">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-500",
-                    isOverCapacity ? "bg-red-500" : "bg-primary"
-                  )}
-                  style={{ width: `${capacityPercentage}%` }}
-                />
-              </div>
-              {isOverCapacity && (
-                <p className="text-xs text-red-600 mt-2 flex items-center gap-1.5 bg-white/50 p-2 rounded border border-red-100">
-                  <AlertTriangle className="size-3.5" />
-                  This group exceeds the recommended limit for {space?.name}.
-                  Consider moving to a larger space or approving as an
-                  exception.
-                </p>
               )}
+            </div>
+
+            {/* Space switcher */}
+            <div className="w-[170px] flex-shrink-0">
+              <Select
+                disabled={isPending}
+                value={spaceId}
+                onValueChange={(newSpaceId) => {
+                  reservations.forEach((res) => onSpaceChange(res.id, newSpaceId));
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Switch space" />
+                </SelectTrigger>
+                <SelectContent className="bg-white">
+                  {allSpaces.map((s) => (
+                    <SelectItem key={s.id} value={s.id} className="text-xs">
+                      {s.name}
+                      {s.capacity != null && s.capacity > 0 && (
+                        <span className="ml-1 text-gray-400">(Cap: {s.capacity})</span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Right: The Conflict Context (if any) */}
+          {/* Day grid */}
+          <div className="overflow-x-auto -mx-1 px-1">
+            <SpaceDayGrid
+              dates={allDates}
+              reservedDates={reservedDates}
+              conflictDates={conflictDates}
+              isPending={isPending}
+              onToggle={onToggleDay}
+            />
+          </div>
+
+          {/* Time picker */}
+          {reservations.length > 0 && (
+            <SpaceTimePicker
+              reservedDates={reservations.map((r) => r.service_date)}
+              startTime={startTime}
+              endTime={endTime}
+              isPending={isPending}
+              onSave={(start, end) =>
+                onUpdateTimes(
+                  reservations.map((r) => r.service_date),
+                  start,
+                  end
+                )
+              }
+            />
+          )}
+
+          {/* Conflict list */}
           {hasConflict && (
-            <div className="relative md:w-[380px] border-t md:border-t-0 md:border-l border-red-100 bg-red-50/50 p-6">
-              <div className="absolute top-6 right-6">
-                <Ban className="h-16 w-16 text-red-100 -rotate-12" />
+            <div className="space-y-2 rounded-lg border border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)] bg-[color-mix(in_srgb,var(--status-clay)_5%,transparent)] p-3">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--status-clay)]">
+                <AlertTriangle className="size-3.5" />
+                {conflictsByBooking.size} conflict
+                {conflictsByBooking.size !== 1 ? "s" : ""}
               </div>
-
-              <h4 className="text-xs font-bold uppercase tracking-wider text-red-800 mb-4 flex items-center gap-2">
-                <AlertTriangle className="size-4" />
-                Blocked By
-              </h4>
-
-              <div className="space-y-3 relative z-10">
-                {blockers.map((blocker) => (
-                  <div
-                    key={blocker.id}
-                    className="bg-white rounded-xl p-3 shadow-sm border border-red-100"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-semibold text-sm text-gray-900">
-                          {blocker.customer_name ||
-                            blocker.contact_name ||
-                            "Unknown Group"}
-                        </p>
-                        <p className="text-xs text-gray-500 font-mono">
-                          {blocker.reference}
-                        </p>
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] px-1.5 h-5"
-                      >
-                        {blocker.status}
-                      </Badge>
-                    </div>
-
-                    <div className="text-xs text-gray-600 bg-neutral rounded p-2 mb-2">
-                      <p className="flex items-center gap-1.5">
-                        <Calendar className="size-3" />
-                        {
-                          spaceConflicts.filter(
-                            (c) => c.conflicts_with === blocker.id
-                          ).length
-                        }{" "}
-                        overlap dates
-                      </p>
-                    </div>
-
-                    <Button
-                      asChild
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between text-xs h-7 hover:bg-gray-50 text-gray-500"
+              {Array.from(conflictsByBooking.entries()).map(
+                ([conflictBookingId, dates]) => {
+                  const blocker = conflictingBookings.find(
+                    (cb) => cb.id === conflictBookingId
+                  );
+                  if (!blocker) return null;
+                  const name =
+                    blocker.customer_name ||
+                    blocker.contact_name ||
+                    "Unknown Group";
+                  return (
+                    <div
+                      key={conflictBookingId}
+                      className="flex flex-wrap items-center justify-between gap-2 text-sm"
                     >
-                      <Link
-                        href={`/admin/bookings/${blocker.id}`}
-                        target="_blank"
+                      <span className="text-gray-700">
+                        <span className="font-medium">{name}</span>{" "}
+                        <span className="text-gray-500">({blocker.status})</span>{" "}
+                        —{" "}
+                        <span className="text-gray-500">
+                          {dates.map(formatConflictDate).join(", ")}
+                        </span>
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-xs px-2 border-[color-mix(in_srgb,var(--status-clay)_20%,transparent)] text-[var(--status-clay)] hover:bg-[color-mix(in_srgb,var(--status-clay)_5%,transparent)] flex-shrink-0"
+                        onClick={() =>
+                          setResolveInfo({ conflictingBookingId: conflictBookingId, dates })
+                        }
                       >
-                        View booking <ExternalLink className="size-3 ml-2" />
-                      </Link>
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                        Resolve
+                      </Button>
+                    </div>
+                  );
+                }
+              )}
             </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+
+          {/* Remove button */}
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-gray-400 hover:text-red-600 hover:bg-red-50 gap-1"
+              onClick={onRemove}
+              disabled={isPending}
+            >
+              <Trash2 className="size-3" />
+              Remove Space
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resolve conflict dialog */}
+      {resolveConflict && resolveInfo && (
+        <ResolveConflictDialog
+          open={!!resolveInfo}
+          onOpenChange={(open) => {
+            if (!open) setResolveInfo(null);
+          }}
+          booking={booking}
+          spaceId={spaceId}
+          spaceName={space?.name ?? ""}
+          conflictDates={resolveInfo.dates}
+          conflictingBooking={resolveConflict}
+        />
+      )}
+    </>
   );
 }

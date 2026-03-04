@@ -34,7 +34,7 @@ export default async function StaffBookingDetail({
     { data: allSpaces },
     { data: allRooms },
     { data: bookingReservations },
-    { data: potentialConflictingReservations },
+    { data: rawConflicts },
     { data: roomingGroups },
     { data: roomAssignmentsForOthers },
   ] = await Promise.all([
@@ -52,12 +52,11 @@ export default async function StaffBookingDetail({
       .from("space_reservations")
       .select("*")
       .eq("booking_id", booking.id),
+    // Fetch space conflicts from enriched view
     supabase
-      .from("space_reservations")
-      .select("*, booking:bookings(status)")
-      .gte("service_date", booking.arrival_date)
-      .lte("service_date", booking.departure_date)
-      .neq("booking_id", booking.id), // Exclude current booking
+      .from("v_space_conflicts")
+      .select("*")
+      .eq("booking_id", booking.id),
     supabase.from("rooming_groups").select("*").eq("booking_id", booking.id),
     // Fetch room assignments for OTHER bookings to detect conflicts
     supabase
@@ -70,60 +69,14 @@ export default async function StaffBookingDetail({
 
   const mealJobs = enrichMealJobs(mealJobsRaw, [booking]);
 
-  // 2. Compute Conflicts in App Layer
-  const conflicts: Views<"v_space_conflicts">[] = [];
   const myReservations = (bookingReservations as SpaceReservation[]) ?? [];
-  const othersReservations =
-    (
-      potentialConflictingReservations as (SpaceReservation & {
-        booking: { status: string } | null;
-      })[]
-    )?.filter((res) => res.booking?.status !== "Cancelled") ?? [];
 
-  for (const myRes of myReservations) {
-    for (const otherRes of othersReservations) {
-      // Must be same space and same day
-      if (
-        myRes.space_id !== otherRes.space_id ||
-        myRes.service_date !== otherRes.service_date
-      ) {
-        continue;
-      }
-
-      // Check time overlap
-      // If times are null, assume full day (00:00 - 23:59)
-      const myStart = myRes.start_time ?? "00:00";
-      const myEnd = myRes.end_time ?? "23:59";
-      const otherStart = otherRes.start_time ?? "00:00";
-      const otherEnd = otherRes.end_time ?? "23:59";
-
-      if (myStart < otherEnd && otherStart < myEnd) {
-        // Priority Logic:
-        // If I am Confirmed/Approved, I only care about other Confirmed/Approved bookings.
-        // If I am Pending, I care about EVERYONE.
-
-        const myStatus = booking.status;
-        const otherStatus = otherRes.booking?.status;
-
-        const iAmPriority =
-          myStatus === "Confirmed" ||
-          myStatus === "Approved";
-        const otherIsPending = otherStatus === "Pending";
-
-        if (iAmPriority && otherIsPending) {
-          // Ignore this conflict
-          continue;
-        }
-
-        conflicts.push({
-          booking_id: booking.id,
-          space_id: myRes.space_id,
-          service_date: myRes.service_date,
-          conflicts_with: otherRes.booking_id,
-        });
-      }
-    }
-  }
+  // Priority filter: Confirmed/Approved bookings ignore Pending conflicts
+  const conflicts = ((rawConflicts as Views<"v_space_conflicts">[]) ?? []).filter((c) => {
+    const iAmPriority =
+      booking.status === "Confirmed" || booking.status === "Approved";
+    return !(iAmPriority && c.other_status === "Pending");
+  });
 
   // 3. Fetch details for conflicting bookings (spaces)
   const conflictingBookingIds = Array.from(
@@ -135,7 +88,7 @@ export default async function StaffBookingDetail({
   if (conflictingBookingIds.length > 0) {
     const { data } = await supabase
       .from("bookings")
-      .select("id, reference, status, contact_name, customer_name")
+      .select("id, reference, status, contact_name, customer_name, headcount")
       .in("id", conflictingBookingIds);
     if (data) {
       conflictingBookingsData = data;

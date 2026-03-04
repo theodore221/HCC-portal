@@ -199,6 +199,111 @@ export async function recordDeposit(bookingId: string, depositReference?: string
   getBookingCacheTags(bookingId).forEach(tag => revalidateTag(tag, {}));
 }
 
+// ==================== Space Management Actions ====================
+
+export async function addSpaceToBooking(
+  bookingId: string,
+  spaceId: string,
+  dates: string[]
+) {
+  const supabase: any = await sbServer();
+
+  const rows = dates.map((date) => ({
+    booking_id: bookingId,
+    space_id: spaceId,
+    service_date: date,
+    start_time: null,
+    end_time: null,
+    status: "Held" as const,
+  }));
+
+  const { error } = await supabase
+    .from("space_reservations")
+    .upsert(rows, { onConflict: "booking_id,space_id,service_date" });
+
+  if (error) throw new Error(`Failed to add space: ${error.message}`);
+
+  revalidatePath("/admin/bookings/[id]", "page");
+  getSpaceReservationCacheTags(bookingId).forEach((tag) => revalidateTag(tag, {}));
+}
+
+export async function removeSpaceFromBooking(
+  bookingId: string,
+  spaceId: string
+) {
+  const supabase: any = await sbServer();
+
+  const { error } = await supabase
+    .from("space_reservations")
+    .delete()
+    .eq("booking_id", bookingId)
+    .eq("space_id", spaceId);
+
+  if (error) throw new Error(`Failed to remove space: ${error.message}`);
+
+  revalidatePath("/admin/bookings/[id]", "page");
+  getSpaceReservationCacheTags(bookingId).forEach((tag) => revalidateTag(tag, {}));
+}
+
+export async function toggleReservationDays(
+  bookingId: string,
+  spaceId: string,
+  addDates: string[],
+  removeDates: string[]
+) {
+  const supabase: any = await sbServer();
+
+  if (removeDates.length > 0) {
+    const { error } = await supabase
+      .from("space_reservations")
+      .delete()
+      .eq("booking_id", bookingId)
+      .eq("space_id", spaceId)
+      .in("service_date", removeDates);
+    if (error) throw new Error(`Failed to remove days: ${error.message}`);
+  }
+
+  if (addDates.length > 0) {
+    const rows = addDates.map((date) => ({
+      booking_id: bookingId,
+      space_id: spaceId,
+      service_date: date,
+      start_time: null,
+      end_time: null,
+      status: "Held" as const,
+    }));
+    const { error } = await supabase
+      .from("space_reservations")
+      .upsert(rows, { onConflict: "booking_id,space_id,service_date" });
+    if (error) throw new Error(`Failed to add days: ${error.message}`);
+  }
+
+  revalidatePath("/admin/bookings/[id]", "page");
+  getSpaceReservationCacheTags(bookingId).forEach((tag) => revalidateTag(tag, {}));
+}
+
+export async function updateReservationTimes(
+  bookingId: string,
+  spaceId: string,
+  dates: string[],
+  startTime: string | null,
+  endTime: string | null
+) {
+  const supabase: any = await sbServer();
+
+  const { error } = await supabase
+    .from("space_reservations")
+    .update({ start_time: startTime, end_time: endTime })
+    .eq("booking_id", bookingId)
+    .eq("space_id", spaceId)
+    .in("service_date", dates);
+
+  if (error) throw new Error(`Failed to update reservation times: ${error.message}`);
+
+  revalidatePath("/admin/bookings/[id]", "page");
+  getSpaceReservationCacheTags(bookingId).forEach((tag) => revalidateTag(tag, {}));
+}
+
 export async function updateSpaceReservation(
   reservationId: string,
   newSpaceId: string

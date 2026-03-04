@@ -488,6 +488,11 @@ export type Database = {
         Row: {
           booking_id: string | null;
           conflicts_with: string | null;
+          my_end: string | null;
+          my_start: string | null;
+          other_end: string | null;
+          other_start: string | null;
+          other_status: string | null;
           service_date: string | null;
           space_id: string | null;
         };

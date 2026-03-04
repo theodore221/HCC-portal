@@ -110,6 +110,11 @@ npm run email:dev        # Preview email templates
 ### Cache Tags
 Defined in `src/lib/cache.ts`: `BOOKINGS`, `MEAL_JOBS`, `SPACE_RESERVATIONS`, `ROOM_ASSIGNMENTS`, `DIETARY_PROFILES`, `CATERERS`, `MENU_ITEMS`, `PROFILES`, `ROOMS`, `SPACES`
 
+### Timezone & Dates
+- **All dates are Melbourne time (AEDT/AEST, UTC+10/+11).** The venue and all bookings operate in this timezone.
+- **Never use `date.toISOString().split("T")[0]`** to produce `YYYY-MM-DD` strings — `toISOString()` converts to UTC, which shifts the date back one day for Australian users. Always use local parts: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`.
+- Date strings stored in the DB (`service_date`, `arrival_date`, `departure_date`) are plain `YYYY-MM-DD` with no timezone — treat them as local calendar dates, never parse with `new Date("YYYY-MM-DD")` without appending `T00:00:00`.
+
 ### UI Patterns
 - Every async route needs `loading.tsx` with HCC logo + skeleton blocks
 - Forms validate client-side before submission

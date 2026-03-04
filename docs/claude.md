@@ -250,6 +250,48 @@ Before committing UI changes, test on:
 - Error: Red (destructive) toast with error details
 - Auto-close success toasts, keep errors visible until dismissed
 
+## Date & Time Handling
+
+The application runs in **Melbourne, Australia (AEDT/AEST — UTC+10 or UTC+11 depending on DST)**. All booking dates are local calendar dates with no embedded timezone.
+
+### The UTC Shift Bug — Never Do This
+
+```ts
+// ❌ WRONG — toISOString() outputs UTC, shifts date back 1 day in AEDT
+const dateStr = new Date("2026-01-14").toISOString().split("T")[0]; // "2026-01-13"
+
+// ❌ WRONG — new Date("YYYY-MM-DD") parses as UTC midnight
+const d = new Date("2026-01-14"); // 01:00 AM AEDT → shows as Jan 13 locally
+```
+
+### Always Use Local Date Parts
+
+```ts
+// ✅ CORRECT — iterate and format using local getters
+function generateDates(arrival: string, departure: string): string[] {
+  const dates: string[] = [];
+  const [ay, am, ad] = arrival.split("-").map(Number);
+  const [dy, dm, dd] = departure.split("-").map(Number);
+  const end = new Date(dy!, dm! - 1, dd!);
+  for (const d = new Date(ay!, am! - 1, ad!); d <= end; d.setDate(d.getDate() + 1)) {
+    const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+    dates.push(`${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
+  }
+  return dates;
+}
+
+// ✅ CORRECT — parse a YYYY-MM-DD string into a local Date
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y!, m! - 1, d!); // local midnight, no UTC shift
+}
+```
+
+### Display Formatting
+Use `toLocaleDateString("en-AU", { ... })` on local `Date` objects (constructed with the pattern above) — this respects Melbourne locale automatically.
+
+---
+
 ## Best Practices Summary
 
 1. **Mobile-first**: Start with mobile layout, enhance for larger screens

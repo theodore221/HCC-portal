@@ -77,6 +77,7 @@ export default function BookingDetailClient({
     status: string;
     contact_name: string | null;
     customer_name: string | null;
+    headcount: number;
   }[];
   roomConflicts: RoomConflict[];
   roomConflictingBookings: {
