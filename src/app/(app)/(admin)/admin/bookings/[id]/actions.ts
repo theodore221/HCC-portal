@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { redirect } from "next/navigation";
 import { sbServer } from "@/lib/supabase-server";
 import type { BookingStatus } from "@/lib/queries/bookings";
 
@@ -178,7 +177,6 @@ export async function deleteBooking(bookingId: string) {
   revalidateTag(CACHE_TAGS.SPACE_RESERVATIONS, {});
   revalidateTag(CACHE_TAGS.ROOM_ASSIGNMENTS, {});
   revalidateTag(CACHE_TAGS.DIETARY_PROFILES, {});
-  redirect("/admin/bookings");
 }
 
 export async function recordDeposit(bookingId: string, depositReference?: string) {

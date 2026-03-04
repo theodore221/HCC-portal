@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 
 import { useTransition, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -154,6 +155,7 @@ export default function BookingDetailClient({
   mealAttendance: MealAttendanceMap;
   validationChecks: BookingValidationChecks;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [cancelReason, setCancelReason] = useState<string>("");
   const [isCancelOpen, setIsCancelOpen] = useState(false);
@@ -201,6 +203,7 @@ export default function BookingDetailClient({
           description:
             "The booking and all related records have been permanently deleted.",
         });
+        router.push("/admin/bookings");
       } catch (error) {
         toast.error("Error", {
           description: "Failed to delete booking. Please try again.",
