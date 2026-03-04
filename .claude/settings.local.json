@@ -24,7 +24,11 @@
       "WebSearch",
       "Bash(git add CLAUDE.md \"docs/design-system.md\" \"docs/frontend/\" \"src/app/globals.css\" && git add \"src/app/\\(app\\)/\\(admin\\)/admin/bookings/client.tsx\" \"src/app/\\(app\\)/\\(admin\\)/admin/enquiries/client.tsx\" \"src/components/ui/status-chip.tsx\" \"src/components/ui/enquiry-status-chip.tsx\")",
       "Bash(git add \\\\\n  CLAUDE.md \\\\\n  docs/patterns.md \\\\\n  \"src/app/\\(app\\)/\\(admin\\)/admin/bookings/[id]/actions.ts\" \\\\\n  \"src/app/\\(app\\)/\\(portal\\)/portal/new-booking/actions.ts\" \\\\\n  \"src/app/\\(public\\)/booking/custom/[token]/actions.ts\" \\\\\n  \"src/app/\\(public\\)/booking/new/_components/accommodation-step.tsx\" \\\\\n  \"src/app/\\(public\\)/booking/new/_components/event-step.tsx\" \\\\\n  \"src/app/\\(public\\)/booking/new/_components/review-step.tsx\" \\\\\n  \"src/app/\\(public\\)/booking/new/actions.ts\" \\\\\n  \"src/app/\\(public\\)/booking/new/booking-form.tsx\" \\\\\n  \"src/lib/validation/booking.ts\" \\\\\n  \"src/lib/booking-child-records.ts\" \\\\\n  \"infra/supabase/migration/060_drop_upsert_booking_snapshot.sql\")",
-      "mcp__playwright__browser_navigate"
+      "mcp__playwright__browser_navigate",
+      "mcp__supabase__list_tables"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }
