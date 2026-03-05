@@ -24,6 +24,15 @@ export const CACHE_TAGS = {
   DIETARY_PROFILES: "dietary-profiles",
   CATERING_OPTIONS: "catering-options",
   ENQUIRIES: "enquiries",
+  // Rostering
+  SHIFTS: "shifts",
+  SHIFT_ASSIGNMENTS: "shift-assignments",
+  ROSTER_JOBS: "roster-jobs",
+  ROSTER_TASKS: "roster-tasks",
+  TIMESHEETS: "timesheets",
+  UNAVAILABILITY_PERIODS: "unavailability-periods",
+  WEEKLY_UNAVAILABILITY: "weekly-unavailability",
+  STAFF_RECORDS: "staff-records",
 } as const;
 
 /**
@@ -172,3 +181,25 @@ export const getCateringOptions = unstable_cache(
     revalidate: 300, // Revalidate after 5 minutes
   }
 );
+
+/**
+ * Helper function to get cache tags for shifts
+ */
+export const getShiftCacheTags = (shiftId?: string): string[] => {
+  const tags: string[] = [CACHE_TAGS.SHIFTS, CACHE_TAGS.SHIFT_ASSIGNMENTS];
+  if (shiftId) {
+    tags.push(`${CACHE_TAGS.SHIFTS}:${shiftId}`);
+  }
+  return tags;
+};
+
+/**
+ * Helper function to get cache tags for timesheets
+ */
+export const getTimesheetCacheTags = (staffId?: string): string[] => {
+  const tags: string[] = [CACHE_TAGS.TIMESHEETS];
+  if (staffId) {
+    tags.push(`${CACHE_TAGS.TIMESHEETS}:${staffId}`);
+  }
+  return tags;
+};

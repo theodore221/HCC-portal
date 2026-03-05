@@ -147,6 +147,25 @@ toast.success("Changes saved", { id });
 | Section header | `size-5` | 20px |
 | Empty state | `size-8` to `size-12` | 32–48px |
 
+## Hover-Reveal Actions
+
+For dense lists where showing action buttons on every row creates clutter, hide them by default and reveal on hover. Add `group` to the row, `opacity-0 group-hover:opacity-100 focus:opacity-100` to the button.
+
+```jsx
+<div className="group flex items-center justify-between px-4 py-2.5 hover:bg-gray-50">
+  <span>{item.name}</span>
+  <Button
+    variant="ghost"
+    size="icon-sm"
+    className="text-gray-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+  >
+    <MoreVertical className="size-3.5" />
+  </Button>
+</div>
+```
+
+`focus:opacity-100` is required for keyboard navigation and touch devices.
+
 ## Animation & Motion
 
 Keep motion subtle:

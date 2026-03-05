@@ -107,6 +107,35 @@ border-status-{x}/20   bg-status-{x}/10   text-status-{x}
 | `shadow-sm` | Cards — standard |
 | `shadow-lg` | Dropdown content, popovers — elevated |
 
+## Rostering Module — Status Token Mappings
+
+These extend the earth-toned status palette for rostering-specific statuses. Use `<RosteringStatusChip>` from `@/components/ui/rostering-status-chip`, never hard-code colors.
+
+### Shift statuses
+| Status | Token | Character |
+|---|---|---|
+| `Draft` | `status-stone` | Gray — unpublished |
+| `Published` | `status-sage` | Green — live |
+| `InProgress` | `status-slate` | Teal — happening now |
+| `Completed` | `status-forest` | Dark green — finished |
+| `Cancelled` | `status-clay` | Red — cancelled |
+
+### Assignment statuses (per staff member on a shift)
+| Status | Token | Character |
+|---|---|---|
+| `Pending` | `status-ochre` | Needs attention |
+| `Accepted` | `status-forest` | Confirmed |
+| `Declined` | `status-clay` | Declined |
+| `NoResponse` | `status-stone` | Missed deadline |
+
+### Timesheet statuses
+| Status | Token | Character |
+|---|---|---|
+| `Draft` | `status-stone` | Being edited |
+| `Submitted` | `status-ochre` | Awaiting review |
+| `Approved` | `status-forest` | Admin approved |
+| `Rejected` | `status-clay` | Needs correction |
+
 ## Semantic CSS Tokens (globals.css)
 
 | Token | Value | Mapped to |

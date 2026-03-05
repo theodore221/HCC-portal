@@ -12,6 +12,7 @@ const navItems = [
   { href: "/staff/schedule", label: "Schedule" },
   { href: "/staff/rooms", label: "Rooms" },
   { href: "/staff/kitchen", label: "Kitchen" },
+  { href: "/staff/rostering", label: "Rostering" },
 ];
 
 export default async function StaffLayout({

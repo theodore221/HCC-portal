@@ -252,6 +252,17 @@ Compact day-toggle button grid for space reservations. Buttons: `w-9 h-9 sm:w-10
 </div>
 ```
 
+## Color-Accented Card
+
+Cards with a data-driven colored left border (e.g. roster job color). Requires `overflow-hidden` so the radius clips correctly.
+
+```jsx
+<div
+  className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden"
+  style={{ borderLeftColor: item.color, borderLeftWidth: "4px" }}
+>
+```
+
 ## Inline Time Picker
 
 Compact time range editor that collapses to a single display line:

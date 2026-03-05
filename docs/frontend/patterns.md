@@ -202,6 +202,17 @@ Outer wrapper: `border border-gray-200 rounded-xl overflow-hidden`.
 
 Do NOT add `shadow-*` to individual timeline cards — they live inside a shadowed parent.
 
+## Split-Panel Layout (List + Detail)
+
+Fixed-width list on the left, flex-1 detail on the right. Always gate behind `lg:` — stack single-column on mobile. On mobile, tapping an item replaces the list view with the detail view.
+
+```jsx
+<div className="grid grid-cols-1 gap-6 lg:grid-cols-[420px_1fr]">
+  <div className="space-y-4">{/* list */}</div>
+  <div>{/* detail or empty state */}</div>
+</div>
+```
+
 ## Sticky Column Table
 
 Grid matrix with a frozen first column for space/room grids:

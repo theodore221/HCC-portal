@@ -7,6 +7,7 @@ import {
   Bed,
   Bell,
   Calendar,
+  ClipboardList,
   Home,
   LayoutDashboard,
   Menu,
@@ -198,6 +199,14 @@ function getIconForItem(href: string, label: string) {
       return Settings;
     case "staff":
       return Users;
+    case "rostering":
+      return ClipboardList;
+    case "schedule":
+      return Calendar;
+    case "rooms":
+      return Bed;
+    case "audit":
+      return Settings;
     default:
       return Home;
   }

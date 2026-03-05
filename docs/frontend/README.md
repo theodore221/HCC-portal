@@ -40,4 +40,5 @@ Do not add more green than this. If you find yourself reaching for `text-primary
 | `patterns.md` | Page composition: headers, stat cards, toolbars, forms, data display |
 | `states.md` | Interactive states, loading, feedback, empty states, animation |
 | `responsive.md` | Breakpoints, container patterns, component rules, testing checklist |
+| `rostering.md` | Rostering module: layouts, status chips, job cards, ⋮ menus, audit findings |
 | `migration.md` | Olive→gray mapping, migrated pages, known gaps |
