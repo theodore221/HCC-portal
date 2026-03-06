@@ -19,7 +19,7 @@ export function StaffMealCard({ job }: StaffMealCardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border/70 bg-white/90 p-4 shadow-soft space-y-3"
+        "rounded-2xl border border-gray-200 bg-white p-4 shadow-soft space-y-3"
       )}
     >
       {/* Header: Meal Type + Time */}
@@ -33,22 +33,22 @@ export function StaffMealCard({ job }: StaffMealCardProps) {
               {job.timeRangeLabel.split("•")[1]?.trim() || job.timeRangeLabel}
             </span>
           </div>
-          <p className="text-sm text-olive-700 mt-1">{job.groupName}</p>
+          <p className="text-sm text-gray-600 mt-1">{job.groupName}</p>
         </div>
       </div>
 
       {/* Divider */}
-      <div className="border-b border-border/50" />
+      <div className="border-b border-gray-100" />
 
       {/* Serves + Menu */}
       <div className="space-y-2">
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1.5">
-            <Users className="h-4 w-4 text-olive-600" />
+            <Users className="h-4 w-4 text-gray-400" />
             <span className="font-medium text-text">{job.countsTotal} serves</span>
           </div>
           <div className="flex items-center gap-1.5 flex-1">
-            <UtensilsCrossed className="h-4 w-4 text-olive-600" />
+            <UtensilsCrossed className="h-4 w-4 text-gray-400" />
             <span className="text-text truncate">{job.menu.join(", ")}</span>
           </div>
         </div>

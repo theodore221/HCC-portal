@@ -84,7 +84,7 @@ export function MealServesDisplay({
       )}
     >
       <div className="flex items-center gap-1">
-        <span className="text-2xl font-bold text-olive-900">{count}</span>
+        <span className="text-2xl font-bold text-gray-900">{count}</span>
         {editable && !disabled && (
           <Pencil className="size-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         )}

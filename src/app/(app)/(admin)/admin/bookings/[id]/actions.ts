@@ -7,6 +7,8 @@ import type { BookingStatus } from "@/lib/queries/bookings";
 import { ensureCustomerProfile } from "@/lib/auth/admin-actions";
 import { sendBookingApprovedEmail } from "@/lib/email/send-booking-approved";
 import { enrichMealJobs } from "@/lib/catering";
+import { sbAdmin } from "@/lib/supabase-admin";
+import { sendCateringJobAssigned } from "@/lib/email/send-catering-job-assigned";
 import {
   CACHE_TAGS,
   getBookingCacheTags,
@@ -398,6 +400,36 @@ export async function assignCaterer(
   if (error) throw new Error(`Failed to assign caterer: ${error.message}`);
   revalidatePath("/admin/bookings/[id]", "page");
   revalidateTag(CACHE_TAGS.MEAL_JOBS, {});
+
+  // Fire-and-forget: notify caterer of assignment
+  if (catererId) {
+    void (async () => {
+      try {
+        const admin = sbAdmin();
+        // Get meal job context
+        const { data: job } = await admin
+          .from("meal_jobs")
+          .select("id, meal, group_name, booking_id, service_date, counts_total, bookings(display_name), caterers(name, email)")
+          .eq("id", mealJobId)
+          .single();
+
+        if (!(job as any)?.caterers?.email) return;
+
+        const groupName = (job as any).bookings?.display_name ?? (job as any).group_name ?? "Booking";
+        await sendCateringJobAssigned({
+          mealJobId,
+          catererEmail: (job as any).caterers.email,
+          catererName: (job as any).caterers.name,
+          groupName,
+          mealType: (job as any).meal ?? "Meal",
+          serviceDate: (job as any).service_date,
+          headcount: (job as any).counts_total ?? 0,
+        });
+      } catch (err) {
+        console.error("Failed to send caterer assignment email:", err);
+      }
+    })();
+  }
 }
 
 export async function updateMealJobItems(

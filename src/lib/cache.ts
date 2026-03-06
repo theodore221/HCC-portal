@@ -33,6 +33,9 @@ export const CACHE_TAGS = {
   UNAVAILABILITY_PERIODS: "unavailability-periods",
   WEEKLY_UNAVAILABILITY: "weekly-unavailability",
   STAFF_RECORDS: "staff-records",
+  // Catering
+  CATERING_NOTIFICATIONS: "catering-notifications",
+  DIETARY_LABELS: "dietary-labels",
 } as const;
 
 /**

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Coffee, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PercolatedCoffeeToggleProps {
@@ -20,6 +20,7 @@ export function PercolatedCoffeeToggle({
   onToggle,
   disabled = false,
 }: PercolatedCoffeeToggleProps) {
+  const switchId = useId();
   const [isChecked, setIsChecked] = useState(checked);
   const [qty, setQty] = useState(quantity?.toString() ?? "20");
   const [isPending, setIsPending] = useState(false);
@@ -65,13 +66,14 @@ export function PercolatedCoffeeToggle({
     >
       <div className="flex items-center gap-2">
         <Switch
-          id="percolated-coffee"
+          id={switchId}
           checked={isChecked}
           onCheckedChange={handleToggle}
           disabled={disabled || isPending}
         />
-        <Label htmlFor="percolated-coffee" className="text-sm text-text-light">
-          ☕ Percolated Coffee
+        <Label htmlFor={switchId} className="flex items-center gap-1.5 text-sm text-gray-600">
+          <Coffee className="size-3.5" />
+          Percolated Coffee
         </Label>
       </div>
       {isChecked && (

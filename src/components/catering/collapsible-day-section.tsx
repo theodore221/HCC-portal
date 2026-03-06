@@ -31,14 +31,14 @@ export function CollapsibleDaySection({
       {/* Collapsible header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="sticky top-0 z-10 w-full bg-white/95 backdrop-blur-sm py-2 border-b border-border/50 cursor-pointer hover:bg-olive-50/50 transition-colors rounded-lg"
+        className="sticky top-0 z-10 w-full bg-white/95 backdrop-blur-sm py-2 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors rounded-lg"
       >
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
             {isExpanded ? (
-              <ChevronUp className="h-4 w-4 text-olive-600" />
+              <ChevronUp className="h-4 w-4 text-gray-500" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-olive-600" />
+              <ChevronDown className="h-4 w-4 text-gray-500" />
             )}
             <h3 className="text-lg font-semibold text-text">
               {formattedDate}
@@ -51,7 +51,7 @@ export function CollapsibleDaySection({
           </div>
           <div className="flex items-center gap-2">
             {!isExpanded && groupNames.length > 0 && (
-              <span className="text-sm text-olive-700 truncate max-w-[200px]">
+              <span className="text-sm text-gray-600 truncate max-w-[200px]">
                 for {groupNamesDisplay}
               </span>
             )}

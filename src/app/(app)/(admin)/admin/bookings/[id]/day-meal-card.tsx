@@ -28,6 +28,7 @@ import {
   MealServesDisplay,
   PercolatedCoffeeToggle,
   InlineMenuDisplay,
+  CateringStatusChip,
 } from "@/components/catering";
 
 interface DayMealCardProps {
@@ -65,6 +66,7 @@ export function DayMealCard({
     try {
       setBulkLoading(true);
       const bookingId = meals[0]?.bookingId;
+      if (!bookingId) return;
       await assignCatererToDay(date, bookingId, bulkCatererId);
       router.refresh();
       const unassignedCount = meals.filter((m) => !m.assignedCatererId).length;
@@ -139,23 +141,23 @@ export function DayMealCard({
       className={cn(
         "rounded-2xl border p-6 shadow-soft transition-colors",
         completionStatus.isComplete
-          ? "border-green-200 bg-green-50/30"
-          : "border-border/70 bg-white/90"
+          ? "border-status-forest/20 bg-status-forest/5"
+          : "border-gray-200 bg-white"
       )}
     >
       {/* Date Header with Completion Status */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-text">{formattedDate}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{formattedDate}</h3>
           {completionStatus.isComplete ? (
-            <Badge className="gap-1.5 border-green-200 bg-green-50 text-green-700">
+            <Badge className="gap-1.5 border-status-forest/20 bg-status-forest/10 text-status-forest">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Completed
             </Badge>
           ) : (
             <Badge
               variant="outline"
-              className="gap-1.5 border-orange-200 bg-orange-50 text-orange-700"
+              className="gap-1.5 border-status-ochre/20 bg-status-ochre/10 text-status-ochre"
             >
               <AlertCircle className="h-3.5 w-3.5" />
               Action Required ({completionStatus.pendingCount})
@@ -173,7 +175,7 @@ export function DayMealCard({
                 onValueChange={setBulkCatererId}
                 disabled={bulkLoading}
               >
-                <SelectTrigger className="h-9 w-[200px] border-border/50 bg-white shadow-soft">
+                <SelectTrigger className="h-9 w-[200px] border-gray-200 bg-white shadow-soft">
                   <SelectValue placeholder="Select caterer..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,7 +204,7 @@ export function DayMealCard({
             </div>
 
             {/* Individual Assignment Toggle - styled like BYO Linen */}
-            <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-neutral-50 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
               <Switch
                 checked={customizeMode}
                 onCheckedChange={setCustomizeMode}
@@ -211,7 +213,7 @@ export function DayMealCard({
               />
               <Label
                 htmlFor={`customize-${date}`}
-                className="text-xs font-medium text-text cursor-pointer"
+                className="text-xs font-medium text-gray-900 cursor-pointer"
               >
                 Assign Individual Meals
               </Label>
@@ -244,7 +246,7 @@ export function DayMealCard({
       )}
 
       {/* Separator */}
-      <div className="border-b border-border/50 mb-6" />
+      <div className="border-b border-gray-100 mb-6" />
 
       {/* Meals List */}
       <div className="space-y-6">
@@ -266,7 +268,7 @@ export function DayMealCard({
               key={meal.id}
               className={cn(
                 "pb-6",
-                index !== meals.length - 1 && "border-b border-border/50"
+                index !== meals.length - 1 && "border-b border-gray-100"
               )}
             >
               {/* Meal Header Row */}
@@ -274,10 +276,10 @@ export function DayMealCard({
                 <div className="flex items-center gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-text">
+                      <span className="text-sm font-semibold text-gray-900">
                         {meal.meal}
                       </span>
-                      <span className="text-xs text-text-light">
+                      <span className="text-xs text-gray-500">
                         {meal.timeRangeLabel.split("•")[1]?.trim()}
                       </span>
                     </div>
@@ -302,17 +304,7 @@ export function DayMealCard({
                   />
 
                   {/* Status Badge */}
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-xs",
-                      meal.status === "Draft"
-                        ? "border-blue-200 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-gray-50 text-gray-600"
-                    )}
-                  >
-                    {meal.status}
-                  </Badge>
+                  <CateringStatusChip status={meal.status} />
                 </div>
               </div>
 
@@ -322,7 +314,7 @@ export function DayMealCard({
                   {/* Caterer Assignment (only shown in customize mode) */}
                   {customizeMode && (
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-text-light">
+                      <label className="text-xs font-medium text-gray-500">
                         Assigned Caterer
                       </label>
                       <Select
@@ -330,7 +322,7 @@ export function DayMealCard({
                         onValueChange={(val) => handleCatererChange(meal.id, val)}
                         disabled={loading === meal.id}
                       >
-                        <SelectTrigger className="h-9 border-border/50 bg-white">
+                        <SelectTrigger className="h-9 border-gray-200 bg-white">
                           <SelectValue placeholder="Select caterer" />
                         </SelectTrigger>
                         <SelectContent>
@@ -347,7 +339,7 @@ export function DayMealCard({
 
                   {/* Menu Items - using InlineMenuDisplay */}
                   <div className={cn("space-y-1.5", !customizeMode && "sm:col-span-2")}>
-                    <label className="text-xs font-medium text-text-light">
+                    <label className="text-xs font-medium text-gray-500">
                       Menu Selection
                     </label>
                     <InlineMenuDisplay

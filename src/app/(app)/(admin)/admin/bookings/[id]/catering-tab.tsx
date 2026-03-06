@@ -176,8 +176,8 @@ export function CateringTab({
 
   if (meals.length === 0) {
     return (
-      <div className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-        <p className="text-sm text-text-light">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-soft">
+        <p className="text-sm text-gray-500">
           No catering services scheduled.
         </p>
       </div>
@@ -191,25 +191,25 @@ export function CateringTab({
   return (
     <div className="space-y-6">
       {/* Progress Summary */}
-      <div className="rounded-2xl border border-border/70 bg-white/90 p-5 shadow-soft">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-soft">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
             <div className="mb-2 flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-text">Catering Progress</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Catering Progress</h3>
               {completionStats.completedDays === completionStats.totalDays && completionStats.totalDays > 0 ? (
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="size-4 text-status-forest" />
               ) : (
-                <Clock className="h-4 w-4 text-orange-500" />
+                <Clock className="size-4 text-status-ochre" />
               )}
             </div>
-            <p className="text-xs text-text-light mb-3">
+            <p className="text-xs text-gray-500 mb-3">
               {completionStats.completedDays} of {completionStats.totalDays} day{completionStats.totalDays !== 1 ? 's' : ''} fully managed
             </p>
             {/* Progress Bar */}
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
               <div
                 className={`h-full transition-all duration-300 ${
-                  progressPercentage === 100 ? "bg-green-500" : "bg-blue-500"
+                  progressPercentage === 100 ? "bg-status-forest" : "bg-primary"
                 }`}
                 style={{ width: `${progressPercentage}%` }}
               />
@@ -228,8 +228,8 @@ export function CateringTab({
 
       {/* Days List */}
       {displayDates.length === 0 ? (
-        <div className="rounded-2xl border border-border/70 bg-white/90 p-6 shadow-soft">
-          <p className="text-sm text-text-light text-center">
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-soft">
+          <p className="text-sm text-gray-500 text-center">
             All days are fully managed!
           </p>
         </div>
@@ -249,7 +249,7 @@ export function CateringTab({
       {/* Dietary Requirements Section */}
       <Card className="shadow-soft">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-text-light">
+          <CardTitle className="text-sm font-semibold uppercase tracking-wide text-gray-500">
             Dietary Requirements
           </CardTitle>
         </CardHeader>

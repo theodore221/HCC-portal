@@ -5,17 +5,25 @@ import {
   getCommentsForMealJobs,
 } from "@/lib/queries/bookings.server";
 import { getCateringOptions } from "@/lib/queries/catering.server";
+import { sbServer } from "@/lib/supabase-server";
 import AdminCateringJobsClient from "./client";
 
 export default async function AdminCateringJobsPage() {
-  const [bookings, mealJobsRaw, cateringOptions] = await Promise.all([
+  const supabase = await sbServer();
+
+  const [bookings, mealJobsRaw, cateringOptions, { data: dietaryLabels }] = await Promise.all([
     getBookingsForAdmin({ excludeCancelled: true }),
     getAssignedMealJobs(),
     getCateringOptions(),
+    supabase
+      .from("dietary_labels")
+      .select("id, label, is_allergy")
+      .eq("active", true)
+      .order("sort_order"),
   ]);
+
   const jobs = enrichMealJobs(mealJobsRaw, bookings);
 
-  // Fetch comments for all jobs
   const jobIds = jobs.map((j) => j.id);
   const commentsMap = await getCommentsForMealJobs(jobIds);
 
@@ -25,6 +33,7 @@ export default async function AdminCateringJobsPage() {
       commentsMap={commentsMap}
       caterers={cateringOptions.caterers}
       menuItems={cateringOptions.menuItems}
+      dietaryLabels={dietaryLabels ?? []}
     />
   );
 }

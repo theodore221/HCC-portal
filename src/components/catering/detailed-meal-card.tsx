@@ -36,8 +36,8 @@ export function DetailedMealCard({
       className={cn(
         "rounded-2xl border p-6 shadow-soft transition-colors space-y-6",
         isConfirmed
-          ? "border-green-200 bg-green-50/30"
-          : "border-border/70 bg-white/90"
+          ? "border-status-forest/20 bg-status-forest/5"
+          : "border-gray-200 bg-white"
       )}
     >
       {/* Header: Meal type, time, and status */}
@@ -61,7 +61,7 @@ export function DetailedMealCard({
             {job.assignedCaterer && (
               <Badge
                 variant="outline"
-                className="mt-1 border-border/70 bg-neutral text-text"
+                className="mt-1 border-gray-200 bg-gray-100 text-gray-700"
               >
                 {job.assignedCaterer}
               </Badge>
@@ -74,10 +74,10 @@ export function DetailedMealCard({
           className={cn(
             "text-xs",
             isConfirmed
-              ? "border-green-200 bg-green-50 text-green-700"
+              ? "border-status-forest/20 bg-status-forest/10 text-status-forest"
               : isAssigned
-              ? "border-border/70 bg-neutral text-text"
-              : "border-blue-200 bg-blue-50 text-blue-700"
+              ? "border-gray-200 bg-gray-100 text-gray-700"
+              : "border-status-stone/20 bg-status-stone/10 text-status-stone"
           )}
         >
           {job.changesRequested ? "Changes Requested" : job.status}
@@ -115,7 +115,7 @@ export function DetailedMealCard({
             {Object.entries(job.dietaryCounts).map(([diet, count]) => (
               <div
                 key={diet}
-                className="flex items-center gap-2 rounded-lg bg-neutral px-3 py-1.5 text-xs border border-border/50"
+                className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1.5 text-xs border border-gray-200"
               >
                 <span className="capitalize text-text-light">{diet}:</span>
                 <span className="font-semibold text-text">{count}</span>
@@ -127,7 +127,7 @@ export function DetailedMealCard({
 
       {/* Coffee request */}
       {job.percolatedCoffee && (
-        <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+        <div className="flex items-center gap-2 rounded-lg bg-status-ochre/10 border border-status-ochre/20 px-3 py-2 text-sm text-status-ochre">
           <Coffee className="h-4 w-4 shrink-0" />
           <span className="font-medium">
             Percolated coffee requested
@@ -139,7 +139,7 @@ export function DetailedMealCard({
 
       {/* Changes requested warning for admin */}
       {currentUserRole === "admin" && job.changesRequested && (
-        <div className="flex items-center gap-2 rounded-lg bg-orange-50 border border-orange-200 px-3 py-2.5 text-sm text-orange-800">
+        <div className="flex items-center gap-2 rounded-lg bg-status-clay/10 border border-status-clay/20 px-3 py-2.5 text-sm text-status-clay">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span className="font-medium">
             Caterer has requested changes - review comments below

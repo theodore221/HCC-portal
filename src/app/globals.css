@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Hide native number input spinners globally */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 :root {
   --background: #f8f9fa;
   --foreground: #1a1a1a;
@@ -32,6 +42,14 @@
   --status-slate: #2a8a7a;
   --status-plum: #8840c4;
   --status-stone: #6b7280;
+  /* Botanical Kitchen — meal-type color system */
+  --meal-breakfast: #d97706;
+  --meal-morning-tea: #92400e;
+  --meal-lunch: #6c8f36;
+  --meal-afternoon-tea: #2a8a7a;
+  --meal-dinner: #7c3aed;
+  --meal-dessert: #c49910;
+  --meal-supper: #6b7280;
 }
 
 @theme inline {
@@ -69,6 +87,13 @@
   --color-status-slate: var(--status-slate);
   --color-status-plum: var(--status-plum);
   --color-status-stone: var(--status-stone);
+  --color-meal-breakfast: var(--meal-breakfast);
+  --color-meal-morning-tea: var(--meal-morning-tea);
+  --color-meal-lunch: var(--meal-lunch);
+  --color-meal-afternoon-tea: var(--meal-afternoon-tea);
+  --color-meal-dinner: var(--meal-dinner);
+  --color-meal-dessert: var(--meal-dessert);
+  --color-meal-supper: var(--meal-supper);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 

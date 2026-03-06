@@ -1,21 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
-import { CateringJobsCalendar } from "@/components/catering-jobs-calendar";
-import { DetailedMealCard } from "@/components/catering/detailed-meal-card";
-import { CollapsibleDaySection } from "@/components/catering/collapsible-day-section";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { KitchenCalendar } from "@/components/catering/kitchen-calendar";
+import { DayDetailPanel } from "@/components/catering/day-detail-panel";
+import { CreateCateringJobDialog } from "@/components/catering/create-catering-job-dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatDateLabel, type EnrichedMealJob } from "@/lib/catering";
+import { type EnrichedMealJob } from "@/lib/catering";
 import type { MealJobCommentWithAuthor } from "@/lib/queries/bookings.server";
+import { Calendar, Plus } from "lucide-react";
+
+type DietaryLabel = { id: string; label: string; is_allergy: boolean };
 
 interface AdminCateringJobsClientProps {
   jobs: EnrichedMealJob[];
@@ -27,6 +21,7 @@ interface AdminCateringJobsClientProps {
     catererId: string | null;
     mealType: string | null;
   }[];
+  dietaryLabels?: DietaryLabel[];
 }
 
 export default function AdminCateringJobsClient({
@@ -34,152 +29,71 @@ export default function AdminCateringJobsClient({
   commentsMap,
   caterers,
   menuItems,
+  dietaryLabels = [],
 }: AdminCateringJobsClientProps) {
-  const [view, setView] = useState("calendar");
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-
-  // Group by date, then by booking within each date
-  const jobsByDateAndBooking = useMemo(() => {
-    // Filter to today and future only for list view
-    const upcomingJobs = jobs.filter((job) => job.date >= today);
-
-    // First group by date
-    const byDate = upcomingJobs.reduce<Record<string, EnrichedMealJob[]>>((acc, job) => {
-      if (!acc[job.date]) acc[job.date] = [];
-      acc[job.date].push(job);
-      return acc;
-    }, {});
-
-    // Sort dates
-    const sortedDates = Object.keys(byDate).sort();
-
-    // For each date, group by booking
-    const result = sortedDates.map((date) => {
-      const jobsForDate = byDate[date];
-      const byBooking = jobsForDate.reduce<Record<string, EnrichedMealJob[]>>(
-        (acc, job) => {
-          if (!acc[job.bookingId]) acc[job.bookingId] = [];
-          acc[job.bookingId].push(job);
-          return acc;
-        },
-        {}
-      );
-
-      // Collect unique group names for this date
-      const groupNames = [...new Set(jobsForDate.map((j) => j.groupName))];
-
-      return {
-        date,
-        bookings: Object.entries(byBooking).map(([bookingId, bookingJobs]) => ({
-          bookingId,
-          groupName: bookingJobs[0]?.groupName ?? "Unknown",
-          jobs: bookingJobs.sort(
-            (a, b) => a.startDate.getTime() - b.startDate.getTime()
-          ),
-        })),
-        totalJobs: jobsForDate.length,
-        groupNames,
-      };
-    });
-
-    return result;
-  }, [jobs, today]);
+  const selectedDateJobs = useMemo(
+    () => (selectedDate ? jobs.filter((j) => j.date === selectedDate) : []),
+    [jobs, selectedDate]
+  );
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <CardTitle>Catering Jobs</CardTitle>
-            <CardDescription>
-              Manage caterer assignments and job details
-            </CardDescription>
+    <>
+      <CreateCateringJobDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        defaultDate={selectedDate ?? undefined}
+        caterers={caterers}
+        dietaryLabels={dietaryLabels}
+      />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+        {/* Left: Calendar card (fills available space) */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 lg:sticky lg:top-4 lg:self-start">
+          <KitchenCalendar
+            jobs={jobs}
+            selectedDate={selectedDate}
+            onSelectDate={(d) => setSelectedDate((prev) => (prev === d ? null : d))}
+          />
+        </div>
+
+        {/* Right: Sidebar — date header + jobs */}
+        <div className="lg:sticky lg:top-4 lg:max-h-[calc(100dvh-120px)] lg:overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-900">
+              {selectedDate ? "" : "Catering Jobs"}
+            </h2>
+            <Button
+              size="sm"
+              onClick={() => setCreateDialogOpen(true)}
+              className="rounded-full px-4"
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add Job
+            </Button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button>Assign Caterer</Button>
-            <Button variant="outline">Export Run Sheets</Button>
-          </div>
-        </CardHeader>
-      </Card>
 
-      <Card>
-        <CardHeader className="space-y-2">
-          <CardTitle>Catering Schedule</CardTitle>
-          <CardDescription>
-            Toggle between calendar and list views to manage upcoming
-            services.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Tabs value={view} onValueChange={setView}>
-            <TabsList>
-              <TabsTrigger value="calendar">Calendar</TabsTrigger>
-              <TabsTrigger value="list">List</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="calendar" className="pt-4">
-              <CateringJobsCalendar
-                jobs={jobs}
-                caterers={caterers}
-                menuItems={menuItems}
-              />
-            </TabsContent>
-
-            <TabsContent value="list" className="pt-4">
-              <div className="space-y-8">
-                {jobsByDateAndBooking.length === 0 ? (
-                  <p className="text-sm text-olive-700">
-                    No catering services scheduled.
-                  </p>
-                ) : null}
-
-                {jobsByDateAndBooking.map(({ date, bookings, totalJobs, groupNames }) => (
-                  <CollapsibleDaySection
-                    key={date}
-                    date={date}
-                    formattedDate={formatDateLabel(date)}
-                    totalJobs={totalJobs}
-                    groupNames={groupNames}
-                    isToday={date === today}
-                  >
-                    {/* Bookings for this day */}
-                    {bookings.map(
-                      ({ bookingId, groupName, jobs: bookingJobs }) => (
-                        <div
-                          key={bookingId}
-                          className="space-y-3 rounded-2xl border border-border/70 bg-white/90 p-5 shadow-soft"
-                        >
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-text">
-                              {groupName}
-                            </h4>
-                            <span className="text-xs text-text-light">
-                              {bookingJobs.length}{" "}
-                              {bookingJobs.length === 1 ? "meal" : "meals"}
-                            </span>
-                          </div>
-
-                          <div className="space-y-3">
-                            {bookingJobs.map((job) => (
-                              <DetailedMealCard
-                                key={job.id}
-                                job={job}
-                                comments={commentsMap.get(job.id) ?? []}
-                                currentUserRole="admin"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </CollapsibleDaySection>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+          {selectedDate ? (
+            <DayDetailPanel
+              date={selectedDate}
+              jobs={selectedDateJobs}
+              commentsMap={commentsMap}
+              caterers={caterers}
+              menuItems={menuItems}
+              dietaryLabels={dietaryLabels}
+              currentUserRole="admin"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-48 rounded-2xl border border-dashed border-gray-200 gap-2">
+              <Calendar className="size-8 text-gray-300" />
+              <p className="text-sm text-gray-500">Select a date to view catering jobs</p>
+              <p className="text-xs text-gray-400">Click any day on the calendar</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

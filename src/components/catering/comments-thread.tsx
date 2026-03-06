@@ -51,7 +51,7 @@ export function CommentsThread({
     <div className="space-y-3">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 text-sm text-olive-700 hover:text-olive-900 transition-colors"
+        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
       >
         <MessageCircle className="h-4 w-4" />
         <span>
@@ -60,7 +60,7 @@ export function CommentsThread({
       </button>
 
       {isExpanded && (
-        <div className="space-y-3 rounded-lg border border-olive-100 bg-olive-50/50 p-3">
+        <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50/50 p-3">
           {/* Comments list */}
           {comments.length > 0 ? (
             <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -71,26 +71,26 @@ export function CommentsThread({
                     "rounded-lg p-2 text-sm",
                     comment.authorRole === "admin"
                       ? "bg-primary/5 border-l-2 border-primary"
-                      : "bg-white border-l-2 border-olive-300"
+                      : "bg-white border-l-2 border-gray-300"
                   )}
                 >
-                  <div className="flex items-center justify-between text-xs text-olive-600 mb-1">
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
                     <span className="font-medium">
                       {comment.authorName}
-                      <span className="ml-1 text-olive-400">
+                      <span className="ml-1 text-gray-400">
                         ({comment.authorRole === "admin" ? "Admin" : "Caterer"})
                       </span>
                     </span>
                     <span>{formatRelativeTime(comment.createdAt)}</span>
                   </div>
-                  <p className="text-olive-800 whitespace-pre-wrap">
+                  <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">
                     {comment.content}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-xs text-olive-500 text-center py-2">
+            <p className="text-xs text-gray-400 text-center py-2">
               No comments yet. Start the conversation.
             </p>
           )}

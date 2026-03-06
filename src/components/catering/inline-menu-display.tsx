@@ -57,13 +57,13 @@ export function InlineMenuDisplay({
           if (!open) setIsEditing(false);
         }}
       >
-        <SelectTrigger className="h-10 w-full border-border/60 bg-white/95 shadow-soft">
+        <SelectTrigger className="h-10 w-full border-gray-200 bg-white shadow-soft">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent
           align="start"
           sideOffset={6}
-          className="w-[var(--radix-select-trigger-width)] max-w-[420px] border-border/60 bg-white shadow-lg"
+          className="w-[var(--radix-select-trigger-width)] max-w-[420px] border-gray-200 bg-white shadow-lg"
         >
           <SelectItem
             value="none"
@@ -95,7 +95,7 @@ export function InlineMenuDisplay({
     <div
       onClick={() => !disabled && setIsEditing(true)}
       className={cn(
-        "flex w-full items-center gap-2 rounded-md border border-border/60 bg-white/90 px-3 py-2 shadow-soft transition-colors",
+        "group flex w-full items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 shadow-soft transition-colors",
         !disabled && "cursor-pointer hover:border-gray-300"
       )}
     >
@@ -104,7 +104,7 @@ export function InlineMenuDisplay({
           "truncate text-sm",
           selectedLabel
             ? "text-gray-900 font-semibold"
-            : "text-neutral-300 font-medium"
+            : "text-gray-400 font-medium"
         )}
       >
         {selectedLabel || placeholder}
