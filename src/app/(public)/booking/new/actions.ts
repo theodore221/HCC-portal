@@ -255,9 +255,16 @@ export async function submitBooking(
       }
     }
 
+    // Auto-set values for Individual bookings (enforced server-side)
+    const isIndividual = formState.booking_type === 'Individual';
+    const headcount = isIndividual ? 1 : (formState.headcount ?? 0);
+    const minors = isIndividual ? false : (formState.minors ?? false);
+    const whole_centre = isIndividual ? false : (formState.whole_centre ?? false);
+    const is_overnight = isIndividual ? true : (formState.is_overnight ?? false);
+
     // Determine event type
     const eventType =
-      formState.booking_type === 'Individual' ? 'Individual Stay' : (formState.event_type ?? null);
+      isIndividual ? 'Individual Stay' : (formState.event_type ?? null);
 
     // Insert booking
     const { data: booking, error: bookingError } = await supabase
@@ -277,10 +284,10 @@ export async function submitBooking(
         departure_date: formState.departure_date,
         arrival_time: formState.arrival_time || null,
         departure_time: formState.departure_time || null,
-        headcount: formState.headcount ?? 0,
-        minors: formState.minors ?? false,
-        whole_centre: formState.whole_centre ?? false,
-        is_overnight: formState.is_overnight ?? false,
+        headcount,
+        minors,
+        whole_centre,
+        is_overnight,
         catering_required: formState.catering_required ?? false,
         byo_linen: formState.byo_linen ?? false,
         accommodation_requests: accommodationRequests,

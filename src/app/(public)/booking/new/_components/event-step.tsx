@@ -150,7 +150,7 @@ export function EventStep({ formState, onChange }: EventStepProps) {
 
       {/* Minors */}
       <div
-        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
           formState.minors ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
         }`}
         onClick={() => onChange({ minors: !formState.minors })}
@@ -160,7 +160,7 @@ export function EventStep({ formState, onChange }: EventStepProps) {
           type="checkbox"
           checked={formState.minors ?? false}
           onChange={(e) => onChange({ minors: e.target.checked })}
-          className="mt-0.5 rounded border-gray-300 text-primary"
+          className="rounded border-gray-300 text-primary"
           onClick={(e) => e.stopPropagation()}
         />
         <div>

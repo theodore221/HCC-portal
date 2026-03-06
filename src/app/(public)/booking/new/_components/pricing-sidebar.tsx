@@ -75,6 +75,7 @@ export function PricingSidebar({ pricing, loading }: PricingSidebarProps) {
                   <span>Total</span>
                   <span className="text-primary">{formatCurrency(pricing.total)}</span>
                 </div>
+                <p className="text-xs text-gray-400 mt-1">All prices inclusive of GST.</p>
               </div>
             )}
           </div>

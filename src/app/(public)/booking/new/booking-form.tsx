@@ -1,5 +1,7 @@
 /**
- * Multi-Step Booking Form — 6-step wizard
+ * Multi-Step Booking Form
+ * Group: 6-step wizard (Contact → Event & Dates → Venue → Accommodation → Catering → Review)
+ * Individual: 4-step wizard (Your Details → Dates & Room → Catering → Review & Confirm)
  */
 
 'use client';
@@ -9,6 +11,7 @@ import { submitBooking, calculatePricingPreview } from './actions';
 import { HoneypotField, HONEYPOT_FIELDS, generateTimeToken } from '@/lib/security/client';
 import type { PricingResult } from '@/lib/pricing/types';
 
+import { BookingTypeGateway } from './_components/booking-type-gateway';
 import { StepIndicator } from './_components/step-indicator';
 import { ContactStep } from './_components/contact-step';
 import { EventStep } from './_components/event-step';
@@ -16,6 +19,9 @@ import { VenueStep } from './_components/venue-step';
 import { AccommodationStep } from './_components/accommodation-step';
 import { CateringStep } from './_components/catering-step';
 import { ReviewStep } from './_components/review-step';
+import { IndividualStayStep } from './_components/individual-stay-step';
+import { IndividualCateringStep } from './_components/individual-catering-step';
+import { IndividualReviewStep } from './_components/individual-review-step';
 import { PricingSidebar } from './_components/pricing-sidebar';
 
 // ─── Data types passed from server ───────────────────────────────────────────
@@ -105,9 +111,18 @@ interface BookingFormProps {
   mealPrices: MealPriceOption[];
 }
 
+// ─── Step definitions ─────────────────────────────────────────────────────────
+
+const GROUP_STEPS = ['Contact', 'Event & Dates', 'Venue', 'Accommodation', 'Catering', 'Review'];
+const INDIVIDUAL_STEPS = ['Your Details', 'Dates & Room', 'Catering', 'Review & Confirm'];
+
+// Steps where pricing sidebar is shown (1-indexed)
+const GROUP_PRICING_STEPS = [3, 4, 5, 6];
+const INDIVIDUAL_PRICING_STEPS = [2, 3, 4];
+
 // ─── Validation helpers ───────────────────────────────────────────────────────
 
-function validateStep(step: number, state: BookingFormState): string | null {
+function validateGroupStep(step: number, state: BookingFormState): string | null {
   switch (step) {
     case 1:
       if (!state.booking_type) return 'Please select a booking type.';
@@ -116,33 +131,52 @@ function validateStep(step: number, state: BookingFormState): string | null {
       if (!state.contact_email?.trim() || !state.contact_email.includes('@')) return 'A valid email address is required.';
       if (!state.contact_phone?.trim() || state.contact_phone.length < 6) return 'A valid phone number is required.';
       return null;
-
     case 2:
-      if (state.booking_type === 'Group' && !state.event_type) return 'Please select an event type.';
+      if (!state.event_type) return 'Please select an event type.';
       if (!state.arrival_date) return 'Arrival date is required.';
       if (!state.departure_date) return 'Departure date is required.';
       if (state.arrival_date && state.departure_date && state.departure_date < state.arrival_date)
         return 'Departure date must be on or after arrival date.';
       if (!state.headcount || state.headcount < 1) return 'Please enter the number of guests.';
       return null;
-
     case 3:
       if (!state.whole_centre && (!state.selected_spaces || state.selected_spaces.length === 0))
         return 'Please select at least one space, or choose exclusive whole-centre use.';
       return null;
-
     case 4:
       if (state.is_overnight === undefined) return 'Please indicate whether you require overnight accommodation.';
       return null;
-
     case 5:
       if (state.catering_required === undefined) return 'Please indicate whether you require catering.';
       return null;
-
     case 6:
       if (!state.terms_accepted) return 'You must accept the Terms & Conditions to submit.';
       return null;
+    default:
+      return null;
+  }
+}
 
+function validateIndividualStep(step: number, state: BookingFormState): string | null {
+  switch (step) {
+    case 1:
+      if (!state.contact_name?.trim() || state.contact_name.length < 2) return 'Full name must be at least 2 characters.';
+      if (!state.contact_email?.trim() || !state.contact_email.includes('@')) return 'A valid email address is required.';
+      if (!state.contact_phone?.trim() || state.contact_phone.length < 6) return 'A valid phone number is required.';
+      return null;
+    case 2:
+      if (!state.arrival_date) return 'Arrival date is required.';
+      if (!state.departure_date) return 'Departure date is required.';
+      if (state.arrival_date && state.departure_date && state.departure_date < state.arrival_date)
+        return 'Departure date must be on or after arrival date.';
+      if (!state.rooms || state.rooms.length === 0) return 'Please select a room for your stay.';
+      return null;
+    case 3:
+      if (state.catering_required === undefined) return 'Please indicate whether you require catering.';
+      return null;
+    case 4:
+      if (!state.terms_accepted) return 'You must accept the Terms & Conditions to submit.';
+      return null;
     default:
       return null;
   }
@@ -150,22 +184,12 @@ function validateStep(step: number, state: BookingFormState): string | null {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const STEPS = [
-  'Contact',
-  'Event & Dates',
-  'Venue',
-  'Accommodation',
-  'Catering',
-  'Review',
-];
-
-// Steps where pricing sidebar is shown (steps 3+)
-const PRICING_STEPS = [3, 4, 5, 6];
-
 export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: BookingFormProps) {
+  // Gateway: shown before the wizard until user picks booking type
+  const [gatewayComplete, setGatewayComplete] = useState(false);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formState, setFormState] = useState<BookingFormState>({
-    booking_type: 'Group',
     minors: false,
     whole_centre: false,
     is_overnight: undefined,
@@ -183,6 +207,11 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
   // Pricing state
   const [pricing, setPricing] = useState<PricingResult | null>(null);
   const [pricingLoading, setPricingLoading] = useState(false);
+
+  const isIndividual = formState.booking_type === 'Individual';
+  const steps = isIndividual ? INDIVIDUAL_STEPS : GROUP_STEPS;
+  const pricingSteps = isIndividual ? INDIVIDUAL_PRICING_STEPS : GROUP_PRICING_STEPS;
+  const totalSteps = steps.length;
 
   const updateForm = useCallback((updates: Partial<BookingFormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
@@ -202,8 +231,19 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
     }
   }, []);
 
+  // Handle gateway selection
+  const handleGatewaySelect = (type: 'Group' | 'Individual') => {
+    const individualDefaults: Partial<BookingFormState> =
+      type === 'Individual'
+        ? { headcount: 1, minors: false, whole_centre: false, selected_spaces: [], is_overnight: true }
+        : {};
+    setFormState((prev) => ({ ...prev, booking_type: type, ...individualDefaults }));
+    setGatewayComplete(true);
+  };
+
   const handleNext = async () => {
-    const error = validateStep(currentStep, formState);
+    const validate = isIndividual ? validateIndividualStep : validateGroupStep;
+    const error = validate(currentStep, formState);
     if (error) {
       setStepError(error);
       return;
@@ -212,8 +252,9 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
 
     const nextStep = currentStep + 1;
 
-    // Refresh pricing on step transition from step 2 onwards
-    if (nextStep >= 3) {
+    // Refresh pricing when entering pricing-visible steps
+    const pricingThreshold = isIndividual ? 2 : 3;
+    if (nextStep >= pricingThreshold) {
       refreshPricing(formState);
     }
 
@@ -227,9 +268,26 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleBackToGateway = () => {
+    setStepError(null);
+    setGatewayComplete(false);
+    setCurrentStep(1);
+    setFormState({
+      minors: false,
+      whole_centre: false,
+      is_overnight: undefined,
+      catering_required: undefined,
+      rooms: [],
+      meals: [],
+      coffee_sessions: [],
+      selected_spaces: [],
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const error = validateStep(6, formState);
+    const validate = isIndividual ? validateIndividualStep : validateGroupStep;
+    const error = validate(totalSteps, formState);
     if (error) {
       setStepError(error);
       return;
@@ -253,7 +311,9 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Submitted!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            {isIndividual ? 'Your retreat is booked!' : 'Booking Submitted!'}
+          </h2>
           <p className="text-gray-700 mb-4">
             Your booking reference is{' '}
             <strong className="font-mono bg-primary/10 px-2 py-0.5 rounded">{submitResult.reference}</strong>
@@ -267,13 +327,18 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
     );
   }
 
-  const showSidebar = PRICING_STEPS.includes(currentStep);
+  // Gateway screen
+  if (!gatewayComplete) {
+    return <BookingTypeGateway onSelect={handleGatewaySelect} />;
+  }
+
+  const showSidebar = pricingSteps.includes(currentStep);
 
   return (
     <div className={`max-w-6xl mx-auto ${showSidebar ? 'lg:grid lg:grid-cols-3 lg:gap-6' : ''}`}>
       {/* Main form area */}
       <div className={showSidebar ? 'lg:col-span-2' : 'max-w-2xl mx-auto w-full'}>
-        <StepIndicator steps={STEPS} currentStep={currentStep} />
+        <StepIndicator steps={steps} currentStep={currentStep} />
 
         {/* Global error */}
         {submitResult?.error && (
@@ -287,31 +352,61 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
           <input type="hidden" name="_form_time" value={timeToken} />
           <input type="hidden" name="_csrf" value={csrfToken} />
 
-          {currentStep === 1 && (
-            <ContactStep formState={formState} onChange={updateForm} />
+          {/* ─── Individual flow ─── */}
+          {isIndividual && (
+            <>
+              {currentStep === 1 && (
+                <ContactStep formState={formState} onChange={updateForm} hideBookingTypeToggle />
+              )}
+              {currentStep === 2 && (
+                <IndividualStayStep formState={formState} roomTypes={roomTypes} onChange={updateForm} />
+              )}
+              {currentStep === 3 && (
+                <IndividualCateringStep formState={formState} mealPrices={mealPrices} onChange={updateForm} />
+              )}
+              {currentStep === 4 && (
+                <IndividualReviewStep
+                  formState={formState}
+                  roomTypes={roomTypes}
+                  mealPrices={mealPrices}
+                  pricing={pricing}
+                  pricingLoading={pricingLoading}
+                  onChange={updateForm}
+                />
+              )}
+            </>
           )}
-          {currentStep === 2 && (
-            <EventStep formState={formState} onChange={updateForm} />
-          )}
-          {currentStep === 3 && (
-            <VenueStep formState={formState} spaces={spaces} onChange={updateForm} />
-          )}
-          {currentStep === 4 && (
-            <AccommodationStep formState={formState} roomTypes={roomTypes} onChange={updateForm} />
-          )}
-          {currentStep === 5 && (
-            <CateringStep formState={formState} mealPrices={mealPrices} onChange={updateForm} />
-          )}
-          {currentStep === 6 && (
-            <ReviewStep
-              formState={formState}
-              spaces={spaces}
-              roomTypes={roomTypes}
-              mealPrices={mealPrices}
-              pricing={pricing}
-              pricingLoading={pricingLoading}
-              onChange={updateForm}
-            />
+
+          {/* ─── Group flow ─── */}
+          {!isIndividual && (
+            <>
+              {currentStep === 1 && (
+                <ContactStep formState={formState} onChange={updateForm} />
+              )}
+              {currentStep === 2 && (
+                <EventStep formState={formState} onChange={updateForm} />
+              )}
+              {currentStep === 3 && (
+                <VenueStep formState={formState} spaces={spaces} onChange={updateForm} />
+              )}
+              {currentStep === 4 && (
+                <AccommodationStep formState={formState} roomTypes={roomTypes} onChange={updateForm} />
+              )}
+              {currentStep === 5 && (
+                <CateringStep formState={formState} mealPrices={mealPrices} onChange={updateForm} />
+              )}
+              {currentStep === 6 && (
+                <ReviewStep
+                  formState={formState}
+                  spaces={spaces}
+                  roomTypes={roomTypes}
+                  mealPrices={mealPrices}
+                  pricing={pricing}
+                  pricingLoading={pricingLoading}
+                  onChange={updateForm}
+                />
+              )}
+            </>
           )}
 
           {/* Step error */}
@@ -336,10 +431,20 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
                 Back
               </button>
             ) : (
-              <div />
+              <button
+                type="button"
+                onClick={handleBackToGateway}
+                disabled={isPending}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Change booking type
+              </button>
             )}
 
-            {currentStep < STEPS.length ? (
+            {currentStep < totalSteps ? (
               <button
                 type="button"
                 onClick={handleNext}
@@ -376,7 +481,7 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
         </form>
       </div>
 
-      {/* Pricing sidebar (steps 3–6) */}
+      {/* Pricing sidebar (steps with pricing) */}
       {showSidebar && (
         <div className="hidden lg:block">
           <div className="sticky top-6">
@@ -385,7 +490,7 @@ export function BookingForm({ csrfToken, spaces, roomTypes, mealPrices }: Bookin
         </div>
       )}
 
-      {/* Mobile pricing summary (steps 3–6, collapsible) */}
+      {/* Mobile pricing summary (collapsible) */}
       {showSidebar && (
         <div className="lg:hidden mt-4">
           <details className="border border-gray-200 rounded-xl overflow-hidden">

@@ -5,38 +5,45 @@ import type { BookingFormState } from '../booking-form';
 interface ContactStepProps {
   formState: BookingFormState;
   onChange: (updates: Partial<BookingFormState>) => void;
+  hideBookingTypeToggle?: boolean;
 }
 
-export function ContactStep({ formState, onChange }: ContactStepProps) {
+export function ContactStep({ formState, onChange, hideBookingTypeToggle = false }: ContactStepProps) {
   const isGroup = formState.booking_type === 'Group';
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Contact Details</h2>
-        <p className="text-sm text-gray-500">Tell us who we&apos;re booking for.</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">
+          {hideBookingTypeToggle ? "Let's start with your details" : 'Contact Details'}
+        </h2>
+        <p className="text-sm text-gray-500">
+          {hideBookingTypeToggle ? "We'll use this to confirm your booking." : "Tell us who we're booking for."}
+        </p>
       </div>
 
-      {/* Booking Type */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Booking Type *</label>
-        <div className="grid grid-cols-2 gap-3">
-          {(['Group', 'Individual'] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => onChange({ booking_type: type })}
-              className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition-colors ${
-                formState.booking_type === type
-                  ? 'border-primary bg-primary/5 text-primary'
-                  : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {type === 'Group' ? '👥 Group / Organisation' : '👤 Individual'}
-            </button>
-          ))}
+      {/* Booking Type (hidden when pre-set from gateway) */}
+      {!hideBookingTypeToggle && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Booking Type *</label>
+          <div className="grid grid-cols-2 gap-3">
+            {(['Group', 'Individual'] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => onChange({ booking_type: type })}
+                className={`py-3 px-4 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  formState.booking_type === type
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {type === 'Group' ? '👥 Group / Organisation' : '👤 Individual'}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Organisation (Group only) */}
       {isGroup && (

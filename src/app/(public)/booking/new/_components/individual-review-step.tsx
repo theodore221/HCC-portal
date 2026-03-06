@@ -1,10 +1,10 @@
 'use client';
 
-import type { BookingFormState, SpaceOption, RoomTypeOption, MealPriceOption } from '../booking-form';
-import { ROOM_DISPLAY_NAMES } from '../_constants';
+import { useState } from 'react';
+import type { BookingFormState, RoomTypeOption, MealPriceOption } from '../booking-form';
+import { ROOM_DISPLAY_NAMES, formatDateRanges } from '../_constants';
 import { formatCurrency, groupLineItemsByCategory } from '@/lib/pricing/utils';
 import type { PricingResult } from '@/lib/pricing/types';
-import { useState } from 'react';
 
 const TERMS = `1. BOOKING CONFIRMATION
 Your booking is not confirmed until you receive written confirmation from Holy Cross Centre staff. Submission of this form is a request only.
@@ -20,18 +20,14 @@ Cancellations less than 14 days before arrival: 100% of the total booking cost i
 4. DAMAGE & CONDUCT
 Guests are responsible for any damage caused to the Centre's property. Holy Cross Centre reserves the right to ask any guests to leave who are not conducting themselves appropriately.
 
-5. CHILD SAFETY
-Holy Cross Centre is committed to the safety of all children. Groups with children must comply with our Child Safety Policy available on request.
-
-6. LIABILITY
+5. LIABILITY
 Holy Cross Centre accepts no liability for loss, injury, or damage to persons or property except where caused by our negligence.
 
-7. VARIATIONS
+6. VARIATIONS
 Holy Cross Centre reserves the right to alter or substitute facilities in exceptional circumstances.`;
 
-interface ReviewStepProps {
+interface IndividualReviewStepProps {
   formState: BookingFormState;
-  spaces: SpaceOption[];
   roomTypes: RoomTypeOption[];
   mealPrices: MealPriceOption[];
   pricing: PricingResult | null;
@@ -72,51 +68,48 @@ function formatTimeDisplay(hhmm: string): string {
   return `${hour}:${String(m).padStart(2, '0')} ${period}`;
 }
 
-export function ReviewStep({
-  formState, spaces, roomTypes, pricing, pricingLoading, onChange,
-}: ReviewStepProps) {
+export function IndividualReviewStep({
+  formState, roomTypes, pricing, pricingLoading, onChange,
+}: IndividualReviewStepProps) {
   const [termsOpen, setTermsOpen] = useState(false);
 
   const nights = formState.arrival_date && formState.departure_date
     ? Math.max(0, Math.round(
-        (new Date(formState.departure_date).getTime() - new Date(formState.arrival_date).getTime()) / (1000 * 60 * 60 * 24)
+        (new Date(formState.departure_date + 'T00:00:00').getTime() - new Date(formState.arrival_date + 'T00:00:00').getTime()) /
+          (1000 * 60 * 60 * 24)
       ))
     : 0;
 
+  const selectedRoom = formState.rooms?.[0];
+  const roomType = selectedRoom ? roomTypes.find((rt) => rt.id === selectedRoom.room_type_id) : null;
+
   const grouped = pricing ? groupLineItemsByCategory(pricing.line_items) : null;
 
-  const spaceBookingDateRange = (() => {
-    if (!formState.arrival_date || !formState.departure_date) return '—';
-    const a = new Date(formState.arrival_date + 'T00:00:00');
-    const d = new Date(formState.departure_date + 'T00:00:00');
-    const aDay = a.getDate();
-    const dDay = d.getDate();
-    const aMonth = a.toLocaleDateString('en-AU', { month: 'short' });
-    const dMonth = d.toLocaleDateString('en-AU', { month: 'short' });
-    if (formState.arrival_date === formState.departure_date) return `${aDay} ${aMonth}`;
-    if (aMonth === dMonth) return `${aDay}–${dDay} ${aMonth}`;
-    return `${aDay} ${aMonth}–${dDay} ${dMonth}`;
+  const mealSummary = (() => {
+    const list = formState.meals ?? [];
+    const types = [...new Set(list.map((m) => m.meal_type))];
+    return types.map((mt) => {
+      const isoDates = list.filter((m) => m.meal_type === mt).map((m) => m.date);
+      return { mt, dates: formatDateRanges(isoDates) };
+    });
   })();
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Review & Submit</h2>
-        <p className="text-sm text-gray-500">Please review your booking details before submitting.</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">Review & Confirm</h2>
+        <p className="text-sm text-gray-500">Please review your retreat details before submitting.</p>
       </div>
 
-      {/* Contact */}
-      <SectionCard title="Contact Details">
-        <ReviewRow label="Type" value={formState.booking_type} />
-        {formState.organization && <ReviewRow label="Organisation" value={formState.organization} />}
+      {/* Your Details */}
+      <SectionCard title="Your Details">
         <ReviewRow label="Name" value={formState.contact_name} />
         <ReviewRow label="Email" value={formState.contact_email} />
         <ReviewRow label="Phone" value={formState.contact_phone} />
       </SectionCard>
 
-      {/* Event */}
-      <SectionCard title="Event Details">
-        {formState.event_type && <ReviewRow label="Event Type" value={formState.event_type} />}
+      {/* Stay Details */}
+      <SectionCard title="Stay Details">
         <ReviewRow
           label="Arrival"
           value={formState.arrival_date
@@ -129,101 +122,29 @@ export function ReviewStep({
             ? formatDateDisplay(formState.departure_date) + (formState.departure_time ? ` at ${formatTimeDisplay(formState.departure_time)}` : '')
             : '—'}
         />
-        <ReviewRow label="Duration" value={nights > 0 ? `${nights} night${nights !== 1 ? 's' : ''}` : 'Same day'} />
-        <ReviewRow label="Guests" value={formState.headcount} />
-        {formState.minors && <ReviewRow label="Minors" value="Includes children / care requirements" />}
-      </SectionCard>
-
-      {/* Venue */}
-      <SectionCard title="Venue">
-        {formState.whole_centre ? (
-          <ReviewRow label="Venue" value="Exclusive use — Whole Centre" />
-        ) : (formState.selected_spaces ?? []).length > 0 ? (
-          <>
-            {(formState.selected_spaces ?? []).map((id) => (
-              <ReviewRow
-                key={id}
-                label={spaces.find((s) => s.id === id)?.name ?? id}
-                value={spaceBookingDateRange}
-              />
-            ))}
-          </>
-        ) : (
-          <ReviewRow label="Spaces" value="None selected" />
+        <ReviewRow label="Duration" value={nights > 0 ? `${nights} night${nights !== 1 ? 's' : ''}` : '—'} />
+        {roomType && (
+          <ReviewRow label="Room" value={ROOM_DISPLAY_NAMES[roomType.name] ?? roomType.name} />
         )}
+        {formState.byo_linen && <ReviewRow label="Linen" value="BYO (−$25 discount)" />}
       </SectionCard>
-
-      {/* Accommodation */}
-      {formState.is_overnight && (
-        <SectionCard title="Accommodation">
-          {(formState.rooms ?? []).length > 0 ? (
-            <>
-              {(formState.rooms ?? []).map((r) => {
-                const rt = roomTypes.find((x) => x.id === r.room_type_id);
-                return (
-                  <ReviewRow
-                    key={r.room_type_id}
-                    label={ROOM_DISPLAY_NAMES[rt?.name ?? ''] ?? rt?.name ?? r.room_type_id}
-                    value={`${r.quantity} room${r.quantity !== 1 ? 's' : ''}`}
-                  />
-                );
-              })}
-              {formState.byo_linen && <ReviewRow label="Linen" value="BYO (−$25/bed discount)" />}
-            </>
-          ) : (
-            <p className="text-sm text-gray-500">No rooms selected</p>
-          )}
-        </SectionCard>
-      )}
 
       {/* Catering */}
-      {formState.catering_required && (
+      {formState.catering_required !== undefined && (
         <SectionCard title="Catering">
-          {(formState.meals ?? []).length > 0 ? (() => {
-            const meals = formState.meals ?? [];
-            const coffeeSessions = formState.coffee_sessions ?? [];
-            const MEAL_ORDER = ['Breakfast', 'Morning Tea', 'Lunch', 'Afternoon Tea', 'Dinner', 'Dessert'];
-            const allDates = [...new Set(meals.map((m) => m.date))].sort();
-
-            return (
-              <div className="space-y-3">
-                {allDates.map((date) => {
-                  const dateLabel = new Date(date + 'T00:00:00').toLocaleDateString('en-AU', {
-                    weekday: 'short', day: 'numeric', month: 'short',
-                  });
-                  const dayMeals = MEAL_ORDER
-                    .map((mt) => {
-                      const entry = meals.find((m) => m.date === date && m.meal_type === mt);
-                      return entry ? { label: mt, qty: entry.headcount } : null;
-                    })
-                    .filter(Boolean) as { label: string; qty: number }[];
-                  const coffeeQty = coffeeSessions
-                    .filter((c) => c.date === date)
-                    .reduce((sum, c) => sum + c.quantity, 0);
-
-                  return (
-                    <div key={date}>
-                      <p className="text-xs font-semibold text-gray-700 mb-1.5">{dateLabel}</p>
-                      <div className="space-y-0.5 pl-3 border-l-2 border-gray-100">
-                        {dayMeals.map((row) => (
-                          <div key={row.label} className="flex justify-between items-center text-xs">
-                            <span className="text-gray-500">{row.label}</span>
-                            <span className="text-gray-400 tabular-nums">{row.qty} serves</span>
-                          </div>
-                        ))}
-                        {coffeeQty > 0 && (
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-gray-500">Percolated Coffee</span>
-                            <span className="text-gray-400 tabular-nums">{coffeeQty} serves</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })() : (
+          {!formState.catering_required ? (
+            <p className="text-sm text-gray-500">Self-catered</p>
+          ) : mealSummary.length > 0 ? (
+            <div className="space-y-1">
+              {mealSummary.map(({ mt, dates }) => (
+                <ReviewRow
+                  key={mt}
+                  label={mt}
+                  value={dates}
+                />
+              ))}
+            </div>
+          ) : (
             <p className="text-sm text-gray-500">No meals selected</p>
           )}
         </SectionCard>
