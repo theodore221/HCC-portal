@@ -58,6 +58,7 @@ import type {
   Space,
   SpaceReservation,
   DietaryProfile,
+  RoomConflict,
 } from "@/lib/queries/bookings";
 import type { Views, Tables } from "@/lib/database.types";
 import type { BookingValidationChecks } from "@/lib/validation/booking-approval";
@@ -67,21 +68,6 @@ import { BookingSummary } from "./_components/booking-summary";
 
 // Meal attendance type: { dietaryProfileId: { mealJobId: boolean } }
 export type MealAttendanceMap = Record<string, Record<string, boolean>>;
-
-// Room conflict type for accommodation tab
-export interface RoomConflict {
-  room_id: string;
-  conflicts_with: string;
-  conflicting_booking: {
-    id: string;
-    reference: string | null;
-    status: string;
-    customer_name: string | null;
-    contact_name: string | null;
-    arrival_date: string;
-    departure_date: string;
-  };
-}
 
 const tabConfig = [
   { value: "overview", label: "Overview" },
@@ -109,6 +95,7 @@ export default function BookingDetailClient({
   dietaryProfiles,
   mealAttendance,
   validationChecks,
+  linkedEnquiry,
 }: {
   booking: BookingWithMeta;
   displayName: string;
@@ -154,6 +141,13 @@ export default function BookingDetailClient({
   dietaryProfiles: DietaryProfile[];
   mealAttendance: MealAttendanceMap;
   validationChecks: BookingValidationChecks;
+  linkedEnquiry?: {
+    id: string;
+    reference_number: string | null;
+    status: string;
+    customer_name: string;
+    quoted_amount: number | null;
+  } | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -448,6 +442,29 @@ export default function BookingDetailClient({
         </Card>
 
         <TabsContent value="overview" className="space-y-6">
+          {/* Linked enquiry indicator */}
+          {linkedEnquiry && (
+            <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm">
+              <span className="text-gray-500 shrink-0">Linked Enquiry</span>
+              <Link
+                href={`/admin/enquiries/${linkedEnquiry.id}`}
+                className="font-medium text-primary hover:underline"
+              >
+                {linkedEnquiry.reference_number ?? linkedEnquiry.id.slice(0, 8)}
+              </Link>
+              <span className="text-gray-400">·</span>
+              <span className="text-gray-600">{linkedEnquiry.customer_name}</span>
+              {linkedEnquiry.quoted_amount && (
+                <>
+                  <span className="text-gray-400">·</span>
+                  <span className="text-gray-600">
+                    {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(linkedEnquiry.quoted_amount)} quoted
+                  </span>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Status Timeline */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <SectionHeading>Status timeline</SectionHeading>

@@ -65,14 +65,15 @@ function YesNoIndicator({
 
 interface ScheduleCardProps {
   item: ScheduleRow;
+  basePath: string;
 }
 
-function ScheduleCard({ item }: ScheduleCardProps) {
+function ScheduleCard({ item, basePath }: ScheduleCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <Card className="overflow-hidden">
-      <Link href={`/admin/bookings/${item.id}`}>
+      <Link href={`${basePath}/bookings/${item.id}`}>
         <CardContent className="p-4">
           {/* Header: Day, Date, Group Name */}
           <div className="mb-3 flex items-start justify-between">
@@ -248,9 +249,10 @@ function ScheduleCard({ item }: ScheduleCardProps) {
 
 interface ScheduleCardsProps {
   data: ScheduleRow[];
+  basePath: string;
 }
 
-export function ScheduleCards({ data }: ScheduleCardsProps) {
+export function ScheduleCards({ data, basePath }: ScheduleCardsProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center text-sm text-gray-500">
@@ -262,7 +264,7 @@ export function ScheduleCards({ data }: ScheduleCardsProps) {
   return (
     <div className="space-y-3">
       {data.map((item) => (
-        <ScheduleCard key={item.id} item={item} />
+        <ScheduleCard key={item.id} item={item} basePath={basePath} />
       ))}
     </div>
   );

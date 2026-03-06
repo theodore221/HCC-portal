@@ -96,27 +96,27 @@ export const ENQUIRY_STATUS_CONFIG: Record<
 > = {
   new: {
     label: "New",
-    className: "bg-blue-100 text-blue-800 border-blue-200",
+    className: "border-status-slate/20 bg-status-slate/10 text-status-slate",
     icon: Sparkles,
   },
   in_discussion: {
     label: "In Discussion",
-    className: "bg-amber-100 text-amber-800 border-amber-200",
+    className: "border-status-ochre/20 bg-status-ochre/10 text-status-ochre",
     icon: MessageCircle,
   },
   quoted: {
     label: "Quoted",
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    className: "border-status-forest/20 bg-status-forest/10 text-status-forest",
     icon: DollarSign,
   },
   converted_to_booking: {
     label: "Converted",
-    className: "bg-purple-100 text-purple-800 border-purple-200",
+    className: "border-status-plum/20 bg-status-plum/10 text-status-plum",
     icon: ArrowRightCircle,
   },
   lost: {
     label: "Lost",
-    className: "bg-neutral-100 text-neutral-600 border-neutral-200",
+    className: "border-status-stone/20 bg-status-stone/10 text-status-stone",
     icon: XCircle,
   },
 };

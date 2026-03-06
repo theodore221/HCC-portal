@@ -12,7 +12,7 @@ import { getCateringOptions } from "@/lib/queries/catering.server";
 import { getDietaryMealAttendance } from "./actions";
 import BookingDetailClient from "./client";
 
-import type { Space, SpaceReservation, DietaryProfile } from "@/lib/queries/bookings";
+import type { Space, SpaceReservation, DietaryProfile, RoomConflict } from "@/lib/queries/bookings";
 import type { Views } from "@/lib/database.types";
 
 export default async function BookingDetail({
@@ -61,13 +61,15 @@ export default async function BookingDetail({
       .select("*")
       .eq("booking_id", booking.id),
     supabase.from("rooming_groups").select("*").eq("booking_id", booking.id),
-    // Fetch room assignments for OTHER bookings to detect conflicts
+    // Fetch room assignments for OTHER bookings that overlap date-range (avoids full table scan)
     supabase
       .from("room_assignments")
       .select(
-        "room_id, booking_id, booking:bookings(id, status, arrival_date, departure_date, reference, customer_name, contact_name)"
+        "room_id, booking_id, booking:bookings!inner(id, status, arrival_date, departure_date, reference, customer_name, contact_name)"
       )
-      .neq("booking_id", booking.id),
+      .neq("booking_id", booking.id)
+      .lt("bookings.arrival_date", booking.departure_date)
+      .gt("bookings.departure_date", booking.arrival_date),
     supabase
       .from("dietary_profiles")
       .select("*")
@@ -76,6 +78,25 @@ export default async function BookingDetail({
   ]);
 
   const mealJobs = enrichMealJobs(mealJobsRaw, [booking]);
+
+  // Fetch linked enquiry if present
+  const enquiryId = (booking as any).enquiry_id as string | null | undefined;
+  let linkedEnquiry: {
+    id: string;
+    reference_number: string | null;
+    status: string;
+    customer_name: string;
+    quoted_amount: number | null;
+  } | null = null;
+
+  if (enquiryId) {
+    const { data } = await supabase
+      .from("enquiries")
+      .select("id, reference_number, status, customer_name, quoted_amount")
+      .eq("id", enquiryId)
+      .single();
+    linkedEnquiry = data ?? null;
+  }
 
   const myReservations = (bookingReservations as SpaceReservation[]) ?? [];
 
@@ -104,20 +125,6 @@ export default async function BookingDetail({
   }
 
   // 4. Compute Room Conflicts
-  interface RoomConflict {
-    room_id: string;
-    conflicts_with: string;
-    conflicting_booking: {
-      id: string;
-      reference: string | null;
-      status: string;
-      customer_name: string | null;
-      contact_name: string | null;
-      arrival_date: string;
-      departure_date: string;
-    };
-  }
-
   const roomConflicts: RoomConflict[] = [];
   const roomConflictingBookingsMap = new Map<string, any>();
 
@@ -169,6 +176,7 @@ export default async function BookingDetail({
       dietaryProfiles={(dietaryProfiles as DietaryProfile[]) ?? []}
       mealAttendance={mealAttendance}
       validationChecks={validationChecks}
+      linkedEnquiry={linkedEnquiry}
     />
   );
 }

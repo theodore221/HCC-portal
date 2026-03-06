@@ -6,6 +6,7 @@ import { ensureCatererUser } from "@/lib/auth/admin-actions";
 import { sendCatererInvitation } from "@/lib/email/send-caterer-invitation";
 import { revalidatePath } from "next/cache";
 import { Tables, TablesInsert, TablesUpdate } from "@/lib/database.types";
+import { getBaseUrl } from "@/lib/config";
 
 const RESOURCES_PATH = "/admin/resources";
 
@@ -165,7 +166,7 @@ export async function createCaterer(data: TablesInsert<"caterers">) {
           type: "magiclink",
           email: caterer.email,
           options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/auth/callback`,
+            redirectTo: `${getBaseUrl()}/auth/callback`,
           },
         });
 

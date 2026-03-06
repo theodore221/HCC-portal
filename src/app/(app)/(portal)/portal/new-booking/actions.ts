@@ -161,7 +161,6 @@ export async function submitPortalBooking(formData: FormData): Promise<PortalBoo
     try {
       const { sendBookingSubmittedEmail } = await import('@/lib/email/send-booking-submitted');
       await sendBookingSubmittedEmail(booking);
-      console.log(`Portal booking confirmation email sent for ${booking.reference}`);
     } catch (emailError) {
       console.error('Failed to send portal booking confirmation email:', emailError);
       // Continue - email failure shouldn't block booking submission

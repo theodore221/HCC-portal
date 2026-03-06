@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
 import { BookingApprovedEmail } from '@/emails/booking-approved';
+import { getBaseUrl } from '@/lib/config';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -35,9 +36,7 @@ export async function sendBookingApprovedEmail({
   accommodationSummary,
   cateringSummary,
 }: SendBookingApprovedEmailParams) {
-  const portalUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/portal/${
-    booking.reference || booking.id
-  }`;
+  const portalUrl = `${getBaseUrl()}/portal/${booking.reference || booking.id}`;
 
   const emailHtml = await render(
     BookingApprovedEmail({

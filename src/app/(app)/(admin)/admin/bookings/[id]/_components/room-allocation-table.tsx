@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDateLocal } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -44,7 +44,7 @@ export function RoomAllocationTable({
     const currentDate = new Date(booking.arrival_date);
     const endDate = new Date(booking.departure_date);
     while (currentDate < endDate) {
-      dates.push(new Date(currentDate).toISOString().split("T")[0]);
+      dates.push(formatDateLocal(new Date(currentDate)));
       currentDate.setDate(currentDate.getDate() + 1);
     }
     return dates;

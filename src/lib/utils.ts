@@ -19,6 +19,14 @@ export function getInitials(input: string) {
   return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
 }
 
+/** Formats a Date to YYYY-MM-DD in local (Melbourne) time. Avoids UTC shift from toISOString(). */
+export function formatDateLocal(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function formatDateRange(start: string | Date, end: string | Date) {
   const startDate = typeof start === "string" ? new Date(start) : start;
   const endDate = typeof end === "string" ? new Date(end) : end;

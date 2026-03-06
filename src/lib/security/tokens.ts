@@ -195,32 +195,48 @@ export function generateOTP(length: number = 6): string {
 }
 
 /**
- * Hash a password using bcrypt
+ * Hash a password using Node.js built-in scrypt (no external deps)
  *
  * Note: For admin passwords only. Customers don't have passwords.
  *
  * @param password - Plain password
- * @returns Hashed password
+ * @returns Hex-encoded hash (salt:hash format)
  */
 export async function hashPassword(password: string): Promise<string> {
-  const bcrypt = await import('bcrypt');
-  const saltRounds = 12;
-  return bcrypt.hash(password, saltRounds);
+  const salt = crypto.randomBytes(16).toString('hex');
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+      if (err) reject(err);
+      else resolve(`${salt}:${derivedKey.toString('hex')}`);
+    });
+  });
 }
 
 /**
  * Verify a password against its hash
  *
  * @param password - Plain password
- * @param hash - Stored hash
+ * @param stored - Stored salt:hash string from hashPassword
  * @returns True if password matches
  */
 export async function verifyPassword(
   password: string,
-  hash: string
+  stored: string
 ): Promise<boolean> {
-  const bcrypt = await import('bcrypt');
-  return bcrypt.compare(password, hash);
+  const [salt, storedHash] = stored.split(':');
+  if (!salt || !storedHash) return false;
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
+      if (err) reject(err);
+      else {
+        try {
+          resolve(crypto.timingSafeEqual(Buffer.from(storedHash, 'hex'), derivedKey));
+        } catch {
+          resolve(false);
+        }
+      }
+    });
+  });
 }
 
 /**

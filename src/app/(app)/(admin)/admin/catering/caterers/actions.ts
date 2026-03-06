@@ -8,6 +8,7 @@ import { sendCatererInvitation } from "@/lib/email/send-caterer-invitation";
 import { revalidateTag } from "next/cache";
 import { CACHE_TAGS } from "@/lib/cache";
 import type { TablesInsert, TablesUpdate } from "@/lib/database.types";
+import { getBaseUrl } from "@/lib/config";
 
 export async function createCaterer(data: TablesInsert<"caterers">) {
   const supabase = await sbServer();
@@ -39,7 +40,7 @@ export async function createCaterer(data: TablesInsert<"caterers">) {
           type: "magiclink",
           email: caterer.email,
           options: {
-            redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/auth/callback`,
+            redirectTo: `${getBaseUrl()}/auth/callback`,
           },
         });
 

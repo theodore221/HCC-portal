@@ -39,7 +39,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { allocateRoom, deallocateRoom, updateRoomAllocationDetails } from '../actions';
 import type { RoomAssignmentWithDetails } from '@/lib/queries/bookings';
-import type { RoomConflict } from '../client';
+import type { RoomConflict } from '@/lib/queries/bookings';
 import type { RoomWithMeta } from '../accommodation-tab';
 
 // Room layout configuration matching physical layout at Holy Cross Centre

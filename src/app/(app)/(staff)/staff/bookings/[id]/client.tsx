@@ -18,23 +18,9 @@ import type {
   RoomWithAssignments,
   Space,
   SpaceReservation,
+  RoomConflict,
 } from "@/lib/queries/bookings";
 import type { Views, Tables } from "@/lib/database.types";
-
-// Room conflict type for accommodation tab
-export interface RoomConflict {
-  room_id: string;
-  conflicts_with: string;
-  conflicting_booking: {
-    id: string;
-    reference: string | null;
-    status: string;
-    customer_name: string | null;
-    contact_name: string | null;
-    arrival_date: string;
-    departure_date: string;
-  };
-}
 
 const tabConfig = [
   { value: "overview", label: "Overview" },

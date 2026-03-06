@@ -4,6 +4,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { formatDateLocal } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ function dateRange(arrival: string, departure: string): string[] {
   const dates: string[] = [];
   const end = new Date(departure);
   for (const d = new Date(arrival); d <= end; d.setDate(d.getDate() + 1)) {
-    dates.push(d.toISOString().split('T')[0]);
+    dates.push(formatDateLocal(new Date(d)));
   }
   return dates;
 }

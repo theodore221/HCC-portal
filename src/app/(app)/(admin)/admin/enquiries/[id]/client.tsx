@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,11 +17,15 @@ import {
   Copy,
   ChevronDown,
   ChevronRight,
+  Link2,
+  Unlink,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EnquiryStatusChip } from "@/components/ui/enquiry-status-chip";
+import { StatusChip } from "@/components/ui/status-chip";
 import { EnquiryNotesThread } from "@/components/enquiry/enquiry-notes-thread";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +47,10 @@ import {
   acceptEnquiryQuote,
   markEnquiryAsLost,
   convertEnquiryToBooking,
+  searchBookingsForLinking,
+  linkEnquiryToBooking,
+  unlinkEnquiryFromBooking,
+  type BookingSearchResult,
 } from "./actions";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { QuoteBuilder, type PricingReferenceData } from "./quote-builder";
@@ -53,6 +61,13 @@ interface EnquiryDetailClientProps {
   quotes: EnquiryQuote[];
   pricingData: PricingReferenceData;
   currentUserName: string;
+  autoMatchedBookings?: BookingSearchResult[];
+  linkedBooking?: {
+    id: string;
+    reference: string | null;
+    status: string;
+    customer_name: string | null;
+  } | null;
 }
 
 function formatDate(dateStr: string | null): string {
@@ -172,11 +187,46 @@ function LineItemsBreakdown({ quote }: { quote: EnquiryQuote }) {
   );
 }
 
+// ── Booking result row used in both suggestions + search results ───────────────
+function BookingRow({
+  booking,
+  onLink,
+  isPending,
+}: {
+  booking: BookingSearchResult;
+  onLink: (id: string) => void;
+  isPending: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white p-3">
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-gray-900">
+            {booking.reference ?? booking.id.slice(0, 8)}
+          </span>
+          <StatusChip status={booking.status as any} />
+        </div>
+        <p className="text-xs text-gray-600 truncate">
+          {booking.customer_name ?? "—"} · {booking.customer_email ?? "—"}
+        </p>
+        <p className="text-xs text-gray-400">
+          {formatDate(booking.arrival_date)} → {formatDate(booking.departure_date)} · {booking.headcount} guests
+        </p>
+      </div>
+      <Button size="sm" disabled={isPending} onClick={() => onLink(booking.id)} className="shrink-0">
+        Link
+      </Button>
+    </div>
+  );
+}
+
 export function EnquiryDetailClient({
   enquiry,
   notes,
   quotes,
   pricingData,
+  autoMatchedBookings = [],
+  linkedBooking,
 }: EnquiryDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -185,6 +235,8 @@ export function EnquiryDetailClient({
   // Dialog / sheet states
   const [isLostDialogOpen, setIsLostDialogOpen] = useState(false);
   const [isConvertDialogOpen, setIsConvertDialogOpen] = useState(false);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [isUnlinkDialogOpen, setIsUnlinkDialogOpen] = useState(false);
   const [isQuoteSheetOpen, setIsQuoteSheetOpen] = useState(false);
   // Increment to remount QuoteBuilder with fresh state each time it opens
   const [quoteBuilderKey, setQuoteBuilderKey] = useState(0);
@@ -205,7 +257,29 @@ export function EnquiryDetailClient({
     custom_pricing_notes: "",
   });
 
+  // Link dialog search state
+  const [linkSearch, setLinkSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<BookingSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const acceptedQuote = quotes.find((q) => q.is_accepted);
+
+  // Debounced search
+  const runSearch = useCallback(async (q: string) => {
+    if (q.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    const results = await searchBookingsForLinking(q.trim());
+    setSearchResults(results);
+    setIsSearching(false);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => runSearch(linkSearch), 300);
+    return () => clearTimeout(timer);
+  }, [linkSearch, runSearch]);
 
   // Handle status transitions
   const handleStatusChange = (newStatus: typeof enquiry.status) => {
@@ -258,7 +332,7 @@ export function EnquiryDetailClient({
     });
   };
 
-  // Handle convert to booking
+  // Handle convert to booking (sends booking link)
   const handleConvertToBooking = () => {
     startTransition(async () => {
       const result = await convertEnquiryToBooking(enquiry.id, {
@@ -271,6 +345,38 @@ export function EnquiryDetailClient({
       router.push(`/admin/bookings/${result.booking_id}`);
     });
   };
+
+  // Handle link to existing booking
+  const handleLink = (bookingId: string) => {
+    startTransition(async () => {
+      try {
+        await linkEnquiryToBooking(enquiry.id, bookingId);
+        setIsLinkDialogOpen(false);
+        toast.success("Enquiry linked to booking");
+        router.refresh();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to link");
+      }
+    });
+  };
+
+  // Handle unlink
+  const handleUnlink = () => {
+    startTransition(async () => {
+      try {
+        await unlinkEnquiryFromBooking(enquiry.id);
+        setIsUnlinkDialogOpen(false);
+        toast.success("Enquiry unlinked from booking");
+        router.refresh();
+      } catch {
+        toast.error("Failed to unlink");
+      }
+    });
+  };
+
+  // Which booking results to show in the link dialog
+  const showSearch = linkSearch.trim().length >= 2;
+  const resultsToShow = showSearch ? searchResults : autoMatchedBookings;
 
   // Get contextual actions based on status
   const getStatusActions = () => {
@@ -285,9 +391,9 @@ export function EnquiryDetailClient({
       case "in_discussion":
         return (
           <>
-            <Button onClick={handleOpenQuoteBuilder}>
-              <DollarSign className="h-4 w-4 mr-2" />
-              Create Quote
+            <Button onClick={() => setIsLinkDialogOpen(true)}>
+              <Link2 className="h-4 w-4 mr-2" />
+              Link to Booking
             </Button>
             <Button variant="outline" onClick={() => setIsLostDialogOpen(true)}>
               <XCircle className="h-4 w-4 mr-2" />
@@ -299,12 +405,9 @@ export function EnquiryDetailClient({
       case "quoted":
         return (
           <>
-            <Button onClick={() => setIsConvertDialogOpen(true)}>
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Convert to Booking
-            </Button>
-            <Button variant="outline" onClick={handleOpenQuoteBuilder}>
-              Revise Quote
+            <Button onClick={() => setIsLinkDialogOpen(true)}>
+              <Link2 className="h-4 w-4 mr-2" />
+              Link to Booking
             </Button>
             <Button variant="outline" onClick={() => setIsLostDialogOpen(true)}>
               <XCircle className="h-4 w-4 mr-2" />
@@ -314,14 +417,22 @@ export function EnquiryDetailClient({
         );
 
       case "converted_to_booking":
-        return enquiry.converted_to_booking_id ? (
-          <Button asChild>
-            <Link href={`/admin/bookings/${enquiry.converted_to_booking_id}`}>
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View Booking
-            </Link>
-          </Button>
-        ) : null;
+        return (
+          <>
+            {(enquiry as any).converted_to_booking_id && (
+              <Button asChild>
+                <Link href={`/admin/bookings/${(enquiry as any).converted_to_booking_id}`}>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Booking
+                </Link>
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setIsUnlinkDialogOpen(true)}>
+              <Unlink className="h-4 w-4 mr-2" />
+              Unlink
+            </Button>
+          </>
+        );
 
       case "lost":
         return (
@@ -495,6 +606,29 @@ export function EnquiryDetailClient({
                 <Label className="text-xs text-gray-500">Created</Label>
                 <p className="text-sm">{formatDate(enquiry.created_at)}</p>
               </div>
+
+              {/* Linked booking indicator */}
+              {linkedBooking && (
+                <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+                  <Label className="text-xs text-gray-500">Linked Booking</Label>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/bookings/${linkedBooking.id}`}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      {linkedBooking.reference ?? linkedBooking.id.slice(0, 8)}
+                    </Link>
+                    <StatusChip status={linkedBooking.status as any} />
+                    <button
+                      type="button"
+                      onClick={() => setIsUnlinkDialogOpen(true)}
+                      className="text-xs text-gray-400 hover:text-status-clay transition-colors"
+                    >
+                      Unlink
+                    </button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -527,10 +661,17 @@ export function EnquiryDetailClient({
                 Track pricing evolution and customer acceptance
               </p>
             </div>
-            <Button onClick={handleOpenQuoteBuilder}>
-              <DollarSign className="h-4 w-4 mr-2" />
-              Create New Quote
-            </Button>
+            <div className="flex gap-2">
+              {(enquiry.status === "quoted" || enquiry.status === "in_discussion") && (
+                <Button variant="outline" onClick={handleOpenQuoteBuilder}>
+                  Revise Quote
+                </Button>
+              )}
+              <Button onClick={handleOpenQuoteBuilder}>
+                <DollarSign className="h-4 w-4 mr-2" />
+                Create New Quote
+              </Button>
+            </div>
           </div>
 
           {quotes.length > 0 ? (
@@ -696,11 +837,92 @@ export function EnquiryDetailClient({
         </DialogContent>
       </Dialog>
 
-      {/* Convert to Booking Dialog */}
+      {/* Link to Booking Dialog */}
+      <Dialog open={isLinkDialogOpen} onOpenChange={(open) => {
+        setIsLinkDialogOpen(open);
+        if (!open) { setLinkSearch(""); setSearchResults([]); }
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Link to Existing Booking</DialogTitle>
+            <DialogDescription>
+              Search for a booking to link this enquiry to, or use a suggested match below.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Input
+              placeholder="Search by reference, name, or email…"
+              value={linkSearch}
+              onChange={(e) => setLinkSearch(e.target.value)}
+              autoFocus
+            />
+
+            {/* Results list */}
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {!showSearch && autoMatchedBookings.length > 0 && (
+                <p className="text-xs font-medium text-gray-500 mb-1">Suggested matches</p>
+              )}
+
+              {resultsToShow.map((b) => (
+                <BookingRow key={b.id} booking={b} onLink={handleLink} isPending={isPending} />
+              ))}
+
+              {showSearch && !isSearching && searchResults.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-400">No bookings found</p>
+              )}
+
+              {isSearching && (
+                <p className="py-6 text-center text-sm text-gray-400">Searching…</p>
+              )}
+            </div>
+
+            {/* Divider + fallback CTA */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-white px-3 text-xs text-gray-400">or</span>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => { setIsLinkDialogOpen(false); setIsConvertDialogOpen(true); }}
+            >
+              Send Booking Link Instead
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unlink Confirmation Dialog */}
+      <Dialog open={isUnlinkDialogOpen} onOpenChange={setIsUnlinkDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Unlink from Booking</DialogTitle>
+            <DialogDescription>
+              This will remove the link between this enquiry and the booking. The booking itself won&apos;t be affected.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUnlinkDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleUnlink} disabled={isPending}>
+              Unlink
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Convert to Booking Dialog (Send Booking Link) */}
       <Dialog open={isConvertDialogOpen} onOpenChange={setIsConvertDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Convert to Booking</DialogTitle>
+            <DialogTitle>Send Booking Link</DialogTitle>
             <DialogDescription>
               Generate a custom booking link for this enquiry. The customer will receive an email
               with a link to complete their booking.
@@ -772,7 +994,7 @@ export function EnquiryDetailClient({
               disabled={!convertData.customer_name || !convertData.customer_email}
             >
               <ExternalLink className="h-4 w-4 mr-2" />
-              Convert to Booking
+              Send Booking Link
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -5,7 +5,7 @@ import { RoomWithAssignments, BookingWithMeta } from "@/lib/queries/bookings";
 import { Tables } from "@/lib/database.types";
 import { RoomAllocationGrid } from "./_components/room-allocation-grid";
 import { AccommodationRequestsCard } from "./_components/accommodation-requests-card";
-import type { RoomConflict } from "./client";
+import type { RoomConflict } from "@/lib/queries/bookings";
 
 export interface RoomWithMeta extends Tables<"rooms"> {
   room_types: Tables<"room_types"> | null;

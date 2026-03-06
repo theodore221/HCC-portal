@@ -8,6 +8,7 @@ import { sbServer } from '@/lib/supabase-server';
 import { generateCustomPricingToken } from '@/lib/security';
 import { revalidatePath } from 'next/cache';
 import type { DiscountConfig } from '@/lib/pricing/types';
+import { getBaseUrl } from '@/lib/config';
 
 export async function createCustomBookingLink(data: {
   customer_name: string;
@@ -72,8 +73,7 @@ export async function createCustomBookingLink(data: {
   revalidatePath('/admin/bookings');
   revalidatePath('/admin/enquiries');
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  const bookingUrl = `${baseUrl}/booking/custom/${token}`;
+  const bookingUrl = `${getBaseUrl()}/booking/custom/${token}`;
 
   // Send custom booking link email (don't fail creation if email fails)
   try {
@@ -87,7 +87,6 @@ export async function createCustomBookingLink(data: {
       discount_percentage: data.discount_percentage,
       custom_pricing_notes: data.custom_pricing_notes,
     });
-    console.log(`Custom booking link email sent for ${booking.reference}`);
   } catch (emailError) {
     console.error('Failed to send custom booking link email:', emailError);
     // Continue - email failure shouldn't block link creation

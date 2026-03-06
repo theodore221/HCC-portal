@@ -149,9 +149,6 @@ export async function submitEnquiry(
       const { sendEnquiryReceivedEmail } =
         await import("@/lib/email/send-enquiry-received");
       await sendEnquiryReceivedEmail(enquiry);
-      console.log(
-        `Enquiry confirmation email sent for ${enquiry.reference_number}`,
-      );
     } catch (emailError) {
       console.error("Failed to send enquiry confirmation email:", emailError);
     }

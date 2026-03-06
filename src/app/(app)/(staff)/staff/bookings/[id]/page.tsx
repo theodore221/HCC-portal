@@ -11,7 +11,7 @@ import {
 import { getCateringOptions } from "@/lib/queries/catering.server";
 import BookingDetailClient from "./client";
 
-import type { Space, SpaceReservation } from "@/lib/queries/bookings";
+import type { Space, SpaceReservation, RoomConflict } from "@/lib/queries/bookings";
 import type { Views } from "@/lib/database.types";
 
 export default async function StaffBookingDetail({
@@ -58,13 +58,15 @@ export default async function StaffBookingDetail({
       .select("*")
       .eq("booking_id", booking.id),
     supabase.from("rooming_groups").select("*").eq("booking_id", booking.id),
-    // Fetch room assignments for OTHER bookings to detect conflicts
+    // Fetch room assignments for OTHER bookings that overlap date-range (avoids full table scan)
     supabase
       .from("room_assignments")
       .select(
-        "room_id, booking_id, booking:bookings(id, status, arrival_date, departure_date, reference, customer_name, contact_name)"
+        "room_id, booking_id, booking:bookings!inner(id, status, arrival_date, departure_date, reference, customer_name, contact_name)"
       )
-      .neq("booking_id", booking.id),
+      .neq("booking_id", booking.id)
+      .lt("bookings.arrival_date", booking.departure_date)
+      .gt("bookings.departure_date", booking.arrival_date),
   ]);
 
   const mealJobs = enrichMealJobs(mealJobsRaw, [booking]);
@@ -96,20 +98,6 @@ export default async function StaffBookingDetail({
   }
 
   // 4. Compute Room Conflicts
-  interface RoomConflict {
-    room_id: string;
-    conflicts_with: string;
-    conflicting_booking: {
-      id: string;
-      reference: string | null;
-      status: string;
-      customer_name: string | null;
-      contact_name: string | null;
-      arrival_date: string;
-      departure_date: string;
-    };
-  }
-
   const roomConflicts: RoomConflict[] = [];
   const roomConflictingBookingsMap = new Map<string, any>();
 

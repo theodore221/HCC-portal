@@ -12,6 +12,8 @@ import {
   getPricingReferenceData,
 } from "@/lib/queries/enquiries.server";
 import { getCurrentProfile } from "@/lib/auth/server";
+import { sbServer } from "@/lib/supabase-server";
+import type { BookingSearchResult } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +41,43 @@ export default async function EnquiryDetailPage({ params }: EnquiryDetailPagePro
       notFound();
     }
 
+    const sb: any = await sbServer();
+    const isLinkable = enquiry.status === "in_discussion" || enquiry.status === "quoted";
+
+    // Fetch auto-matched bookings + linked booking in parallel (post-enquiry-load)
+    const [autoMatchedResult, linkedBookingResult] = await Promise.all([
+      // Auto-match by email exact or name ilike — only when linkable
+      isLinkable
+        ? sb
+            .from("bookings")
+            .select("id, reference, customer_name, customer_email, arrival_date, departure_date, status, headcount")
+            .or(
+              enquiry.customer_email
+                ? `customer_email.eq.${enquiry.customer_email},customer_name.ilike.%${enquiry.customer_name}%`
+                : `customer_name.ilike.%${enquiry.customer_name}%`
+            )
+            .order("arrival_date", { ascending: false })
+            .limit(5)
+        : Promise.resolve({ data: [] }),
+
+      // Linked booking summary
+      (enquiry as any).converted_to_booking_id
+        ? sb
+            .from("bookings")
+            .select("id, reference, status, customer_name")
+            .eq("id", (enquiry as any).converted_to_booking_id)
+            .single()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    const autoMatchedBookings: BookingSearchResult[] = autoMatchedResult.data ?? [];
+    const linkedBooking = linkedBookingResult.data as {
+      id: string;
+      reference: string | null;
+      status: string;
+      customer_name: string | null;
+    } | null;
+
     return (
       <EnquiryDetailClient
         enquiry={enquiry}
@@ -46,6 +85,8 @@ export default async function EnquiryDetailPage({ params }: EnquiryDetailPagePro
         quotes={quotes}
         pricingData={pricingData}
         currentUserName={profile?.full_name || profile?.email || "Unknown"}
+        autoMatchedBookings={autoMatchedBookings}
+        linkedBooking={linkedBooking}
       />
     );
   } catch (error) {

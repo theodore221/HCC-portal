@@ -43,7 +43,6 @@ export function DateNavigation({ selectedDate, basePath }: DateNavigationProps) 
 
   const handleDateChange = (dateStr: string) => {
     if (!dateStr) return;
-    console.log("Navigating to date:", dateStr);
     router.push(`${basePath}?date=${dateStr}`);
   };
 
@@ -51,7 +50,6 @@ export function DateNavigation({ selectedDate, basePath }: DateNavigationProps) 
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + offset);
     const dateStr = formatDateString(newDate);
-    console.log("Navigate offset:", offset, "New date:", dateStr);
     handleDateChange(dateStr);
   };
 

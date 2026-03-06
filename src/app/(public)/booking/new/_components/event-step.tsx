@@ -1,6 +1,7 @@
 'use client';
 
 import type { BookingFormState } from '../booking-form';
+import { formatDateLocal } from '@/lib/utils';
 
 const EVENT_TYPES = [
   'Retreat',
@@ -33,7 +34,7 @@ export function EventStep({ formState, onChange }: EventStepProps) {
   const isGroup = formState.booking_type === 'Group';
   const duration = formatDuration(formState.arrival_date ?? '', formState.departure_date ?? '');
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatDateLocal(new Date());
 
   return (
     <div className="space-y-5">

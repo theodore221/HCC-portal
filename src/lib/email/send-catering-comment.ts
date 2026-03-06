@@ -2,9 +2,9 @@ import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { CateringCommentNotificationEmail } from "@/emails/catering-comment-notification";
 import { sbAdmin } from "@/lib/supabase-admin";
+import { getBaseUrl } from "@/lib/config";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const BASE_URL = process.env.PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 interface SendCateringCommentParams {
   mealJobId: string;
@@ -21,8 +21,8 @@ export async function sendCateringComment(params: SendCateringCommentParams) {
   try {
     const portalUrl =
       params.authorRole === "caterer"
-        ? `${BASE_URL}/admin/catering/jobs`
-        : `${BASE_URL}/caterer/jobs`;
+        ? `${getBaseUrl()}/admin/catering/jobs`
+        : `${getBaseUrl()}/caterer/jobs`;
 
     const emailHtml = await render(
       CateringCommentNotificationEmail({

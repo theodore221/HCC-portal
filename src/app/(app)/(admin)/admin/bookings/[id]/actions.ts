@@ -109,7 +109,6 @@ export async function updateBookingStatus(
         cateringSummary,
       });
 
-      console.log(`Booking approval email sent for booking ${bookingId}`);
     } catch (emailError) {
       // Log email error but don't fail the approval
       console.error("Failed to send booking approval email:", emailError);

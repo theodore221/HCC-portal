@@ -51,9 +51,10 @@ function formatDate(dateStr: string): string {
 
 interface ScheduleTableProps {
   data: ScheduleRow[];
+  basePath: string;
 }
 
-export function ScheduleTable({ data }: ScheduleTableProps) {
+export function ScheduleTable({ data, basePath }: ScheduleTableProps) {
   const columns = useMemo<ColumnDef<ScheduleRow>[]>(
     () => [
       // Date column with day of week
@@ -65,7 +66,7 @@ export function ScheduleTable({ data }: ScheduleTableProps) {
         ),
         cell: ({ row }) => (
           <Link
-            href={`/staff/bookings/${row.original.id}`}
+            href={`${basePath}/bookings/${row.original.id}`}
             className="flex items-center gap-2 text-sm hover:underline"
           >
             <span className="w-4 font-bold text-primary">
@@ -87,7 +88,7 @@ export function ScheduleTable({ data }: ScheduleTableProps) {
         ),
         cell: ({ row }) => (
           <Link
-            href={`/staff/bookings/${row.original.id}`}
+            href={`${basePath}/bookings/${row.original.id}`}
             className="font-medium text-text hover:text-primary hover:underline"
           >
             {row.original.groupName}
@@ -342,7 +343,7 @@ export function ScheduleTable({ data }: ScheduleTableProps) {
         meta: "min-w-[150px]",
       },
     ],
-    []
+    [basePath]
   );
 
   return (

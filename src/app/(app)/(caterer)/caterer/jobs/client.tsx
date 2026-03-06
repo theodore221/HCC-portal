@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useMemo } from "react";
 
 import { DetailedMealCard } from "@/components/catering/detailed-meal-card";
-import { CateringJobsCalendar } from "@/components/catering-jobs-calendar";
+import { KitchenCalendar } from "@/components/catering/kitchen-calendar";
 import { CollapsibleDaySection } from "@/components/catering/collapsible-day-section";
 import {
   Card,
@@ -141,12 +141,7 @@ export default function CatererJobsClient({
               </TabsList>
 
               <TabsContent value="calendar" className="pt-4">
-                <CateringJobsCalendar
-                  jobs={jobs}
-                  caterers={caterers}
-                  menuItems={menuItems}
-                  readOnly
-                />
+                <KitchenCalendar jobs={jobs} readOnly />
               </TabsContent>
 
               <TabsContent value="list" className="pt-4">

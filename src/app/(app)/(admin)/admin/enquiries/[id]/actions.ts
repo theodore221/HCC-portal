@@ -9,6 +9,130 @@ import { calculateBookingPricing } from "@/lib/pricing";
 import type { EnquiryStatus, NoteType } from "@/lib/queries/enquiries";
 import type { BookingSelections, DiscountConfig, PricingLineItem, PriceTableSnapshot, PricingResult } from "@/lib/pricing/types";
 
+export type BookingSearchResult = {
+  id: string;
+  reference: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  arrival_date: string;
+  departure_date: string;
+  status: string;
+  headcount: number;
+};
+
+/**
+ * Search bookings by reference, customer name, or email for linking to an enquiry
+ */
+export async function searchBookingsForLinking(query: string): Promise<BookingSearchResult[]> {
+  if (!query || query.trim().length < 2) return [];
+  const sb: any = await sbServer();
+  const q = query.trim();
+
+  const { data, error } = await sb
+    .from("bookings")
+    .select("id, reference, customer_name, customer_email, arrival_date, departure_date, status, headcount")
+    .or(`reference.ilike.%${q}%,customer_name.ilike.%${q}%,customer_email.ilike.%${q}%`)
+    .order("arrival_date", { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error("Error searching bookings:", error);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+/**
+ * Link an enquiry to an existing booking (sets both FKs, updates enquiry status to converted_to_booking)
+ */
+export async function linkEnquiryToBooking(enquiryId: string, bookingId: string) {
+  const sb: any = await sbServer();
+  const { profile } = await getCurrentProfile();
+
+  if (!profile) throw new Error("Not authenticated");
+
+  // Guard: reject if already linked to a DIFFERENT booking
+  const { data: enquiry } = await sb
+    .from("enquiries")
+    .select("converted_to_booking_id")
+    .eq("id", enquiryId)
+    .single();
+
+  if (enquiry?.converted_to_booking_id && enquiry.converted_to_booking_id !== bookingId) {
+    throw new Error("This enquiry is already linked to a different booking");
+  }
+
+  const { error: enquiryError } = await sb
+    .from("enquiries")
+    .update({ converted_to_booking_id: bookingId, status: "converted_to_booking" })
+    .eq("id", enquiryId);
+
+  if (enquiryError) throw new Error("Failed to link enquiry");
+
+  // Best-effort: update bookings.enquiry_id
+  await sb.from("bookings").update({ enquiry_id: enquiryId }).eq("id", bookingId);
+
+  await sb.from("enquiry_notes").insert({
+    enquiry_id: enquiryId,
+    author_id: profile.id,
+    author_name: profile.full_name || profile.email,
+    note_type: "note",
+    content: "Linked to existing booking",
+    metadata: { booking_id: bookingId },
+  });
+
+  revalidatePath(`/admin/enquiries/${enquiryId}`);
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/admin/enquiries");
+  revalidateTag(CACHE_TAGS.ENQUIRIES, {});
+  revalidateTag(CACHE_TAGS.BOOKINGS, {});
+}
+
+/**
+ * Unlink an enquiry from its booking (clears both FKs, reverts enquiry status to quoted)
+ */
+export async function unlinkEnquiryFromBooking(enquiryId: string) {
+  const sb: any = await sbServer();
+  const { profile } = await getCurrentProfile();
+
+  if (!profile) throw new Error("Not authenticated");
+
+  const { data: enquiry } = await sb
+    .from("enquiries")
+    .select("converted_to_booking_id")
+    .eq("id", enquiryId)
+    .single();
+
+  const bookingId = enquiry?.converted_to_booking_id as string | null;
+
+  const { error: enquiryError } = await sb
+    .from("enquiries")
+    .update({ converted_to_booking_id: null, status: "quoted" })
+    .eq("id", enquiryId);
+
+  if (enquiryError) throw new Error("Failed to unlink enquiry");
+
+  if (bookingId) {
+    await sb.from("bookings").update({ enquiry_id: null }).eq("id", bookingId);
+  }
+
+  await sb.from("enquiry_notes").insert({
+    enquiry_id: enquiryId,
+    author_id: profile.id,
+    author_name: profile.full_name || profile.email,
+    note_type: "note",
+    content: "Unlinked from booking",
+    metadata: { booking_id: bookingId },
+  });
+
+  revalidatePath(`/admin/enquiries/${enquiryId}`);
+  if (bookingId) revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/admin/enquiries");
+  revalidateTag(CACHE_TAGS.ENQUIRIES, {});
+  revalidateTag(CACHE_TAGS.BOOKINGS, {});
+}
+
 /**
  * Update enquiry status and log the change
  */

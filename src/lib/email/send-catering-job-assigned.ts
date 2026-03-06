@@ -2,9 +2,9 @@ import { Resend } from "resend";
 import { render } from "@react-email/render";
 import { CateringJobAssignedEmail } from "@/emails/catering-job-assigned";
 import { sbAdmin } from "@/lib/supabase-admin";
+import { getBaseUrl } from "@/lib/config";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const BASE_URL = process.env.PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 interface SendCateringJobAssignedParams {
   mealJobId: string;
@@ -25,7 +25,7 @@ export async function sendCateringJobAssigned(params: SendCateringJobAssignedPar
         mealType: params.mealType,
         serviceDate: params.serviceDate,
         headcount: params.headcount,
-        portalUrl: `${BASE_URL}/caterer/jobs`,
+        portalUrl: `${getBaseUrl()}/caterer/jobs`,
       })
     );
 

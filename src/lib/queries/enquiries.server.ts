@@ -49,44 +49,42 @@ export async function getEnquiriesForAdmin(params?: {
 }
 
 /**
- * Get status counts for metrics
+ * Get status counts for metrics using parallel COUNT queries (no full-table fetch)
  */
 export async function getEnquiryStatusCounts() {
   const sb: any = await sbServer();
 
-  const { data, error } = await sb
-    .from("enquiries")
-    .select("status");
+  const [
+    { count: newCount },
+    { count: inDiscussionCount },
+    { count: quotedCount },
+    { count: convertedCount },
+    { count: lostCount },
+    { count: total },
+  ] = await Promise.all([
+    sb.from("enquiries").select("*", { count: "exact", head: true }).eq("status", "new"),
+    sb.from("enquiries").select("*", { count: "exact", head: true }).eq("status", "in_discussion"),
+    sb.from("enquiries").select("*", { count: "exact", head: true }).eq("status", "quoted"),
+    sb.from("enquiries").select("*", { count: "exact", head: true }).eq("status", "converted_to_booking"),
+    sb.from("enquiries").select("*", { count: "exact", head: true }).eq("status", "lost"),
+    sb.from("enquiries").select("*", { count: "exact", head: true }),
+  ]);
 
-  if (error) {
-    console.error("Error fetching status counts:", error);
-    throw new Error("Failed to fetch status counts");
-  }
-
-  // Count by status
-  const counts: Record<EnquiryStatus, number> = {
-    new: 0,
-    in_discussion: 0,
-    quoted: 0,
-    converted_to_booking: 0,
-    lost: 0,
-  };
-
-  data.forEach((row: any) => {
-    const status = row.status as EnquiryStatus;
-    counts[status] = (counts[status] || 0) + 1;
-  });
+  const n = newCount ?? 0;
+  const id = inDiscussionCount ?? 0;
+  const q = quotedCount ?? 0;
+  const c = convertedCount ?? 0;
+  const l = lostCount ?? 0;
+  const t = total ?? 0;
 
   return {
-    total: data.length,
-    new: counts.new,
-    in_discussion: counts.in_discussion,
-    quoted: counts.quoted,
-    converted_to_booking: counts.converted_to_booking,
-    lost: counts.lost,
-    conversionRate: data.length > 0
-      ? Math.round((counts.converted_to_booking / data.length) * 100)
-      : 0,
+    total: t,
+    new: n,
+    in_discussion: id,
+    quoted: q,
+    converted_to_booking: c,
+    lost: l,
+    conversionRate: t > 0 ? Math.round((c / t) * 100) : 0,
   };
 }
 

@@ -1,10 +1,10 @@
 import { Resend } from 'resend';
 import { render } from '@react-email/render';
 import { AdminNewEnquiryEmail } from '@/emails/admin-new-enquiry';
+import { getBaseUrl } from '@/lib/config';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@holycrosscentre.com.au';
-const SITE_URL = process.env.PUBLIC_SITE_URL || 'http://localhost:3000';
 
 interface EnquiryData {
   id: string;
@@ -21,7 +21,7 @@ interface EnquiryData {
 }
 
 export async function sendAdminNewEnquiryEmail(enquiry: EnquiryData) {
-  const adminUrl = `${SITE_URL}/admin/enquiries/${enquiry.id}`;
+  const adminUrl = `${getBaseUrl()}/admin/enquiries/${enquiry.id}`;
 
   const emailHtml = await render(
     AdminNewEnquiryEmail({
