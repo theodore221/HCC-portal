@@ -1,24 +1,19 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpRight,
   Bed,
-  CheckCircle2,
-  Filter,
-  Plus,
   Search,
-  SlidersHorizontal,
   Sparkles,
   AlertTriangle,
   X,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -47,14 +42,14 @@ import {
 } from "@/lib/queries/bookings";
 import { cn } from "@/lib/utils";
 
-const statusOptions: { label: string; value: BookingStatus }[] = [
-  { label: "Awaiting Details", value: "AwaitingDetails" },
-  { label: "Pending", value: "Pending" },
-  { label: "Approved", value: "Approved" },
-  { label: "Confirmed", value: "Confirmed" },
-  { label: "In progress", value: "InProgress" },
-  { label: "Completed", value: "Completed" },
-  { label: "Cancelled", value: "Cancelled" },
+const statusOptions: { label: string; value: BookingStatus; active: string; inactive: string }[] = [
+  { label: "Awaiting Details", value: "AwaitingDetails", active: "border-status-sage bg-status-sage text-white", inactive: "border-status-sage/20 bg-white text-status-sage hover:bg-status-sage/5" },
+  { label: "Pending",          value: "Pending",         active: "border-status-ochre bg-status-ochre text-white", inactive: "border-status-ochre/20 bg-white text-status-ochre hover:bg-status-ochre/5" },
+  { label: "Approved",         value: "Approved",        active: "border-status-forest bg-status-forest text-white", inactive: "border-status-forest/20 bg-white text-status-forest hover:bg-status-forest/5" },
+  { label: "Confirmed",        value: "Confirmed",       active: "border-status-forest bg-status-forest text-white", inactive: "border-status-forest/20 bg-white text-status-forest hover:bg-status-forest/5" },
+  { label: "In Progress",      value: "InProgress",      active: "border-status-sage bg-status-sage text-white", inactive: "border-status-sage/20 bg-white text-status-sage hover:bg-status-sage/5" },
+  { label: "Completed",        value: "Completed",       active: "border-status-stone bg-status-stone text-white", inactive: "border-status-stone/20 bg-white text-status-stone hover:bg-status-stone/5" },
+  { label: "Cancelled",        value: "Cancelled",       active: "border-status-clay bg-status-clay text-white", inactive: "border-status-clay/20 bg-white text-status-clay hover:bg-status-clay/5" },
 ];
 
 // Hoist to module level to avoid creating on every cell render
@@ -249,12 +244,6 @@ const columns: ColumnDef<BookingWithMeta>[] = [
   },
 ];
 
-const statCards = [
-  { label: "Pending", key: "Pending", accent: "text-status-ochre bg-status-ochre/5 border-status-ochre/10" },
-  { label: "Approved", key: "Approved", accent: "text-status-forest bg-status-forest/5 border-status-forest/10" },
-  { label: "Confirmed", key: "Confirmed", accent: "text-status-forest bg-status-forest/5 border-status-forest/10" },
-  { label: "In Progress", key: "InProgress", accent: "text-status-sage bg-status-sage/5 border-status-sage/10" },
-] as const;
 
 export default function AdminBookingsClient({
   bookings,
@@ -311,39 +300,6 @@ export default function AdminBookingsClient({
     <div className="space-y-6">
       {isLoading && <LoadingOverlay />}
 
-      {/* Page header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Manage and review all booking requests
-          </p>
-        </div>
-        <Link
-          href="/admin/bookings/create-link"
-          className={buttonVariants({ variant: "default", size: "sm" })}
-        >
-          <Plus className="size-4 mr-1.5" />
-          Create Booking Link
-        </Link>
-      </div>
-
-      {/* Summary stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(({ label, key, accent }) => (
-          <div
-            key={key}
-            className={cn(
-              "rounded-2xl border p-4 shadow-soft",
-              accent
-            )}
-          >
-            <p className="text-2xl font-bold">{statusCounts[key] ?? 0}</p>
-            <p className="text-xs uppercase tracking-wide mt-1 opacity-75">{label}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Table card */}
       <Card className="px-0">
         <CardContent>
@@ -380,7 +336,7 @@ export default function AdminBookingsClient({
               return (
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    {statusOptions.map(({ label, value }) => {
+                    {statusOptions.map(({ label, value, active, inactive }) => {
                       const isActive = activeStatusFilter.has(value);
                       return (
                         <button
@@ -388,22 +344,17 @@ export default function AdminBookingsClient({
                           type="button"
                           onClick={() => toggleStatus(value, !isActive)}
                           className={cn(
-                            "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold transition-all duration-200",
-                            isActive
-                              ? "border-primary bg-primary text-white shadow-sm"
-                              : "border-border/60 bg-white text-text-light hover:border-primary/40 hover:text-text"
+                            "rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                            isActive ? active : inactive
                           )}
                         >
-                          <span>{label}</span>
-                          <span className="rounded-full bg-neutral px-2 py-0.5 text-[11px] font-semibold text-text">
-                            {statusCounts[value] ?? 0}
-                          </span>
+                          {label} ({statusCounts[value] ?? 0})
                         </button>
                       );
                     })}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative w-full max-w-xs">
+<div className="relative w-full max-w-xs">
                       <Search
                         className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-light/70"
                         aria-hidden="true"

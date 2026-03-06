@@ -19,15 +19,11 @@ export async function getResources() {
     { data: rooms },
     { data: roomTypes },
     { data: mealPrices },
-    { data: menuItems },
-    { data: caterers },
   ] = await Promise.all([
     supabase.from("spaces").select("*").order("name"),
     supabase.from("rooms").select("*, room_types(*)").order("name"),
     supabase.from("room_types").select("*").order("price"),
     supabase.from("meal_prices").select("*").order("price"),
-    supabase.from("menu_items").select("*, caterers(name)").order("label"),
-    supabase.from("caterers").select("*").order("name"),
   ]);
 
   return {
@@ -35,8 +31,6 @@ export async function getResources() {
     rooms: rooms || [],
     roomTypes: roomTypes || [],
     mealPrices: mealPrices || [],
-    menuItems: menuItems || [],
-    caterers: caterers || [],
   };
 }
 

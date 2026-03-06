@@ -3,31 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import {
-  CalendarDays,
-  UserCheck,
-  FileText,
-  CalendarOff,
-  Users,
-  ListTodo,
-} from "lucide-react";
+import { Calendar, MessageSquare } from "lucide-react";
 
 const TABS = [
-  { href: "/admin/rostering/scheduler", label: "Scheduler", icon: CalendarDays },
-  { href: "/admin/rostering/my-shifts", label: "My Shifts", icon: UserCheck },
-  { href: "/admin/rostering/timesheets", label: "Timesheets", icon: FileText },
-  { href: "/admin/rostering/unavailability", label: "Unavailability", icon: CalendarOff },
-  { href: "/admin/rostering/staff", label: "Staff", icon: Users },
-  { href: "/admin/rostering/tasks", label: "Tasks", icon: ListTodo },
+  { href: "/admin/bookings", label: "Bookings", icon: Calendar },
+  { href: "/admin/enquiries", label: "Enquiries", icon: MessageSquare },
 ];
 
-export function RosteringTabs() {
+// Only show on the list pages, not detail/sub pages
+const LIST_PAGES = ["/admin/bookings", "/admin/enquiries"];
+
+export function BookingsTabs() {
   const pathname = usePathname();
+
+  if (!LIST_PAGES.includes(pathname)) return null;
 
   return (
     <nav className="flex gap-1 border-b border-gray-200 pb-0 mb-6 overflow-x-auto">
       {TABS.map(({ href, label, icon: Icon }) => {
-        const isActive = pathname.startsWith(href);
+        const isActive = pathname === href;
         return (
           <Link
             key={href}

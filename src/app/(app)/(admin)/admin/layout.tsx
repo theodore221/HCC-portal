@@ -8,8 +8,7 @@ import { getCurrentProfile } from "@/lib/auth/server";
 
 const navItems = [
   { href: "/admin", label: "Dashboard" },
-  { href: "/admin/enquiries", label: "Enquiries" },
-  { href: "/admin/bookings", label: "Bookings" },
+  { href: "/admin/bookings", label: "Bookings", activePaths: ["/admin/enquiries"] },
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/rooms", label: "Rooms" },
   { href: "/admin/catering/jobs", label: "Kitchen" },

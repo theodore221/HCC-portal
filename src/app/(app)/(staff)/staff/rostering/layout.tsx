@@ -6,13 +6,7 @@ export default function StaffRosteringLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">My Roster</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          View shifts, log timesheets, and manage leave.
-        </p>
-      </div>
+    <div>
       <StaffRosteringTabs />
       {children}
     </div>

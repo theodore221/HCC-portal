@@ -34,6 +34,8 @@ import { UserMenu } from "@/components/layout/user-menu";
 type NavItem = {
   href: string;
   label: string;
+  /** Additional path prefixes that should also mark this nav item as active */
+  activePaths?: string[];
 };
 
 interface DashboardShellProps {
@@ -49,6 +51,29 @@ interface DashboardShellProps {
   };
 }
 
+const ROUTE_TITLE_OVERRIDES: Record<string, { title: string; description?: string }> = {
+  "/admin/rostering": {
+    title: "Rostering",
+    description: "Manage shifts, tasks, staff records, timesheets, and leave.",
+  },
+  "/admin/catering": {
+    title: "Kitchen",
+    description: "Manage catering jobs, caterers, menus, and dietary requirements.",
+  },
+  "/admin/bookings": {
+    title: "Bookings",
+    description: "Manage bookings and enquiries.",
+  },
+  "/admin/enquiries": {
+    title: "Bookings",
+    description: "Manage bookings and enquiries.",
+  },
+  "/staff/rostering": {
+    title: "My Roster",
+    description: "View shifts, log timesheets, and manage leave.",
+  },
+};
+
 export function DashboardShell({
   title,
   description,
@@ -60,6 +85,13 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const pathname = usePathname();
   const normalizedPath = pathname ?? "";
+
+  const routeOverride = Object.entries(ROUTE_TITLE_OVERRIDES).find(
+    ([prefix]) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
+  )?.[1];
+
+  const displayTitle = routeOverride?.title ?? title;
+  const displayDescription = routeOverride?.description ?? description;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -129,9 +161,9 @@ export function DashboardShell({
                   </Button>
                 </SheetTrigger>
                 <div>
-                  <h1 className="text-xl font-bold text-text">{title}</h1>
-                  {description ? (
-                    <p className="text-sm text-text-light">{description}</p>
+                  <h1 className="text-xl font-bold text-text">{displayTitle}</h1>
+                  {displayDescription ? (
+                    <p className="text-sm text-text-light">{displayDescription}</p>
                   ) : null}
                 </div>
               </div>
@@ -285,7 +317,10 @@ function SidebarContent({
               (pathname.startsWith(`${item.href}/`) &&
                 item.href !== "/admin" &&
                 item.href !== "/staff" &&
-                item.href !== "/caterer");
+                item.href !== "/caterer") ||
+              (item.activePaths?.some(
+                (p) => pathname === p || pathname.startsWith(`${p}/`)
+              ) ?? false);
             const Icon = getIconForItem(item.href, item.label);
             return (
               <SheetClose asChild key={item.href}>

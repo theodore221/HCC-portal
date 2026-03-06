@@ -1,5 +1,30 @@
 import { forwardRef } from "react";
 import { format } from "date-fns";
+
+function formatDateRanges(isoDates: string[]): string {
+  if (isoDates.length === 0) return '';
+  const sorted = [...isoDates].sort();
+  const dates = sorted.map((d) => new Date(d + 'T00:00:00'));
+  const runs: Date[][] = [];
+  let current: Date[] = [dates[0]];
+  for (let i = 1; i < dates.length; i++) {
+    const diffDays = Math.round((dates[i].getTime() - dates[i - 1].getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) { current.push(dates[i]); }
+    else { runs.push(current); current = [dates[i]]; }
+  }
+  runs.push(current);
+  return runs.map((run) => {
+    const first = run[0];
+    const last = run[run.length - 1];
+    const firstDay = first.getDate();
+    const lastDay = last.getDate();
+    const firstMonth = first.toLocaleDateString('en-AU', { month: 'short' });
+    const lastMonth = last.toLocaleDateString('en-AU', { month: 'short' });
+    if (run.length === 1) return `${firstDay} ${firstMonth}`;
+    if (firstMonth === lastMonth) return `${firstDay}–${lastDay} ${firstMonth}`;
+    return `${firstDay} ${firstMonth}–${lastDay} ${lastMonth}`;
+  }).join(', ');
+}
 import {
   BookingWithMeta,
   RoomWithAssignments,
@@ -186,42 +211,43 @@ export const BookingSummary = forwardRef<HTMLDivElement, BookingSummaryProps>(
               <thead>
                 <tr className="text-xs text-gray-500 border-b border-gray-200">
                   <th className="py-2 font-medium w-1/3">Space</th>
-                  <th className="py-2 font-medium w-1/3">Date</th>
+                  <th className="py-2 font-medium w-1/3">Dates</th>
                   <th className="py-2 font-medium w-1/3">Time</th>
                 </tr>
               </thead>
               <tbody>
                 {reservations.length > 0
-                  ? reservations.map((res) => (
-                      <tr
-                        key={res.id}
-                        className="border-b border-gray-100 last:border-0"
-                      >
-                        <td className="py-2 font-medium">
-                          {getSpaceName(res.space_id)}
-                        </td>
-                        <td className="py-2">{formatDate(res.service_date)}</td>
-                        <td className="py-2">
-                          {formatTime(res.start_time)} -{" "}
-                          {formatTime(res.end_time)}
-                        </td>
-                      </tr>
-                    ))
+                  ? (() => {
+                      // Group by space — one row per space with compressed date ranges
+                      const bySpace = new Map<string, { dates: string[]; start_time: string | null; end_time: string | null }>();
+                      reservations.forEach((res) => {
+                        const existing = bySpace.get(res.space_id);
+                        if (existing) {
+                          existing.dates.push(res.service_date);
+                        } else {
+                          bySpace.set(res.space_id, { dates: [res.service_date], start_time: res.start_time, end_time: res.end_time });
+                        }
+                      });
+                      return [...bySpace.entries()].map(([spaceId, { dates, start_time, end_time }]) => (
+                        <tr key={spaceId} className="border-b border-gray-100 last:border-0">
+                          <td className="py-2 font-medium">{getSpaceName(spaceId)}</td>
+                          <td className="py-2">{formatDateRanges(dates)}</td>
+                          <td className="py-2">
+                            {start_time && end_time
+                              ? `${formatTime(start_time)} – ${formatTime(end_time)}`
+                              : <span className="text-gray-400">—</span>}
+                          </td>
+                        </tr>
+                      ));
+                    })()
                   : booking.spaces.map((spaceId, index) => (
-                      <tr
-                        key={`space-${index}`}
-                        className="border-b border-gray-100 last:border-0"
-                      >
-                        <td className="py-2 font-medium">
-                          {getSpaceName(spaceId)}
+                      <tr key={`space-${index}`} className="border-b border-gray-100 last:border-0">
+                        <td className="py-2 font-medium">{getSpaceName(spaceId)}</td>
+                        <td className="py-2">
+                          {formatDate(booking.arrival_date)} – {formatDate(booking.departure_date)}
                         </td>
                         <td className="py-2">
-                          {formatDate(booking.arrival_date)} -{" "}
-                          {formatDate(booking.departure_date)}
-                        </td>
-                        <td className="py-2">
-                          {formatTime(booking.arrival_time)} -{" "}
-                          {formatTime(booking.departure_time)}
+                          {formatTime(booking.arrival_time)} – {formatTime(booking.departure_time)}
                         </td>
                       </tr>
                     ))}
@@ -247,46 +273,41 @@ export const BookingSummary = forwardRef<HTMLDivElement, BookingSummaryProps>(
                 </p>
               ) : (
                 <div className="space-y-6">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="text-xs text-gray-500 border-b border-gray-200">
-                        <th className="py-2 font-medium w-1/5">Date</th>
-                        <th className="py-2 font-medium w-1/5">Meal</th>
-                        <th className="py-2 font-medium w-1/5">Time</th>
-                        <th className="py-2 font-medium text-center w-1/12">
-                          Count
-                        </th>
-                        <th className="py-2 font-medium w-1/3">Details</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {mealJobs.map((job) => (
-                        <tr
-                          key={job.id}
-                          className="border-b border-gray-100 last:border-0"
-                        >
-                          <td className="py-2">{formatDate(job.date)}</td>
-                          <td className="py-2 font-medium">{job.meal}</td>
-                          <td className="py-2">
-                            {format(new Date(job.startISOString), "HH:mm")} -{" "}
-                            {format(new Date(job.endISOString), "HH:mm")}
-                          </td>
-                          <td className="py-2 text-center">
-                            {job.countsTotal || booking.headcount}
-                          </td>
-                          <td className="py-2 text-xs">
-                            {job.menu && job.menu.length > 0 ? (
-                              <span className="text-text-light">
-                                {job.menu.join(", ")}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 italic">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {/* Group by meal type for a compact summary */}
+                  {(() => {
+                    const mealTypes = [...new Set(mealJobs.map((j) => j.meal))];
+                    return (
+                      <table className="w-full text-left border-collapse text-sm">
+                        <thead>
+                          <tr className="text-xs text-gray-500 border-b border-gray-200">
+                            <th className="py-2 font-medium w-1/5">Meal</th>
+                            <th className="py-2 font-medium w-1/6">Time</th>
+                            <th className="py-2 font-medium w-1/12 text-center">Count</th>
+                            <th className="py-2 font-medium">Dates</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {mealTypes.map((meal) => {
+                            const jobs = mealJobs.filter((j) => j.meal === meal);
+                            const first = jobs[0];
+                            const totalCount = jobs.reduce((s, j) => s + (j.countsTotal || booking.headcount), 0);
+                            const avgCount = Math.round(totalCount / jobs.length);
+                            const dates = formatDateRanges(jobs.map((j) => j.date));
+                            return (
+                              <tr key={meal} className="border-b border-gray-100 last:border-0">
+                                <td className="py-2 font-medium">{meal}</td>
+                                <td className="py-2 text-gray-600">
+                                  {format(new Date(first.startISOString), "HH:mm")}–{format(new Date(first.endISOString), "HH:mm")}
+                                </td>
+                                <td className="py-2 text-center">{avgCount}</td>
+                                <td className="py-2 text-xs text-gray-600">{dates}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    );
+                  })()}
                 </div>
               )}
             </div>
