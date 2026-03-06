@@ -64,6 +64,8 @@ Items: `hover:bg-gray-100/70 rounded-md`.
 
 ## Tabs
 
+### Radix Tabs (inline content switching)
+
 ```jsx
 <TabsList className="inline-flex items-center gap-2 rounded-full bg-gray-100 p-1">
   <TabsTrigger value="x" className="rounded-full px-4 py-2 text-sm whitespace-nowrap">
@@ -73,6 +75,57 @@ Items: `hover:bg-gray-100/70 rounded-md`.
 ```
 
 Always `bg-gray-100` for TabsList, never `bg-neutral`. For mobile, wrap in a scroll container (see `responsive.md`).
+
+### Nav Tabs (route-based navigation)
+
+Use for top-level section navigation where each tab routes to a different page. Features an underline indicator, icon + label, and `primary`-colored active state.
+
+```tsx
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Calendar, Users } from "lucide-react"; // pick icons per tab
+
+const TABS = [
+  { href: "/admin/section/tab-one", label: "Tab One", icon: Calendar },
+  { href: "/admin/section/tab-two", label: "Tab Two", icon: Users },
+];
+
+export function SectionTabs() {
+  const pathname = usePathname();
+  return (
+    <nav className="flex gap-1 border-b border-gray-200 pb-0 mb-6 overflow-x-auto">
+      {TABS.map(({ href, label, icon: Icon }) => {
+        const isActive = pathname.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-colors whitespace-nowrap",
+              isActive
+                ? "border-primary text-primary bg-primary/5"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            )}
+          >
+            <Icon className="size-4" />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+```
+
+Key rules:
+- `<nav>` wrapper with `border-b border-gray-200 mb-6 overflow-x-auto`
+- Active: `border-primary text-primary bg-primary/5` with `border-b-2`
+- Inactive: `border-transparent` (hides the border-b-2), `text-gray-500 hover:text-gray-700 hover:bg-gray-50`
+- Always include a `size-4` icon from lucide-react that reflects the tab's content
+- `whitespace-nowrap` prevents label wrapping on narrow screens
 
 ## Badge
 
